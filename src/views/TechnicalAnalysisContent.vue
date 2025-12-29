@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import CandlestickChart from '@/components/crypto/CandlestickChart.vue'
+import { calculateAllIndicators, getRSIInterpretation, generateSparklinePath } from '@/utils/technicalIndicators'
 
 // API endpoints for OHLC data
 const API_BASE = 'http://localhost:5000/api/ohlc'
@@ -48,6 +49,15 @@ const latestCandle = computed(() => {
 const priceChange = computed(() => {
   if (!latestCandle.value) return 0
   return latestCandle.value.priceChangePercent || 0
+})
+
+// Technical indicators
+const indicators = computed(() => {
+  return calculateAllIndicators(candleData.value)
+})
+
+const rsiInterpretation = computed(() => {
+  return getRSIInterpretation(indicators.value.rsi)
 })
 
 // Fetch candle data
@@ -115,7 +125,9 @@ const fetchMetrics = async () => {
   }
 }
 
-// Format helpers
+// Exchange rate USD to COP
+const copRate = 4400
+
 const formatPrice = (value) => {
   if (!value) return '$0.00'
   return new Intl.NumberFormat('en-US', {
@@ -124,6 +136,17 @@ const formatPrice = (value) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: value < 1 ? 6 : 2
   }).format(value)
+}
+
+const formatCOP = (value) => {
+  if (!value) return 'COP $0'
+  const cop = value * copRate
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(cop)
 }
 
 const formatTimestamp = (timestamp) => {
@@ -234,6 +257,9 @@ const handleTimeframeChange = () => {
         <p class="text-xl font-bold font-mono text-slate-900 dark:text-white">
           {{ formatPrice(latestCandle?.close) }}
         </p>
+        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          🇨🇴 {{ formatCOP(latestCandle?.close) }}
+        </p>
       </div>
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">24h Change</p>
@@ -246,12 +272,217 @@ const handleTimeframeChange = () => {
         <p class="text-xl font-bold font-mono text-success">
           {{ formatPrice(latestCandle?.high) }}
         </p>
+        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          🇨🇴 {{ formatCOP(latestCandle?.high) }}
+        </p>
       </div>
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">Low</p>
         <p class="text-xl font-bold font-mono text-danger">
           {{ formatPrice(latestCandle?.low) }}
         </p>
+        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          🇨🇴 {{ formatCOP(latestCandle?.low) }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Technical Indicators -->
+    <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
+      <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
+        <span class="material-symbols-outlined text-primary">show_chart</span>
+        Technical Indicators
+        <span class="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">{{ currentCoin.symbol }}</span>
+      </h3>
+      
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- RSI -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-text-secondary font-medium">RSI (14)</span>
+            <div class="flex items-center gap-2">
+              <svg v-if="indicators.rsiHistory?.length > 1" width="50" height="20" class="overflow-visible">
+                <path 
+                  :d="generateSparklinePath(indicators.rsiHistory, 50, 20)" 
+                  fill="none" 
+                  :stroke="indicators.rsi >= 70 ? '#ef4444' : indicators.rsi <= 30 ? '#10b981' : '#137fec'" 
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span 
+                class="text-xs font-bold px-2 py-0.5 rounded"
+                :class="{
+                  'text-danger bg-danger/10': rsiInterpretation.color === 'danger',
+                  'text-success bg-success/10': rsiInterpretation.color === 'success',
+                  'text-gray-500 bg-gray-100': rsiInterpretation.color === 'gray'
+                }"
+              >
+                {{ rsiInterpretation.status }}
+              </span>
+            </div>
+          </div>
+          <p class="text-2xl font-bold font-mono" :class="{
+            'text-danger': indicators.rsi >= 70,
+            'text-success': indicators.rsi <= 30,
+            'text-slate-900 dark:text-white': indicators.rsi > 30 && indicators.rsi < 70
+          }">
+            {{ indicators.rsi?.toFixed(2) || 'N/A' }}
+          </p>
+          <!-- RSI Bar -->
+          <div class="mt-2 h-2 bg-gray-200 dark:bg-border-dark rounded-full overflow-hidden">
+            <div 
+              class="h-full transition-all duration-300"
+              :class="{
+                'bg-danger': indicators.rsi >= 70,
+                'bg-success': indicators.rsi <= 30,
+                'bg-primary': indicators.rsi > 30 && indicators.rsi < 70
+              }"
+              :style="{ width: `${indicators.rsi || 0}%` }"
+            ></div>
+          </div>
+          <p class="text-[10px] text-text-secondary mt-1">{{ rsiInterpretation.description }}</p>
+        </div>
+
+        <!-- SMA 7 -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">SMA (7)</span>
+            <svg v-if="indicators.sma7History?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.sma7History, 60, 24)" 
+                fill="none" 
+                stroke="#137fec" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
+            {{ formatPrice(indicators.sma7) }}
+          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(indicators.sma7) }}
+          </p>
+        </div>
+
+        <!-- SMA 14 -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">SMA (14)</span>
+            <svg v-if="indicators.sma14History?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.sma14History, 60, 24)" 
+                fill="none" 
+                stroke="#8b5cf6" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
+            {{ formatPrice(indicators.sma14) }}
+          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(indicators.sma14) }}
+          </p>
+        </div>
+
+        <!-- SMA 30 -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">SMA (30)</span>
+            <svg v-if="indicators.sma30History?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.sma30History, 60, 24)" 
+                fill="none" 
+                stroke="#f59e0b" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
+            {{ formatPrice(indicators.sma30) }}
+          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(indicators.sma30) }}
+          </p>
+        </div>
+      </div>
+
+      <!-- EMA Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        <!-- EMA 12 -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">EMA (12)</span>
+            <svg v-if="indicators.ema12History?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.ema12History, 60, 24)" 
+                fill="none" 
+                stroke="#10b981" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
+            {{ formatPrice(indicators.ema12) }}
+          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(indicators.ema12) }}
+          </p>
+        </div>
+
+        <!-- EMA 26 -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">EMA (26)</span>
+            <svg v-if="indicators.ema26History?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.ema26History, 60, 24)" 
+                fill="none" 
+                stroke="#ef4444" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
+            {{ formatPrice(indicators.ema26) }}
+          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(indicators.ema26) }}
+          </p>
+        </div>
+
+        <!-- MACD -->
+        <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-text-secondary font-medium">MACD</span>
+            <svg v-if="indicators.macdHistory?.length > 1" width="60" height="24" class="overflow-visible">
+              <path 
+                :d="generateSparklinePath(indicators.macdHistory, 60, 24)" 
+                fill="none" 
+                :stroke="indicators.macd?.macd >= 0 ? '#10b981' : '#ef4444'" 
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <p class="text-lg font-bold font-mono mt-1" :class="indicators.macd?.macd >= 0 ? 'text-success' : 'text-danger'">
+            {{ indicators.macd?.macd?.toFixed(2) || 'N/A' }}
+          </p>
+          <p class="text-[10px] text-text-secondary">EMA12 - EMA26</p>
+        </div>
       </div>
     </div>
 
@@ -295,6 +526,9 @@ const handleTimeframeChange = () => {
         <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <span class="material-symbols-outlined text-primary">table_chart</span>
           Recent Candles
+          <span class="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+            {{ currentCoin.symbol }}
+          </span>
         </h2>
       </div>
       
@@ -319,17 +553,29 @@ const handleTimeframeChange = () => {
               <td class="px-4 py-2 text-slate-500 dark:text-text-secondary font-mono text-xs">
                 {{ formatTimestamp(candle.timestamp) }}
               </td>
-              <td class="px-4 py-2 text-right font-mono text-slate-900 dark:text-white">
-                {{ formatPrice(candle.open) }}
+              <td class="px-4 py-2 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono text-slate-900 dark:text-white">{{ formatPrice(candle.open) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.open) }}</span>
+                </div>
               </td>
-              <td class="px-4 py-2 text-right font-mono text-success">
-                {{ formatPrice(candle.high) }}
+              <td class="px-4 py-2 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono text-success">{{ formatPrice(candle.high) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.high) }}</span>
+                </div>
               </td>
-              <td class="px-4 py-2 text-right font-mono text-danger">
-                {{ formatPrice(candle.low) }}
+              <td class="px-4 py-2 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono text-danger">{{ formatPrice(candle.low) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.low) }}</span>
+                </div>
               </td>
-              <td class="px-4 py-2 text-right font-mono font-medium text-slate-900 dark:text-white">
-                {{ formatPrice(candle.close) }}
+              <td class="px-4 py-2 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono font-medium text-slate-900 dark:text-white">{{ formatPrice(candle.close) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.close) }}</span>
+                </div>
               </td>
               <td class="px-4 py-2 text-right font-mono text-slate-500 dark:text-text-secondary text-xs">
                 {{ candle.volume ? (candle.volume / 1e9).toFixed(2) + 'B' : '-' }}

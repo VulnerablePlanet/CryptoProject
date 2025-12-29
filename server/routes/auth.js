@@ -1,6 +1,15 @@
 const express = require('express')
 const { body } = require('express-validator')
-const { register, login, me, updateProfile } = require('../controllers/authController')
+const { 
+  register, 
+  login, 
+  refreshAccessToken,
+  logout,
+  logoutAll,
+  me, 
+  updateProfile, 
+  getUserCount 
+} = require('../controllers/authController')
 const { auth } = require('../middleware/auth')
 
 const router = express.Router()
@@ -38,10 +47,22 @@ router.post('/register', registerValidation, register)
 // @route   POST /api/auth/login
 router.post('/login', loginValidation, login)
 
+// @route   POST /api/auth/refresh
+router.post('/refresh', refreshAccessToken)
+
+// @route   POST /api/auth/logout
+router.post('/logout', logout)
+
+// @route   POST /api/auth/logout-all
+router.post('/logout-all', auth, logoutAll)
+
 // @route   GET /api/auth/me
 router.get('/me', auth, me)
 
 // @route   PUT /api/auth/profile
 router.put('/profile', auth, updateProfile)
+
+// @route   GET /api/auth/user-count
+router.get('/user-count', getUserCount)
 
 module.exports = router

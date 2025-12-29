@@ -9,10 +9,17 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  selectedCoinId: {
+    type: String,
+    default: ''
   }
 })
 
 const emit = defineEmits(['coin-click'])
+
+// Exchange rate USD to COP
+const copRate = 4400
 
 const formatPrice = (price) => {
   if (!price) return '$0.00'
@@ -22,6 +29,17 @@ const formatPrice = (price) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: price < 1 ? 6 : 2
   }).format(price)
+}
+
+const formatCOP = (price) => {
+  if (!price) return 'COP $0'
+  const cop = price * copRate
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(cop)
 }
 
 const formatBalance = (value) => {
@@ -78,7 +96,12 @@ const handleCoinClick = (coin) => {
               v-for="coin in coins" 
               :key="coin.id"
               @click="handleCoinClick(coin)"
-              class="hover:bg-gray-50 dark:hover:bg-border-dark/20 transition-colors cursor-pointer group"
+              class="transition-colors cursor-pointer group"
+              :class="[
+                (coin.id === selectedCoinId || coin.coinId === selectedCoinId)
+                  ? 'bg-primary/5 dark:bg-primary/10 border-l-2 border-primary'
+                  : 'hover:bg-gray-50 dark:hover:bg-border-dark/20'
+              ]"
             >
               <td class="py-4 px-6">
                 <div class="flex items-center gap-3">
@@ -95,16 +118,22 @@ const handleCoinClick = (coin) => {
                   </div>
                 </div>
               </td>
-              <td class="py-4 px-6 text-right font-mono text-slate-900 dark:text-white">
-                {{ formatPrice(coin.current_price) }}
+              <td class="py-4 px-6 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono text-slate-900 dark:text-white">{{ formatPrice(coin.current_price) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</span>
+                </div>
               </td>
               <td class="py-4 px-6 text-right">
                 <div class="flex flex-col items-end">
                   <span class="text-slate-900 dark:text-white font-mono font-medium">
-                    {{ formatBalance(coin.holdings || Math.random() * 2) }} {{ coin.symbol?.toUpperCase() }}
+                    {{ formatBalance(coin.holdings) }} {{ coin.symbol?.toUpperCase() }}
                   </span>
                   <span class="text-text-secondary text-xs">
-                    {{ formatPrice((coin.holdings || Math.random() * 2) * coin.current_price) }}
+                    {{ formatPrice(coin.holdings * coin.current_price) }}
+                  </span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+                    🇨🇴 {{ formatCOP(coin.holdings * coin.current_price) }}
                   </span>
                 </div>
               </td>

@@ -2,16 +2,36 @@ const jwt = require('jsonwebtoken')
 const { validationResult } = require('express-validator')
 const User = require('../models/User')
 const Portfolio = require('../models/Portfolio')
+const RefreshToken = require('../models/RefreshToken')
 
 /**
- * Generate JWT token
+ * Generate Access Token (short-lived)
  */
-const generateToken = (userId) => {
+const generateAccessToken = (userId) => {
   return jwt.sign(
     { userId },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
   )
+}
+
+/**
+ * Parse duration string to days (e.g., '7d' -> 7)
+ */
+const parseDurationToDays = (duration) => {
+  const match = duration.match(/^(\d+)([dhms])$/)
+  if (!match) return 7 // default 7 days
+  
+  const value = parseInt(match[1])
+  const unit = match[2]
+  
+  switch (unit) {
+    case 'd': return value
+    case 'h': return value / 24
+    case 'm': return value / (24 * 60)
+    case 's': return value / (24 * 60 * 60)
+    default: return 7
+  }
 }
 
 /**
@@ -51,13 +71,19 @@ const register = async (req, res) => {
     // Create empty portfolio for user
     await Portfolio.create({ user: user._id, holdings: [] })
     
-    // Generate token
-    const token = generateToken(user._id)
+    // Generate tokens
+    const accessToken = generateAccessToken(user._id)
+    const refreshExpiresDays = parseDurationToDays(process.env.JWT_REFRESH_EXPIRES_IN || '7d')
+    const refreshTokenDoc = await RefreshToken.createToken(user._id, refreshExpiresDays, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip
+    })
     
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
+      accessToken,
+      refreshToken: refreshTokenDoc.token,
       user: user.toJSON()
     })
   } catch (error) {
@@ -107,13 +133,19 @@ const login = async (req, res) => {
       })
     }
     
-    // Generate token
-    const token = generateToken(user._id)
+    // Generate tokens
+    const accessToken = generateAccessToken(user._id)
+    const refreshExpiresDays = parseDurationToDays(process.env.JWT_REFRESH_EXPIRES_IN || '7d')
+    const refreshTokenDoc = await RefreshToken.createToken(user._id, refreshExpiresDays, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip
+    })
     
     res.json({
       success: true,
       message: 'Login successful',
-      token,
+      accessToken,
+      refreshToken: refreshTokenDoc.token,
       user: user.toJSON()
     })
   } catch (error) {
@@ -121,6 +153,97 @@ const login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error logging in'
+    })
+  }
+}
+
+/**
+ * @desc    Refresh access token
+ * @route   POST /api/auth/refresh
+ * @access  Public
+ */
+const refreshAccessToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      })
+    }
+    
+    // Find valid refresh token
+    const tokenDoc = await RefreshToken.findValidToken(refreshToken)
+    
+    if (!tokenDoc) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired refresh token'
+      })
+    }
+    
+    // Generate new access token
+    const accessToken = generateAccessToken(tokenDoc.user._id)
+    
+    res.json({
+      success: true,
+      accessToken,
+      user: tokenDoc.user.toJSON()
+    })
+  } catch (error) {
+    console.error('Refresh token error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error refreshing token'
+    })
+  }
+}
+
+/**
+ * @desc    Logout user (revoke refresh token)
+ * @route   POST /api/auth/logout
+ * @access  Public
+ */
+const logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body
+    
+    if (refreshToken) {
+      await RefreshToken.revokeToken(refreshToken)
+    }
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    })
+  } catch (error) {
+    console.error('Logout error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error logging out'
+    })
+  }
+}
+
+/**
+ * @desc    Logout from all devices
+ * @route   POST /api/auth/logout-all
+ * @access  Private
+ */
+const logoutAll = async (req, res) => {
+  try {
+    await RefreshToken.revokeAllUserTokens(req.user._id)
+    
+    res.json({
+      success: true,
+      message: 'Logged out from all devices'
+    })
+  } catch (error) {
+    console.error('Logout all error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error logging out from all devices'
     })
   }
 }
@@ -189,9 +312,35 @@ const updateProfile = async (req, res) => {
   }
 }
 
+/**
+ * @desc    Get total user count
+ * @route   GET /api/auth/user-count
+ * @access  Public
+ */
+const getUserCount = async (req, res) => {
+  try {
+    const count = await User.countDocuments()
+    
+    res.json({
+      success: true,
+      count
+    })
+  } catch (error) {
+    console.error('Get user count error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user count'
+    })
+  }
+}
+
 module.exports = {
   register,
   login,
+  refreshAccessToken,
+  logout,
+  logoutAll,
   me,
-  updateProfile
+  updateProfile,
+  getUserCount
 }

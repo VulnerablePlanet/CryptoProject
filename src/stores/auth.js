@@ -14,22 +14,95 @@ const api = axios.create({
 export const useAuthStore = defineStore('auth', () => {
   // State - persisted to localStorage
   const user = useLocalStorage('cryptodev-user', null)
-  const token = useLocalStorage('cryptodev-token', null)
+  const accessToken = useLocalStorage('cryptodev-access-token', null)
+  const refreshToken = useLocalStorage('cryptodev-refresh-token', null)
   const isLoading = ref(false)
   const error = ref(null)
+  const isRefreshing = ref(false)
+  let refreshPromise = null
 
   // Getters
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
+  const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const userName = computed(() => user.value?.name || 'Guest')
   const userEmail = computed(() => user.value?.email || '')
+  // Legacy getter for compatibility
+  const token = computed(() => accessToken.value)
 
-  // Axios interceptor to add token to requests
+  /**
+   * Refresh the access token using refresh token
+   */
+  const refreshAccessToken = async () => {
+    // If already refreshing, return the existing promise
+    if (isRefreshing.value && refreshPromise) {
+      return refreshPromise
+    }
+
+    if (!refreshToken.value) {
+      logout()
+      return null
+    }
+
+    isRefreshing.value = true
+    refreshPromise = api.post('/refresh', { refreshToken: refreshToken.value })
+      .then(response => {
+        if (response.data.success) {
+          accessToken.value = response.data.accessToken
+          if (response.data.user) {
+            user.value = response.data.user
+          }
+          return response.data.accessToken
+        }
+        throw new Error('Refresh failed')
+      })
+      .catch(err => {
+        console.error('Token refresh failed:', err)
+        // Refresh token is invalid, logout user
+        logout()
+        return null
+      })
+      .finally(() => {
+        isRefreshing.value = false
+        refreshPromise = null
+      })
+
+    return refreshPromise
+  }
+
+  // Axios request interceptor - add token to requests
   api.interceptors.request.use((config) => {
-    if (token.value) {
-      config.headers.Authorization = `Bearer ${token.value}`
+    if (accessToken.value) {
+      config.headers.Authorization = `Bearer ${accessToken.value}`
     }
     return config
   })
+
+  // Axios response interceptor - handle 401 and auto-refresh
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config
+
+      // If 401 and we haven't retried yet
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        // Don't retry on login/register/refresh endpoints
+        if (originalRequest.url?.includes('/refresh') || 
+            originalRequest.url?.includes('/login') || 
+            originalRequest.url?.includes('/register')) {
+          return Promise.reject(error)
+        }
+
+        originalRequest._retry = true
+
+        const newToken = await refreshAccessToken()
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          return api(originalRequest)
+        }
+      }
+
+      return Promise.reject(error)
+    }
+  )
 
   // Actions
 
@@ -45,7 +118,8 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (response.data.success) {
         user.value = response.data.user
-        token.value = response.data.token
+        accessToken.value = response.data.accessToken
+        refreshToken.value = response.data.refreshToken
         return { success: true, user: response.data.user }
       } else {
         throw new Error(response.data.message || 'Login failed')
@@ -76,7 +150,8 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (response.data.success) {
         user.value = response.data.user
-        token.value = response.data.token
+        accessToken.value = response.data.accessToken
+        refreshToken.value = response.data.refreshToken
         return { success: true, user: response.data.user }
       } else {
         throw new Error(response.data.message || 'Registration failed')
@@ -97,7 +172,7 @@ export const useAuthStore = defineStore('auth', () => {
    * Fetch current user data from server
    */
   const fetchUser = async () => {
-    if (!token.value) return null
+    if (!accessToken.value) return null
 
     try {
       const response = await api.get('/me')
@@ -107,10 +182,7 @@ export const useAuthStore = defineStore('auth', () => {
         return response.data.user
       }
     } catch (err) {
-      // Token might be expired, clear auth
-      if (err.response?.status === 401) {
-        logout()
-      }
+      // Token might be expired, the interceptor will handle refresh
       console.error('Error fetching user:', err)
     }
     
@@ -145,10 +217,33 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Logout user
    */
-  const logout = () => {
-    user.value = null
-    token.value = null
-    error.value = null
+  const logout = async () => {
+    try {
+      // Revoke refresh token on server
+      if (refreshToken.value) {
+        await api.post('/logout', { refreshToken: refreshToken.value }).catch(() => {})
+      }
+    } finally {
+      // Clear local state regardless of server response
+      user.value = null
+      accessToken.value = null
+      refreshToken.value = null
+      error.value = null
+    }
+  }
+
+  /**
+   * Logout from all devices
+   */
+  const logoutAll = async () => {
+    try {
+      await api.post('/logout-all')
+    } finally {
+      user.value = null
+      accessToken.value = null
+      refreshToken.value = null
+      error.value = null
+    }
   }
 
   /**
@@ -161,7 +256,9 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     // State
     user,
-    token,
+    token, // Legacy compatibility
+    accessToken,
+    refreshToken,
     isLoading,
     error,
     // Getters
@@ -172,8 +269,10 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
+    logoutAll,
     clearError,
     fetchUser,
-    updateProfile
+    updateProfile,
+    refreshAccessToken
   }
 })

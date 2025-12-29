@@ -25,6 +25,10 @@ const props = defineProps({
   fillOpacity: {
     type: Number,
     default: 0.2
+  },
+  copRate: {
+    type: Number,
+    default: 4400
   }
 })
 
@@ -152,6 +156,16 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
+const formatCOP = (price) => {
+  const cop = price * props.copRate
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(cop)
+}
+
 const handleTimeframeChange = (tf) => {
   activeTimeframe.value = tf.value
   emit('timeframe-change', tf.value)
@@ -204,9 +218,14 @@ const handleMouseLeave = () => {
       
       <!-- Current Price Display -->
       <div class="flex items-center gap-3">
-        <span class="text-lg font-bold text-slate-900 dark:text-white font-mono">
-          {{ formatPrice(hoveredPoint?.value || currentPrice) }}
-        </span>
+        <div class="flex flex-col items-end">
+          <span class="text-lg font-bold text-slate-900 dark:text-white font-mono">
+            {{ formatPrice(hoveredPoint?.value || currentPrice) }}
+          </span>
+          <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+            🇨🇴 {{ formatCOP(hoveredPoint?.value || currentPrice) }}
+          </span>
+        </div>
         <span 
           class="text-sm font-bold px-2 py-0.5 rounded"
           :class="isPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'"

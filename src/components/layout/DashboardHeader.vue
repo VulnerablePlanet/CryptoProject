@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
@@ -8,10 +8,32 @@ import { useNotificationStore } from '@/stores/notifications'
 import RealtimeIndicator from '@/components/common/RealtimeIndicator.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const uiStore = useUIStore()
 const notificationStore = useNotificationStore()
+
+// Page titles mapping
+const pageTitles = {
+  '/dashboard': 'Dashboard',
+  '/trading': 'Trade',
+  '/wallet': 'Wallet',
+  '/transactions': 'Transactions',
+  '/watchlist': 'Watchlist',
+  '/technical-analysis': 'Technical Analysis',
+  '/pokemon': 'Pokemon',
+  '/learn': 'Learn',
+  '/security': 'Security',
+  '/api-keys': 'API Keys',
+  '/docs': 'Documentation',
+  '/profile': 'Profile',
+  '/notifications': 'Notifications'
+}
+
+const currentPageTitle = computed(() => {
+  return pageTitles[route.path] || 'Overview'
+})
 
 // Format time ago
 const formatTimeAgo = (date) => {
@@ -114,10 +136,7 @@ onUnmounted(() => {
       </button>
       
       <div class="flex flex-col">
-        <h2 class="text-slate-900 dark:text-white text-base font-bold">Overview</h2>
-        <span class="text-xs text-text-secondary font-mono hidden sm:block">
-          System Status: <span class="text-success">Operational</span>
-        </span>
+        <h2 class="text-slate-900 dark:text-white text-base font-bold">{{ currentPageTitle }}</h2>
       </div>
       
       <!-- Realtime Indicator -->

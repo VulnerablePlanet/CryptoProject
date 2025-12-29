@@ -1,10 +1,24 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 
 const authStore = useAuthStore()
+const userCount = ref(0)
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/auth/user-count')
+    const data = await response.json()
+    if (data.success) {
+      userCount.value = data.count
+    }
+  } catch (error) {
+    console.error('Error fetching user count:', error)
+  }
+})
 </script>
 
 <template>
@@ -56,20 +70,20 @@ const authStore = useAuthStore()
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8">
           <span class="material-symbols-outlined text-[16px]">verified_user</span>
-          Trusted by 50,000+ developers
+          {{ userCount }} registered {{ userCount === 1 ? 'user' : 'users' }}
         </div>
         
         <!-- Logo -->
         <img src="/logo.png" alt="Crypto market anomaly detector" class="size-20 mx-auto mb-8" />
         
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
-          Invest with the <br/>
-          <span class="text-gradient">Precision of Code</span>
+          Analyze Markets with <br/>
+          <span class="text-gradient">Intelligent Data</span>
         </h1>
         
         <p class="text-lg md:text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-          The first crypto exchange built for developers, white hats, and security researchers. 
-          API-first, security-obsessed, and ready for your bots.
+          Advanced trading analysis platform that detects market anomalies and identifies patterns. 
+          Real-time insights, data-driven decisions, and smarter trading strategies.
         </p>
         
         <!-- CTA Buttons -->
@@ -100,26 +114,7 @@ const authStore = useAuthStore()
             </RouterLink>
           </template>
         </div>
-        
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto text-center">
-          <div>
-            <p class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">99.99%</p>
-            <p class="text-sm text-text-secondary">Uptime SLA</p>
-          </div>
-          <div>
-            <p class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">&lt;50ms</p>
-            <p class="text-sm text-text-secondary">API Latency</p>
-          </div>
-          <div>
-            <p class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">$2B+</p>
-            <p class="text-sm text-text-secondary">Trading Volume</p>
-          </div>
-          <div>
-            <p class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">150+</p>
-            <p class="text-sm text-text-secondary">Cryptocurrencies</p>
-          </div>
-        </div>
+
       </div>
     </main>
     

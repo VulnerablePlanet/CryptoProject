@@ -11,6 +11,7 @@ const connectionError = ref(null)
 
 /**
  * Initialize Socket.io connection
+ * Only connects if user is authenticated
  */
 export const initSocket = () => {
   if (socket?.connected) {
@@ -19,6 +20,12 @@ export const initSocket = () => {
 
   const authStore = useAuthStore()
   
+  // Only connect if user is authenticated
+  if (!authStore.isAuthenticated || !authStore.token) {
+    console.log('🔌 Socket: Skipping connection (not authenticated)')
+    return null
+  }
+  
   socket = io(window.location.origin, {
     auth: {
       token: authStore.token
@@ -26,7 +33,8 @@ export const initSocket = () => {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
-    reconnectionDelay: 1000
+    reconnectionDelay: 1000,
+    timeout: 10000
   })
 
   // Connection events
@@ -42,7 +50,7 @@ export const initSocket = () => {
   })
 
   socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error.message)
+    console.warn('Socket connection error:', error.message)
     connectionError.value = error.message
     isConnected.value = false
   })

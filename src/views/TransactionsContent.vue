@@ -53,13 +53,25 @@ const isFormValid = computed(() => {
          recordForm.value.priceAtTransaction > 0
 })
 
-// Methods
+// Exchange rate USD to COP
+const copRate = 4400
+
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2
   }).format(value)
+}
+
+const formatCOP = (value) => {
+  const cop = value * copRate
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(cop)
 }
 
 const formatDate = (date) => {
@@ -282,20 +294,28 @@ onMounted(async () => {
               </td>
               
               <!-- Price -->
-              <td class="px-4 py-4 text-right font-mono text-slate-700 dark:text-gray-300">
-                {{ formatCurrency(tx.priceAtTransaction) }}
+              <td class="px-4 py-4 text-right">
+                <div class="flex flex-col items-end">
+                  <span class="font-mono text-slate-700 dark:text-gray-300">{{ formatCurrency(tx.priceAtTransaction) }}</span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(tx.priceAtTransaction) }}</span>
+                </div>
               </td>
               
               <!-- Total -->
               <td class="px-4 py-4 text-right">
-                <span 
-                  class="font-mono font-medium"
-                  :class="tx.type === 'buy' || tx.type === 'transfer_in' || tx.type === 'deposit' 
-                    ? 'text-success' 
-                    : 'text-danger'"
-                >
-                  {{ tx.type === 'sell' || tx.type === 'transfer_out' || tx.type === 'withdraw' ? '-' : '+' }}{{ formatCurrency(tx.totalValue) }}
-                </span>
+                <div class="flex flex-col items-end">
+                  <span 
+                    class="font-mono font-medium"
+                    :class="tx.type === 'buy' || tx.type === 'transfer_in' || tx.type === 'deposit' 
+                      ? 'text-success' 
+                      : 'text-danger'"
+                  >
+                    {{ tx.type === 'sell' || tx.type === 'transfer_out' || tx.type === 'withdraw' ? '-' : '+' }}{{ formatCurrency(tx.totalValue) }}
+                  </span>
+                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+                    🇨🇴 {{ formatCOP(tx.totalValue) }}
+                  </span>
+                </div>
               </td>
               
               <!-- Date -->

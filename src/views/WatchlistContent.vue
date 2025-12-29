@@ -49,12 +49,24 @@ const enhancedWatchlist = computed(() => {
   })
 })
 
-// Methods
+// Exchange rate USD to COP
+const copRate = 4400
+
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
   }).format(value)
+}
+
+const formatCOP = (value) => {
+  const cop = value * copRate
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(cop)
 }
 
 const formatPercent = (value) => {
@@ -216,6 +228,7 @@ onMounted(async () => {
           <!-- Price -->
           <div class="text-right">
             <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatCurrency(coin.current_price) }}</p>
+            <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</p>
             <p 
               class="text-xs font-medium"
               :class="coin.price_change_24h >= 0 ? 'text-success' : 'text-danger'"

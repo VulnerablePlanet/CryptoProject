@@ -8,6 +8,7 @@ const sections = [
   { id: 'structure', name: 'Project Structure', icon: 'folder' },
   { id: 'database', name: 'Database', icon: 'database' },
   { id: 'api', name: 'API Endpoints', icon: 'api' },
+  { id: 'security', name: 'Security', icon: 'lock' },
   { id: 'frontend', name: 'Frontend Modules', icon: 'web' },
   { id: 'realtime', name: 'Real-time Features', icon: 'bolt' },
 ]
@@ -85,6 +86,19 @@ const databaseModels = [
       { name: 'read', type: 'Boolean', desc: 'Read status' },
       { name: 'data', type: 'Object', desc: 'Related data (coinId, transactionId, etc)' },
     ]
+  },
+  {
+    name: 'RefreshToken',
+    collection: 'refreshtokens',
+    fields: [
+      { name: '_id', type: 'ObjectId', desc: 'Unique identifier' },
+      { name: 'token', type: 'String', desc: 'Secure random token (64 bytes hex)' },
+      { name: 'user', type: 'ObjectId', desc: 'Reference to User' },
+      { name: 'expiresAt', type: 'Date', desc: 'Token expiration date (7 days)' },
+      { name: 'userAgent', type: 'String', desc: 'Browser/device info' },
+      { name: 'ipAddress', type: 'String', desc: 'Client IP address' },
+      { name: 'createdAt', type: 'Date', desc: 'Token creation date' },
+    ]
   }
 ]
 
@@ -94,10 +108,14 @@ const apiEndpoints = [
     category: 'Authentication',
     prefix: '/api/auth',
     endpoints: [
-      { method: 'POST', path: '/register', desc: 'Create new user account' },
-      { method: 'POST', path: '/login', desc: 'Authenticate user and get JWT' },
+      { method: 'POST', path: '/register', desc: 'Create account, get access + refresh tokens' },
+      { method: 'POST', path: '/login', desc: 'Authenticate, get access + refresh tokens' },
+      { method: 'POST', path: '/refresh', desc: 'Get new access token using refresh token' },
+      { method: 'POST', path: '/logout', desc: 'Revoke refresh token (logout)' },
+      { method: 'POST', path: '/logout-all', desc: 'Revoke all tokens (logout all devices)' },
       { method: 'GET', path: '/me', desc: 'Get current user profile' },
       { method: 'PUT', path: '/profile', desc: 'Update user profile' },
+      { method: 'GET', path: '/user-count', desc: 'Get total registered users count' },
     ]
   },
   {
@@ -162,7 +180,7 @@ const apiEndpoints = [
 
 // Frontend stores
 const frontendStores = [
-  { name: 'auth', file: 'stores/auth.js', desc: 'User authentication, JWT token management, login/register' },
+  { name: 'auth', file: 'stores/auth.js', desc: 'Authentication with access/refresh tokens, auto-refresh on 401' },
   { name: 'crypto', file: 'stores/crypto.js', desc: 'Cryptocurrency data from CoinGecko API, real-time price updates' },
   { name: 'portfolio', file: 'stores/portfolio.js', desc: 'User portfolio holdings, CRUD operations' },
   { name: 'transactions', file: 'stores/transactions.js', desc: 'Transaction history, filters, pagination' },
@@ -216,11 +234,11 @@ const methodColors = {
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-primary mb-1">5</div>
+              <div class="text-3xl font-bold text-primary mb-1">6</div>
               <div class="text-xs text-text-secondary">Database Models</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-success mb-1">20+</div>
+              <div class="text-3xl font-bold text-success mb-1">25+</div>
               <div class="text-xs text-text-secondary">API Endpoints</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
@@ -318,7 +336,8 @@ const methodColors = {
 │   │   ├── Portfolio.js
 │   │   ├── Transaction.js
 │   │   ├── Watchlist.js
-│   │   └── Notification.js
+│   │   ├── Notification.js
+│   │   └── RefreshToken.js    # Session tokens
 │   ├── <span class="text-blue-400">routes/</span>
 │   │   ├── auth.js
 │   │   ├── portfolio.js
@@ -436,6 +455,122 @@ const methodColors = {
                   <code class="text-sm font-mono text-slate-700 dark:text-gray-300 flex-1">{{ category.prefix }}{{ endpoint.path }}</code>
                   <span class="text-xs text-text-secondary hidden md:block">{{ endpoint.desc }}</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Section -->
+      <div v-if="activeSection === 'security'" class="space-y-6">
+        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Security</h2>
+          <p class="text-text-secondary mb-6">Authentication and session management security features</p>
+          
+          <div class="space-y-6">
+            <!-- Token System -->
+            <div class="border border-gray-200 dark:border-border-dark rounded-xl overflow-hidden">
+              <div class="bg-gray-50 dark:bg-background-dark p-4 border-b border-gray-200 dark:border-border-dark">
+                <h3 class="font-bold text-slate-900 dark:text-white">Refresh Token System</h3>
+                <p class="text-xs text-text-secondary">Secure dual-token authentication</p>
+              </div>
+              <div class="p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="p-4 bg-primary/5 rounded-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="material-symbols-outlined text-primary">bolt</span>
+                      <h4 class="font-bold text-slate-900 dark:text-white">Access Token</h4>
+                    </div>
+                    <ul class="text-sm text-text-secondary space-y-1">
+                      <li>• Expires in <code class="bg-primary/10 text-primary px-1 rounded">15 minutes</code></li>
+                      <li>• Used for API requests</li>
+                      <li>• Stored in localStorage</li>
+                      <li>• Short-lived for security</li>
+                    </ul>
+                  </div>
+                  <div class="p-4 bg-success/5 rounded-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="material-symbols-outlined text-success">refresh</span>
+                      <h4 class="font-bold text-slate-900 dark:text-white">Refresh Token</h4>
+                    </div>
+                    <ul class="text-sm text-text-secondary space-y-1">
+                      <li>• Expires in <code class="bg-success/10 text-success px-1 rounded">7 days</code></li>
+                      <li>• Used to get new access tokens</li>
+                      <li>• Stored in database (revocable)</li>
+                      <li>• 64 bytes cryptographically secure</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Token Flow -->
+            <div class="border border-gray-200 dark:border-border-dark rounded-xl overflow-hidden">
+              <div class="bg-gray-50 dark:bg-background-dark p-4 border-b border-gray-200 dark:border-border-dark">
+                <h3 class="font-bold text-slate-900 dark:text-white">Authentication Flow</h3>
+              </div>
+              <div class="p-4">
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto font-mono text-sm">
+                  <pre class="text-gray-300"><span class="text-green-400">// 1. Login/Register</span>
+POST /api/auth/login → { accessToken, refreshToken }
+
+<span class="text-green-400">// 2. API Requests</span>
+Authorization: Bearer {accessToken}
+
+<span class="text-green-400">// 3. Token Expired (401 response)</span>
+POST /api/auth/refresh → { accessToken } <span class="text-gray-500">// Auto-retry</span>
+
+<span class="text-green-400">// 4. Logout</span>
+POST /api/auth/logout → Revokes refresh token</pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security Features -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 border border-gray-200 dark:border-border-dark rounded-xl">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="size-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-warning">autorenew</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 dark:text-white">Auto-Refresh</h4>
+                  </div>
+                </div>
+                <p class="text-sm text-text-secondary">Axios interceptors automatically refresh expired access tokens and retry failed requests.</p>
+              </div>
+              <div class="p-4 border border-gray-200 dark:border-border-dark rounded-xl">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="size-10 rounded-lg bg-danger/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-danger">logout</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 dark:text-white">Token Revocation</h4>
+                  </div>
+                </div>
+                <p class="text-sm text-text-secondary">Logout invalidates refresh tokens server-side. Option to logout from all devices.</p>
+              </div>
+              <div class="p-4 border border-gray-200 dark:border-border-dark rounded-xl">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="size-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-purple-500">key</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 dark:text-white">Password Hashing</h4>
+                  </div>
+                </div>
+                <p class="text-sm text-text-secondary">Passwords are hashed using bcrypt with salt rounds of 12 before storage.</p>
+              </div>
+              <div class="p-4 border border-gray-200 dark:border-border-dark rounded-xl">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary">timer</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 dark:text-white">TTL Index</h4>
+                  </div>
+                </div>
+                <p class="text-sm text-text-secondary">MongoDB TTL index automatically cleans up expired refresh tokens.</p>
               </div>
             </div>
           </div>

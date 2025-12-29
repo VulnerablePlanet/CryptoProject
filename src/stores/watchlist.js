@@ -33,6 +33,26 @@ export const useWatchlistStore = defineStore('watchlist', () => {
     return config
   })
 
+  // Response interceptor - handle 401 and refresh token
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const authStore = useAuthStore()
+      const originalRequest = error.config
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true
+        
+        const newToken = await authStore.refreshAccessToken()
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          return api(originalRequest)
+        }
+      }
+      return Promise.reject(error)
+    }
+  )
+
   // Actions
   const fetchWatchlist = async () => {
     loading.value = true

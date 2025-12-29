@@ -81,9 +81,12 @@ const candlesticks = computed(() => {
   if (visibleCandles.value.length === 0) return []
   
   const availableWidth = chartWidth - chartPadding.left - chartPadding.right
-  const candleWidth = availableWidth / candlesPerView.value
-  const bodyWidth = candleWidth * 0.7
-  const wickWidth = 1
+  // Use the actual number of visible candles, not the max candlesPerView
+  const actualCandles = visibleCandles.value.length
+  const candleWidth = availableWidth / actualCandles
+  // Make body wider relative to candle spacing (80% instead of 70%)
+  const bodyWidth = Math.max(4, candleWidth * 0.8)
+  const wickWidth = Math.max(1, candleWidth * 0.1)
   
   return visibleCandles.value.map((candle, index) => {
     const x = chartPadding.left + index * candleWidth + candleWidth / 2
@@ -99,13 +102,19 @@ const candlesticks = computed(() => {
       isBullish = prevCandle ? candle.close >= prevCandle.close : true
     }
     
+    // Calculate body height - ensure minimum height for visibility
+    const bodyTop = priceToY(Math.max(candle.open, candle.close))
+    const bodyBottom = priceToY(Math.min(candle.open, candle.close))
+    const calculatedBodyHeight = Math.abs(bodyBottom - bodyTop)
+    const bodyHeight = Math.max(2, calculatedBodyHeight)
+    
     return {
       data: candle,
       x,
       bodyX: x - bodyWidth / 2,
       bodyWidth,
-      bodyTop: priceToY(Math.max(candle.open, candle.close)),
-      bodyHeight: Math.max(4, Math.abs(priceToY(candle.open) - priceToY(candle.close))),
+      bodyTop: candle.open === candle.close ? bodyTop - 1 : bodyTop,
+      bodyHeight,
       wickTop: priceToY(candle.high),
       wickBottom: priceToY(candle.low),
       wickX: x,
