@@ -25,6 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const userName = computed(() => user.value?.name || 'Guest')
   const userEmail = computed(() => user.value?.email || '')
+  const userAvatar = computed(() => user.value?.avatar || null)
   // Legacy getter for compatibility
   const token = computed(() => accessToken.value)
 
@@ -265,6 +266,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     userName,
     userEmail,
+    userAvatar,
     // Actions
     login,
     register,

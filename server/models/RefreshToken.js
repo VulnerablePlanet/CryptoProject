@@ -5,19 +5,16 @@ const refreshTokenSchema = new mongoose.Schema({
   token: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   expiresAt: {
     type: Date,
-    required: true,
-    index: true
+    required: true
   },
   createdAt: {
     type: Date,
@@ -34,8 +31,9 @@ const refreshTokenSchema = new mongoose.Schema({
   }
 })
 
-// Auto-delete expired tokens using TTL index
-refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+// Indexes
+refreshTokenSchema.index({ user: 1 })
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }) // TTL index for auto-delete
 
 /**
  * Generate a secure random refresh token

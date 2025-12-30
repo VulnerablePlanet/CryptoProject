@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -8,6 +8,7 @@ const authStore = useAuthStore()
 const isEditing = ref(false)
 const isSaving = ref(false)
 const showSuccess = ref(false)
+const errorMessage = ref('')
 
 // Profile photo
 const profilePhoto = ref(null)
@@ -31,34 +32,64 @@ const profileForm = ref({
 // Original data for cancel/reset
 const originalData = ref({})
 
-// Verification status
-const verificationLevel = ref(2)
-const isPro = ref(true)
+// Load user data from store
+const loadUserData = () => {
+  const user = authStore.user
+  if (user) {
+    const userData = {
+      displayName: user.name || '',
+      legalName: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      birthDate: user.birthDate ? user.birthDate.split('T')[0] : '',
+      location: user.location || '',
+      bio: user.bio || '',
+      github: user.socialLinks?.github || '',
+      twitter: user.socialLinks?.twitter || '',
+      linkedin: user.socialLinks?.linkedin || '',
+      website: user.socialLinks?.website || ''
+    }
+    
+    profileForm.value = { ...userData }
+    originalData.value = { ...userData }
+    
+    // Load existing avatar
+    if (user.avatar && !photoPreview.value) {
+      photoPreview.value = user.avatar
+    }
+  }
+}
 
 // Initialize form with user data
-onMounted(() => {
-  // Simulated user data - in production this would come from authStore.user
-  const userData = {
-    displayName: authStore.user?.name || 'Usuario Demo',
-    legalName: 'Usuario Demo Apellido',
-    email: authStore.user?.email || 'usuario@ejemplo.com',
-    phone: '+1 (555) 123-4567',
-    birthDate: '1990-05-15',
-    location: 'Ciudad de México, México',
-    bio: 'Desarrollador apasionado por la tecnología blockchain y las criptomonedas.',
-    github: 'github.com/usuario-demo',
-    twitter: '@usuario_demo',
-    linkedin: 'linkedin.com/in/usuario-demo',
-    website: 'www.usuario-demo.com'
-  }
+onMounted(async () => {
+  // First load from cached store data
+  loadUserData()
   
-  profileForm.value = { ...userData }
-  originalData.value = { ...userData }
+  // Then fetch fresh data from server
+  if (authStore.accessToken) {
+    await authStore.fetchUser()
+    loadUserData()
+  }
 })
+
+// Watch for user changes in store
+watch(() => authStore.user, () => {
+  if (!isEditing.value) {
+    loadUserData()
+  }
+}, { deep: true })
 
 // Computed
 const hasChanges = computed(() => {
-  return JSON.stringify(profileForm.value) !== JSON.stringify(originalData.value) || photoPreview.value
+  return JSON.stringify(profileForm.value) !== JSON.stringify(originalData.value) || profilePhoto.value
+})
+
+const currentAvatar = computed(() => {
+  if (photoPreview.value) {
+    // If it's a blob URL (new upload preview) or existing avatar path
+    return photoPreview.value
+  }
+  return null
 })
 
 // Methods
@@ -77,29 +108,78 @@ const removePhoto = () => {
 
 const startEditing = () => {
   isEditing.value = true
+  errorMessage.value = ''
 }
 
 const cancelEditing = () => {
   profileForm.value = { ...originalData.value }
   profilePhoto.value = null
-  photoPreview.value = null
+  // Restore original avatar preview
+  photoPreview.value = authStore.user?.avatar || null
   isEditing.value = false
+  errorMessage.value = ''
 }
 
 const saveProfile = async () => {
   isSaving.value = true
+  errorMessage.value = ''
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Create FormData for file upload
+    const formData = new FormData()
+    
+    // Add profile fields
+    formData.append('name', profileForm.value.displayName)
+    formData.append('phone', profileForm.value.phone)
+    formData.append('birthDate', profileForm.value.birthDate || '')
+    formData.append('location', profileForm.value.location)
+    formData.append('bio', profileForm.value.bio)
+    
+    // Add social links as JSON
+    formData.append('socialLinks', JSON.stringify({
+      github: profileForm.value.github,
+      twitter: profileForm.value.twitter,
+      linkedin: profileForm.value.linkedin,
+      website: profileForm.value.website
+    }))
+    
+    // Add avatar file if selected
+    if (profilePhoto.value) {
+      formData.append('avatar', profilePhoto.value)
+    }
+    
+    // Send to API using fetch for FormData
+    const token = authStore.accessToken
+    const response = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+    
+    const data = await response.json()
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Error al actualizar el perfil')
+    }
+    
+    // Update auth store with new user data (need to use proper assignment for reactivity)
+    // The store's user is a useLocalStorage ref, so we assign the value properly
+    if (authStore.user) {
+      Object.assign(authStore.user, data.user)
+    } else {
+      // Fallback: refetch user from server
+      await authStore.fetchUser()
+    }
     
     // Update original data
     originalData.value = { ...profileForm.value }
     
-    // Update auth store if needed
-    if (authStore.user) {
-      authStore.user.name = profileForm.value.displayName
-      authStore.user.email = profileForm.value.email
+    // Reset photo state
+    profilePhoto.value = null
+    if (data.user.avatar) {
+      photoPreview.value = data.user.avatar
     }
     
     isEditing.value = false
@@ -110,6 +190,7 @@ const saveProfile = async () => {
     }, 3000)
   } catch (error) {
     console.error('Error saving profile:', error)
+    errorMessage.value = error.message || 'Error al guardar los cambios'
   } finally {
     isSaving.value = false
   }
@@ -167,6 +248,20 @@ const formatDate = (dateString) => {
       </div>
     </div>
 
+    <!-- Error Alert -->
+    <Transition name="fade">
+      <div 
+        v-if="errorMessage"
+        class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
+      >
+        <span class="material-symbols-outlined text-danger">error</span>
+        <p class="text-danger font-medium">{{ errorMessage }}</p>
+        <button @click="errorMessage = ''" class="ml-auto text-danger hover:text-red-700">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </Transition>
+
     <!-- Success Alert -->
     <Transition name="fade">
       <div 
@@ -185,8 +280,8 @@ const formatDate = (dateString) => {
         <div class="relative">
           <div class="size-24 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center overflow-hidden ring-4 ring-white dark:ring-card-dark shadow-lg">
             <img 
-              v-if="photoPreview" 
-              :src="photoPreview" 
+              v-if="currentAvatar" 
+              :src="currentAvatar" 
               alt="Profile" 
               class="w-full h-full object-cover"
             />
@@ -194,31 +289,21 @@ const formatDate = (dateString) => {
               {{ profileForm.displayName.charAt(0).toUpperCase() }}
             </span>
           </div>
-          <!-- Verification Badge -->
-          <div class="absolute -bottom-1 -right-1 size-7 bg-success rounded-full flex items-center justify-center ring-2 ring-white dark:ring-card-dark">
-            <span class="material-symbols-outlined text-white text-[16px]">verified</span>
-          </div>
         </div>
 
         <!-- Profile Info -->
         <div class="flex-1">
           <div class="flex flex-wrap items-center gap-3 mb-1">
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ profileForm.displayName }}</h2>
-            <span v-if="isPro" class="px-2 py-0.5 bg-primary text-white text-xs font-bold rounded-full">PRO</span>
           </div>
-          <p class="text-text-secondary text-sm mb-2">{{ profileForm.email }}</p>
-          <div class="flex items-center gap-2 text-sm">
-            <span class="material-symbols-outlined text-success text-[16px]">verified</span>
-            <span class="text-success font-medium">Identidad Verificada</span>
-            <span class="text-text-secondary">• Nivel {{ verificationLevel }}</span>
-          </div>
+          <p class="text-text-secondary text-sm">{{ profileForm.email }}</p>
         </div>
 
         <!-- Photo Actions -->
         <div v-if="isEditing" class="flex gap-2">
           <button 
             @click="removePhoto"
-            v-if="photoPreview"
+            v-if="currentAvatar"
             class="px-4 py-2 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
           >
             Eliminar
@@ -261,7 +346,7 @@ const formatDate = (dateString) => {
           <div>
             <label class="block text-sm text-text-secondary mb-2">Nombre de Usuario</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white">
-              {{ profileForm.displayName }}
+              {{ profileForm.displayName || '—' }}
             </div>
             <input 
               v-else 
@@ -275,7 +360,7 @@ const formatDate = (dateString) => {
           <div>
             <label class="block text-sm text-text-secondary mb-2">Nombre Completo</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white">
-              {{ profileForm.legalName }}
+              {{ profileForm.legalName || '—' }}
             </div>
             <input 
               v-else 
@@ -290,7 +375,7 @@ const formatDate = (dateString) => {
             <label class="block text-sm text-text-secondary mb-2">Fecha de Nacimiento</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">cake</span>
-              {{ formatDate(profileForm.birthDate) }}
+              {{ formatDate(profileForm.birthDate) || '—' }}
             </div>
             <input 
               v-else 
@@ -305,7 +390,7 @@ const formatDate = (dateString) => {
             <label class="block text-sm text-text-secondary mb-2">Ubicación</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">location_on</span>
-              {{ profileForm.location }}
+              {{ profileForm.location || '—' }}
             </div>
             <input 
               v-else 
@@ -329,16 +414,10 @@ const formatDate = (dateString) => {
           <!-- Email -->
           <div>
             <label class="block text-sm text-text-secondary mb-2">Correo Electrónico</label>
-            <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
+            <div class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">mail</span>
-              {{ profileForm.email }}
+              {{ profileForm.email || '—' }}
             </div>
-            <input 
-              v-else 
-              v-model="profileForm.email"
-              type="email"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
-            />
           </div>
 
           <!-- Phone -->
@@ -346,7 +425,7 @@ const formatDate = (dateString) => {
             <label class="block text-sm text-text-secondary mb-2">Teléfono</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">phone</span>
-              {{ profileForm.phone }}
+              {{ profileForm.phone || '—' }}
             </div>
             <input 
               v-else 
@@ -361,7 +440,7 @@ const formatDate = (dateString) => {
             <label class="block text-sm text-text-secondary mb-2">GitHub / Portfolio</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">code</span>
-              {{ profileForm.github }}
+              {{ profileForm.github || '—' }}
             </div>
             <input 
               v-else 
@@ -377,7 +456,7 @@ const formatDate = (dateString) => {
             <label class="block text-sm text-text-secondary mb-2">Sitio Web</label>
             <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-text-secondary text-[18px]">language</span>
-              {{ profileForm.website }}
+              {{ profileForm.website || '—' }}
             </div>
             <input 
               v-else 
@@ -400,7 +479,7 @@ const formatDate = (dateString) => {
         <div>
           <label class="block text-sm text-text-secondary mb-2">Biografía</label>
           <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white min-h-[80px]">
-            {{ profileForm.bio }}
+            {{ profileForm.bio || '—' }}
           </div>
           <textarea 
             v-else 

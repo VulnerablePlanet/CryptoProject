@@ -3,6 +3,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const http = require('http')
+const path = require('path')
 const { Server } = require('socket.io')
 
 const connectDB = require('./config/db')
@@ -20,10 +21,12 @@ const { startPriceService } = require('./services/priceService')
 const app = express()
 const server = http.createServer(app)
 
-// Socket.io setup with CORS
+// Socket.io setup with CORS// CORS configuration - allow any localhost port in development
+const corsOrigin = process.env.CORS_ORIGIN || /^http:\/\/localhost:\d+$/
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: corsOrigin,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -31,11 +34,14 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: corsOrigin,
   credentials: true
 }))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')))
 
 // Initialize Socket.io
 const socketHelpers = initializeSocket(io)

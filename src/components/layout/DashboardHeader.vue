@@ -261,9 +261,15 @@ onUnmounted(() => {
         <button 
           id="profile-btn"
           @click.stop="uiStore.toggleProfileMenu"
-          class="size-9 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+          class="size-9 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all overflow-hidden"
         >
-          {{ authStore.userName.charAt(0).toUpperCase() }}
+          <img 
+            v-if="authStore.userAvatar" 
+            :src="authStore.userAvatar" 
+            alt="Profile" 
+            class="w-full h-full object-cover"
+          />
+          <span v-else>{{ authStore.userName.charAt(0).toUpperCase() }}</span>
         </button>
         
         <!-- Profile Dropdown -->
@@ -283,8 +289,14 @@ onUnmounted(() => {
             <!-- User Info -->
             <div class="p-4 border-b border-gray-200 dark:border-border-dark">
               <div class="flex items-center gap-3">
-                <div class="size-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white font-bold">
-                  {{ authStore.userName.charAt(0).toUpperCase() }}
+                <div class="size-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                  <img 
+                    v-if="authStore.userAvatar" 
+                    :src="authStore.userAvatar" 
+                    alt="Profile" 
+                    class="w-full h-full object-cover"
+                  />
+                  <span v-else>{{ authStore.userName.charAt(0).toUpperCase() }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="font-medium text-slate-900 dark:text-white truncate">{{ authStore.userName }}</p>

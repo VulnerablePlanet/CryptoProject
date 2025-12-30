@@ -27,6 +27,29 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  phone: {
+    type: String,
+    default: ''
+  },
+  birthDate: {
+    type: Date,
+    default: null
+  },
+  location: {
+    type: String,
+    default: ''
+  },
+  bio: {
+    type: String,
+    maxlength: [500, 'Bio cannot exceed 500 characters'],
+    default: ''
+  },
+  socialLinks: {
+    github: { type: String, default: '' },
+    twitter: { type: String, default: '' },
+    linkedin: { type: String, default: '' },
+    website: { type: String, default: '' }
+  },
   settings: {
     currency: {
       type: String,

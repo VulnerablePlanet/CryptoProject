@@ -45,9 +45,6 @@ const portfolioSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Index for faster user lookups
-portfolioSchema.index({ user: 1 })
-
 // Method to add or update a holding
 portfolioSchema.methods.addHolding = function(coinData, amount, buyPrice) {
   const existingIndex = this.holdings.findIndex(h => h.coinId === coinData.id)

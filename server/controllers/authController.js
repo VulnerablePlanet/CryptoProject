@@ -285,12 +285,43 @@ const me = async (req, res) => {
  */
 const updateProfile = async (req, res) => {
   try {
-    const { name, avatar, settings } = req.body
+    const { name, phone, birthDate, location, bio, socialLinks, settings } = req.body
+    const fs = require('fs')
+    const path = require('path')
     
     const updateData = {}
-    if (name) updateData.name = name
-    if (avatar !== undefined) updateData.avatar = avatar
-    if (settings) updateData.settings = { ...req.user.settings, ...settings }
+    
+    // Basic info fields
+    if (name !== undefined) updateData.name = name
+    if (phone !== undefined) updateData.phone = phone
+    if (birthDate !== undefined) updateData.birthDate = birthDate || null
+    if (location !== undefined) updateData.location = location
+    if (bio !== undefined) updateData.bio = bio
+    
+    // Social links - merge with existing (parse JSON if string from FormData)
+    if (socialLinks) {
+      const existingSocialLinks = req.user.socialLinks || {}
+      const parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks
+      updateData.socialLinks = { ...existingSocialLinks, ...parsedSocialLinks }
+    }
+    
+    // Settings - merge with existing
+    if (settings) {
+      updateData.settings = { ...req.user.settings, ...settings }
+    }
+    
+    // Handle avatar upload
+    if (req.file) {
+      // Delete old avatar if exists
+      if (req.user.avatar) {
+        const oldAvatarPath = path.join(__dirname, '..', '..', 'public', req.user.avatar)
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath)
+        }
+      }
+      // Set new avatar path (relative to public folder)
+      updateData.avatar = `/uploads/avatars/${req.file.filename}`
+    }
     
     const user = await User.findByIdAndUpdate(
       req.user._id,
@@ -307,7 +338,7 @@ const updateProfile = async (req, res) => {
     console.error('Update profile error:', error)
     res.status(500).json({
       success: false,
-      message: 'Error updating profile'
+      message: error.message || 'Error updating profile'
     })
   }
 }

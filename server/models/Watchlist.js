@@ -72,9 +72,6 @@ const watchlistSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Index for user lookups
-watchlistSchema.index({ user: 1 })
-
 // Method to check if coin is in watchlist
 watchlistSchema.methods.hasCoin = function(coinId) {
   return this.coins.some(c => c.coinId === coinId)

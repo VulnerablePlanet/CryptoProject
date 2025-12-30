@@ -11,6 +11,7 @@ const {
   getUserCount 
 } = require('../controllers/authController')
 const { auth } = require('../middleware/auth')
+const { upload } = require('../middleware/upload')
 
 const router = express.Router()
 
@@ -60,7 +61,7 @@ router.post('/logout-all', auth, logoutAll)
 router.get('/me', auth, me)
 
 // @route   PUT /api/auth/profile
-router.put('/profile', auth, updateProfile)
+router.put('/profile', auth, upload.single('avatar'), updateProfile)
 
 // @route   GET /api/auth/user-count
 router.get('/user-count', getUserCount)
