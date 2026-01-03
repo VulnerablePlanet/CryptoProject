@@ -99,6 +99,21 @@ const databaseModels = [
       { name: 'ipAddress', type: 'String', desc: 'Client IP address' },
       { name: 'createdAt', type: 'Date', desc: 'Token creation date' },
     ]
+  },
+  {
+    name: 'Candle',
+    collection: 'candles',
+    fields: [
+      { name: '_id', type: 'ObjectId', desc: 'Unique identifier' },
+      { name: 'coinId', type: 'String', desc: 'CoinGecko coin ID (bitcoin, ethereum)' },
+      { name: 'timeframe', type: 'String', desc: 'Candle timeframe (5m, 15m, 1h, 4h, 1d)' },
+      { name: 'timestamp', type: 'Date', desc: 'Candle open time' },
+      { name: 'open', type: 'Number', desc: 'Opening price' },
+      { name: 'high', type: 'Number', desc: 'Highest price' },
+      { name: 'low', type: 'Number', desc: 'Lowest price' },
+      { name: 'close', type: 'Number', desc: 'Closing price' },
+      { name: 'volume', type: 'Number', desc: 'Trading volume' },
+    ]
   }
 ]
 
@@ -175,6 +190,25 @@ const apiEndpoints = [
       { method: 'GET', path: '/global', desc: 'Global cryptocurrency stats' },
       { method: 'GET', path: '/search/trending', desc: 'Top 7 trending coins' },
     ]
+  },
+  {
+    category: 'OHLC Data',
+    prefix: '/api/ohlc',
+    endpoints: [
+      { method: 'GET', path: '/:coinId/candles', desc: 'Get OHLC candles from cache or CoinGecko' },
+      { method: 'POST', path: '/:coinId/sync', desc: 'Force sync OHLC data from CoinGecko' },
+      { method: 'GET', path: '/status', desc: 'Get rate limiter status and metrics' },
+      { method: 'GET', path: '/coins', desc: 'List supported coins for OHLC' },
+    ]
+  },
+  {
+    category: 'Fibonacci Analysis',
+    prefix: '/api/fibonacci',
+    endpoints: [
+      { method: 'GET', path: '/:coinId', desc: 'Get Fibonacci analysis with pivot detection' },
+      { method: 'GET', path: '/:coinId/pivots', desc: 'Get only pivot points (Swing High/Low)' },
+      { method: 'GET', path: '/ratios', desc: 'Get Fibonacci ratio configurations' },
+    ]
   }
 ]
 
@@ -188,6 +222,8 @@ const frontendStores = [
   { name: 'notifications', file: 'stores/notifications.js', desc: 'Real-time notifications, read status' },
   { name: 'theme', file: 'stores/theme.js', desc: 'Dark/light mode toggle, theme persistence' },
   { name: 'ui', file: 'stores/ui.js', desc: 'UI state, sidebar, dropdowns, modals' },
+  { name: 'tradingview', file: 'stores/tradingview.js', desc: 'TradingView charts, OHLC data, rate limiting, cache' },
+  { name: 'fibonacci', file: 'stores/fibonacci.js', desc: 'Fibonacci analysis, pivot detection, retracement levels' },
 ]
 
 const methodColors = {
@@ -234,19 +270,19 @@ const methodColors = {
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-primary mb-1">6</div>
+              <div class="text-3xl font-bold text-primary mb-1">7</div>
               <div class="text-xs text-text-secondary">Database Models</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-success mb-1">25+</div>
+              <div class="text-3xl font-bold text-success mb-1">35+</div>
               <div class="text-xs text-text-secondary">API Endpoints</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-warning mb-1">8</div>
+              <div class="text-3xl font-bold text-warning mb-1">10</div>
               <div class="text-xs text-text-secondary">Pinia Stores</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg text-center">
-              <div class="text-3xl font-bold text-purple-500 mb-1">10+</div>
+              <div class="text-3xl font-bold text-purple-500 mb-1">12+</div>
               <div class="text-xs text-text-secondary">Vue Pages</div>
             </div>
           </div>
@@ -307,6 +343,13 @@ const methodColors = {
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">CoinGecko</p>
                 <p class="text-xs text-text-secondary">API</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="text-2xl">📈</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Lightweight Charts</p>
+                <p class="text-xs text-text-secondary">TradingView</p>
               </div>
             </div>
           </div>
@@ -660,6 +703,34 @@ POST /api/auth/logout → Revokes refresh token</pre>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">API Keys</p>
                 <p class="text-xs text-text-secondary">/api-keys</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">analytics</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Technical Analysis</p>
+                <p class="text-xs text-text-secondary">/technical-analysis</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-warning dark:bg-warning/20 rounded-lg">
+              <span class="material-symbols-outlined text-white dark:text-warning">candlestick_chart</span>
+              <div>
+                <p class="font-medium text-white dark:text-warning text-sm">TradingView Charts</p>
+                <p class="text-xs text-white/70 dark:text-warning/70">/tradingview</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-warning dark:bg-warning/20 rounded-lg">
+              <span class="material-symbols-outlined text-white dark:text-warning">ssid_chart</span>
+              <div>
+                <p class="font-medium text-white dark:text-warning text-sm">Fibonacci Analysis</p>
+                <p class="text-xs text-white/70 dark:text-warning/70">/fibonacci</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">person</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Profile</p>
+                <p class="text-xs text-text-secondary">/profile</p>
               </div>
             </div>
           </div>

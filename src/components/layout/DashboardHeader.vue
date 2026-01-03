@@ -22,6 +22,8 @@ const pageTitles = {
   '/transactions': 'Transactions',
   '/watchlist': 'Watchlist',
   '/technical-analysis': 'Technical Analysis',
+  '/tradingview': 'TradingView Charts',
+  '/fibonacci': 'Análisis Fibonacci',
   '/pokemon': 'Pokemon',
   '/learn': 'Learn',
   '/security': 'Security',

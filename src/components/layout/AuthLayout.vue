@@ -1,14 +1,34 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
+import { useCryptoStore } from '@/stores/crypto'
+import { useAuthStore } from '@/stores/auth'
+import { initSocket, disconnectSocket } from '@/services/socket'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import DashboardHeader from '@/components/layout/DashboardHeader.vue'
 
-// Ensure theme is applied on layout mount
+// Stores
 const themeStore = useThemeStore()
+const cryptoStore = useCryptoStore()
+const authStore = useAuthStore()
+
+// Initialize socket and realtime features when authenticated layout mounts
 onMounted(() => {
   themeStore.applyTheme()
+  
+  // Initialize socket connection for authenticated users
+  if (authStore.isAuthenticated) {
+    initSocket()
+    // Enable realtime price updates
+    cryptoStore.enableRealtimePrices()
+  }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  cryptoStore.disableRealtimePrices()
+  disconnectSocket()
 })
 </script>
 

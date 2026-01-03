@@ -16,6 +16,8 @@ const mainNav = [
   { name: 'Transactions', path: '/transactions', icon: 'receipt_long' },
   { name: 'Watchlist', path: '/watchlist', icon: 'star' },
   { name: 'Technical Analysis', path: '/technical-analysis', icon: 'analytics' },
+  { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
+  { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },
   { name: 'Pokemon', path: '/pokemon', icon: 'pets' },
   { name: 'Docs', path: '/docs', icon: 'description' },
 ]

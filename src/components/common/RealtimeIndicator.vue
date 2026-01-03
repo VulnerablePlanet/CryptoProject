@@ -1,18 +1,38 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useCryptoStore } from '@/stores/crypto'
 import { useSocket } from '@/services/socket'
 
 const cryptoStore = useCryptoStore()
 const { isConnected } = useSocket()
 
+// Reactive trigger for time updates
+const updateTrigger = ref(0)
+let intervalId = null
+
 const lastUpdateText = computed(() => {
+  // Use updateTrigger to force reactivity
+  updateTrigger.value
+  
   if (!cryptoStore.lastUpdated) return 'Never'
   const diff = Date.now() - new Date(cryptoStore.lastUpdated).getTime()
   const seconds = Math.floor(diff / 1000)
   if (seconds < 60) return `${seconds}s ago`
   const minutes = Math.floor(seconds / 60)
   return `${minutes}m ago`
+})
+
+// Update the time display every second
+onMounted(() => {
+  intervalId = setInterval(() => {
+    updateTrigger.value++
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
 })
 </script>
 

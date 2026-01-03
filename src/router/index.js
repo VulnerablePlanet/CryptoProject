@@ -87,6 +87,16 @@ const routes = [
         path: 'technical-analysis',
         name: 'technical-analysis',
         component: () => import('@/views/TechnicalAnalysisContent.vue')
+      },
+      {
+        path: 'tradingview',
+        name: 'tradingview',
+        component: () => import('@/views/TradingViewContent.vue')
+      },
+      {
+        path: 'fibonacci',
+        name: 'fibonacci',
+        component: () => import('@/views/FibonacciContent.vue')
       }
     ]
   },
