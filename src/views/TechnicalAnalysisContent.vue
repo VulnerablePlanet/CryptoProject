@@ -487,7 +487,7 @@ const handleTimeframeChange = () => {
     </div>
 
     <!-- Chart -->
-    <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl overflow-hidden">
+    <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl">
       <div class="p-4 border-b border-gray-200 dark:border-border-dark flex items-center justify-between">
         <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <span class="material-symbols-outlined text-primary">candlestick_chart</span>
@@ -498,14 +498,14 @@ const handleTimeframeChange = () => {
         </span>
       </div>
       
-      <div class="h-[400px] p-4">
-        <div v-if="loading" class="h-full flex items-center justify-center">
+      <div class="min-h-[550px]">
+        <div v-if="loading" class="h-[500px] flex items-center justify-center">
           <div class="flex flex-col items-center gap-3">
             <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
             <p class="text-text-secondary text-sm">Loading chart data...</p>
           </div>
         </div>
-        <div v-else-if="candleData.length === 0" class="h-full flex items-center justify-center">
+        <div v-else-if="candleData.length === 0" class="h-[500px] flex items-center justify-center">
           <div class="text-center">
             <span class="material-symbols-outlined text-6xl text-gray-300 dark:text-border-dark">insert_chart</span>
             <p class="text-text-secondary mt-2">No data available. Click "Sync Data" to fetch candles.</p>
@@ -514,7 +514,7 @@ const handleTimeframeChange = () => {
         <CandlestickChart
           v-else
           :candles="candleData"
-          :height="350"
+          :height="500"
           :showVolume="true"
         />
       </div>

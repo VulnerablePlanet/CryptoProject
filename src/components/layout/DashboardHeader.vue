@@ -27,7 +27,8 @@ const pageTitles = {
   '/pokemon': 'Pokemon',
   '/learn': 'Learn',
   '/security': 'Security',
-  '/api-keys': 'API Keys',
+  '/settings/api-keys': 'API Keys',
+  '/settings/users': 'Usuarios',
   '/docs': 'Documentation',
   '/profile': 'Profile',
   '/notifications': 'Notifications'

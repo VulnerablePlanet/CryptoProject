@@ -64,9 +64,14 @@ const routes = [
         component: () => import('@/views/SecurityContent.vue')
       },
       {
-        path: 'api-keys',
+        path: 'settings/api-keys',
         name: 'api-keys',
         component: () => import('@/views/ApiKeysContent.vue')
+      },
+      {
+        path: 'settings/users',
+        name: 'users',
+        component: () => import('@/views/UsersContent.vue')
       },
       {
         path: 'docs',
@@ -97,6 +102,11 @@ const routes = [
         path: 'fibonacci',
         name: 'fibonacci',
         component: () => import('@/views/FibonacciContent.vue')
+      },
+      {
+        path: 'pro-trading',
+        name: 'pro-trading',
+        component: () => import('@/views/ProTradingContent.vue')
       }
     ]
   },

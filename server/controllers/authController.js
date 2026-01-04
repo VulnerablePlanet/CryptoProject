@@ -365,6 +365,30 @@ const getUserCount = async (req, res) => {
   }
 }
 
+/**
+ * @desc    Get all users
+ * @route   GET /api/auth/users
+ * @access  Private
+ */
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('name email avatar createdAt')
+      .sort({ createdAt: -1 })
+    
+    res.json({
+      success: true,
+      users
+    })
+  } catch (error) {
+    console.error('Get all users error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching users'
+    })
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -373,5 +397,6 @@ module.exports = {
   logoutAll,
   me,
   updateProfile,
-  getUserCount
+  getUserCount,
+  getAllUsers
 }

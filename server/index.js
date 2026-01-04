@@ -16,6 +16,8 @@ const pokemonRoutes = require('./routes/pokemon')
 const ohlcRoutes = require('./routes/ohlc')
 const tradingRoutes = require('./routes/trading')
 const fibonacciRoutes = require('./routes/fibonacci')
+const exchangeRoutes = require('./routes/exchange')
+const apikeysRoutes = require('./routes/apikeys')
 const initializeSocket = require('./socket')
 const { startPriceService } = require('./services/priceService')
 
@@ -58,6 +60,8 @@ app.use('/api/pokemon', pokemonRoutes)
 app.use('/api/ohlc', ohlcRoutes)
 app.use('/api/trading', tradingRoutes)
 app.use('/api/fibonacci', fibonacciRoutes)
+app.use('/api/exchange', exchangeRoutes)
+app.use('/api/apikeys', apikeysRoutes)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

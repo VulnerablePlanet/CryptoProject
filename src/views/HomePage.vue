@@ -121,28 +121,29 @@ onMounted(async () => {
     <!-- Features Section -->
     <section class="py-20 px-4 bg-gray-50 dark:bg-surface-dark">
       <div class="max-w-6xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-slate-900 dark:text-white mb-12">Built for Developers</h2>
+        <h2 class="text-3xl font-bold text-center text-slate-900 dark:text-white mb-4">Módulos del Sistema</h2>
+        <p class="text-center text-text-secondary mb-12 max-w-2xl mx-auto">Herramientas avanzadas para análisis de mercado y detección de anomalías en criptomonedas</p>
         <div class="grid md:grid-cols-3 gap-8">
           <div class="p-6 rounded-xl bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark">
             <div class="size-12 flex items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-              <span class="material-symbols-outlined">terminal</span>
+              <span class="material-symbols-outlined">analytics</span>
             </div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">REST & WebSocket API</h3>
-            <p class="text-text-secondary text-sm">Full API access with comprehensive documentation. Build bots, integrate with your tools, automate everything.</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Análisis Técnico</h3>
+            <p class="text-text-secondary text-sm">Indicadores RSI, MACD, SMA, EMA y niveles Fibonacci. Gráficos de velas OHLC con datos históricos de CoinGecko.</p>
           </div>
           <div class="p-6 rounded-xl bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark">
             <div class="size-12 flex items-center justify-center rounded-lg bg-success/10 text-success mb-4">
-              <span class="material-symbols-outlined">verified_user</span>
+              <span class="material-symbols-outlined">show_chart</span>
             </div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Bank-Grade Security</h3>
-            <p class="text-text-secondary text-sm">95% cold storage, 2FA, withdrawal whitelists, and regular third-party security audits.</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Trading en Tiempo Real</h3>
+            <p class="text-text-secondary text-sm">Precios en vivo via WebSocket, gráficos interactivos con TradingView y seguimiento de portafolio con alertas.</p>
           </div>
           <div class="p-6 rounded-xl bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark">
             <div class="size-12 flex items-center justify-center rounded-lg bg-purple-500/10 text-purple-500 mb-4">
-              <span class="material-symbols-outlined">speed</span>
+              <span class="material-symbols-outlined">key</span>
             </div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Ultra-Low Latency</h3>
-            <p class="text-text-secondary text-sm">Co-located servers, optimized matching engine, and real-time data feeds for algorithmic trading.</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Gestión de API Keys</h3>
+            <p class="text-text-secondary text-sm">Almacena y gestiona claves API de CoinGecko, Binance y otros proveedores para uso dinámico en la aplicación.</p>
           </div>
         </div>
       </div>

@@ -184,12 +184,17 @@ export const calculateSMAHistory = (prices, period) => {
   if (!prices || prices.length < period) return []
   
   const result = []
+  // Pad with nulls for the first (period-1) values where SMA can't be calculated
+  for (let i = 0; i < period - 1; i++) {
+    result.push(null)
+  }
+  // Calculate SMA for remaining values
   for (let i = period - 1; i < prices.length; i++) {
     const slice = prices.slice(i - period + 1, i + 1)
     const sum = slice.reduce((acc, p) => acc + p, 0)
     result.push(sum / period)
   }
-  return result.slice(-20) // Last 20 values for sparkline
+  return result
 }
 
 /**
@@ -204,6 +209,11 @@ export const calculateEMAHistory = (prices, period) => {
   const multiplier = 2 / (period + 1)
   const result = []
   
+  // Pad with nulls for the first (period-1) values where EMA can't be calculated
+  for (let i = 0; i < period - 1; i++) {
+    result.push(null)
+  }
+  
   // First EMA is SMA
   let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period
   result.push(ema)
@@ -214,13 +224,13 @@ export const calculateEMAHistory = (prices, period) => {
     result.push(ema)
   }
   
-  return result.slice(-20) // Last 20 values for sparkline
+  return result
 }
 
 /**
  * Calculate MACD history
  * @param {number[]} prices - Array of closing prices
- * @returns {number[]} Array of MACD values
+ * @returns {number[]} Array of MACD values (EMA12 - EMA26)
  */
 export const calculateMACDHistory = (prices) => {
   if (!prices || prices.length < 26) return []
@@ -228,15 +238,21 @@ export const calculateMACDHistory = (prices) => {
   const ema12History = calculateEMAHistory(prices, 12)
   const ema26History = calculateEMAHistory(prices, 26)
   
-  // Align arrays (EMA26 starts later)
-  const offset = ema12History.length - ema26History.length
   const result = []
   
-  for (let i = 0; i < ema26History.length; i++) {
-    result.push(ema12History[i + offset] - ema26History[i])
+  // Build MACD array aligned with prices
+  for (let i = 0; i < prices.length; i++) {
+    const ema12 = ema12History[i]
+    const ema26 = ema26History[i]
+    
+    if (ema12 === null || ema26 === null) {
+      result.push(null)
+    } else {
+      result.push(ema12 - ema26)
+    }
   }
   
-  return result.slice(-20)
+  return result
 }
 
 /**
@@ -249,12 +265,17 @@ export const calculateMACDHistory = (prices) => {
 export const generateSparklinePath = (data, width = 80, height = 30) => {
   if (!data || data.length < 2) return ''
   
-  const min = Math.min(...data)
-  const max = Math.max(...data)
+  // Filter out null, undefined, and NaN values
+  const validData = data.filter(value => value !== null && value !== undefined && !isNaN(value))
+  
+  if (validData.length < 2) return ''
+  
+  const min = Math.min(...validData)
+  const max = Math.max(...validData)
   const range = max - min || 1
   
-  const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * width
+  const points = validData.map((value, index) => {
+    const x = (index / (validData.length - 1)) * width
     const y = height - ((value - min) / range) * height
     return `${x},${y}`
   })
@@ -273,14 +294,19 @@ export const calculateRSIHistory = (prices, period = 14) => {
   
   const result = []
   
+  // Pad with nulls for the first period values where RSI can't be calculated
+  for (let i = 0; i < period; i++) {
+    result.push(null)
+  }
+  
   // Calculate RSI for each point where we have enough data
   for (let i = period; i < prices.length; i++) {
     const slice = prices.slice(0, i + 1)
     const rsi = calculateRSI(slice, period)
-    if (rsi !== null) result.push(rsi)
+    result.push(rsi)
   }
   
-  return result.slice(-20) // Last 20 values for sparkline
+  return result
 }
 
 export default {

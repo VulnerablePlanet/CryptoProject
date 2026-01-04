@@ -17,6 +17,7 @@ const mainNav = [
   { name: 'Watchlist', path: '/watchlist', icon: 'star' },
   { name: 'Technical Analysis', path: '/technical-analysis', icon: 'analytics' },
   { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
+  { name: 'Pro Trading', path: '/pro-trading', icon: 'finance_mode' },
   { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },
   { name: 'Pokemon', path: '/pokemon', icon: 'pets' },
   { name: 'Docs', path: '/docs', icon: 'description' },
@@ -24,7 +25,8 @@ const mainNav = [
 
 // App Settings submenu
 const settingsNav = [
-  { name: 'API Keys', path: '/api-keys', icon: 'key' },
+  { name: 'API Keys', path: '/settings/api-keys', icon: 'key' },
+  { name: 'Usuarios', path: '/settings/users', icon: 'group' },
 ]
 
 const isActive = (path) => route.path === path

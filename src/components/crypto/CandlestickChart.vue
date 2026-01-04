@@ -31,8 +31,10 @@ const copRate = ref(4400)
 
 // Chart dimensions
 const chartWidth = 1000
-const chartPadding = { top: 20, right: 60, bottom: 40, left: 10 }
-const volumeHeight = props.showVolume ? 60 : 0
+const chartPadding = { top: 20, right: 60, bottom: 80, left: 50 }
+
+// Volume height is calculated dynamically based on props
+const getVolumeHeight = () => props.showVolume ? 60 : 0
 
 // Visible candles based on viewport
 const visibleCandles = computed(() => {
@@ -49,7 +51,7 @@ const priceRange = computed(() => {
   const lows = visibleCandles.value.map(c => c.low)
   const max = Math.max(...highs)
   const min = Math.min(...lows)
-  const padding = (max - min) * 0.1
+  const padding = (max - min) * 0.15
   
   return {
     min: min - padding,
@@ -67,7 +69,7 @@ const volumeRange = computed(() => {
 
 // Chart height calculations
 const mainChartHeight = computed(() => {
-  return props.height - chartPadding.top - chartPadding.bottom - volumeHeight
+  return props.height - chartPadding.top - chartPadding.bottom - getVolumeHeight()
 })
 
 // Price to Y coordinate
@@ -123,9 +125,9 @@ const candlesticks = computed(() => {
       color: isBullish ? '#0bda5b' : '#ef4444',
       // Volume bar
       volumeHeight: props.showVolume 
-        ? ((candle.volume || 0) / volumeRange.value.max) * volumeHeight * 0.8
+        ? ((candle.volume || 0) / volumeRange.value.max) * getVolumeHeight() * 0.8
         : 0,
-      volumeY: props.height - chartPadding.bottom - ((candle.volume || 0) / volumeRange.value.max) * volumeHeight * 0.8
+      volumeY: props.height - chartPadding.bottom - ((candle.volume || 0) / volumeRange.value.max) * getVolumeHeight() * 0.8
     }
   })
 })

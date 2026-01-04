@@ -52,18 +52,34 @@ const handleRegister = async () => {
           Stay up-to-date and make the best decisions in your operations.
         </p>
         
-        <div class="mt-12 space-y-6">
+        <div class="mt-12 space-y-5">
           <div class="flex items-center gap-4 text-white/90">
-            <span class="material-symbols-outlined text-[28px] text-success">check_circle</span>
-            <span class="text-lg font-medium">Fibonacci</span>
+            <span class="material-symbols-outlined text-[28px] text-success">analytics</span>
+            <div>
+              <span class="text-lg font-medium">Análisis Técnico Avanzado</span>
+              <p class="text-sm text-white/60">RSI, MACD, SMA, EMA y niveles Fibonacci</p>
+            </div>
           </div>
           <div class="flex items-center gap-4 text-white/90">
-            <span class="material-symbols-outlined text-[28px] text-success">check_circle</span>
-            <span class="text-lg font-medium">MA</span>
+            <span class="material-symbols-outlined text-[28px] text-success">show_chart</span>
+            <div>
+              <span class="text-lg font-medium">Trading en Tiempo Real</span>
+              <p class="text-sm text-white/60">Precios en vivo y gráficos TradingView</p>
+            </div>
           </div>
           <div class="flex items-center gap-4 text-white/90">
-            <span class="material-symbols-outlined text-[28px] text-success">check_circle</span>
-            <span class="text-lg font-medium">RSI</span>
+            <span class="material-symbols-outlined text-[28px] text-success">candlestick_chart</span>
+            <div>
+              <span class="text-lg font-medium">Gráficos OHLC</span>
+              <p class="text-sm text-white/60">Velas japonesas con datos de CoinGecko</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-white/90">
+            <span class="material-symbols-outlined text-[28px] text-success">key</span>
+            <div>
+              <span class="text-lg font-medium">Gestión de API Keys</span>
+              <p class="text-sm text-white/60">Almacena claves de múltiples exchanges</p>
+            </div>
           </div>
         </div>
       </div>

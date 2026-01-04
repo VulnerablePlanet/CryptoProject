@@ -22,8 +22,8 @@ export const useAuthStore = defineStore('auth', () => {
   let refreshPromise = null
 
   // Getters
-  const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
-  const userName = computed(() => user.value?.name || 'Guest')
+  const isAuthenticated = computed(() => !!accessToken.value && !!user.value && !!user.value?.name)
+  const userName = computed(() => user.value?.name || '')
   const userEmail = computed(() => user.value?.email || '')
   const userAvatar = computed(() => user.value?.avatar || null)
   // Legacy getter for compatibility

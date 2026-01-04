@@ -8,7 +8,8 @@ const {
   logoutAll,
   me, 
   updateProfile, 
-  getUserCount 
+  getUserCount,
+  getAllUsers
 } = require('../controllers/authController')
 const { auth } = require('../middleware/auth')
 const { upload } = require('../middleware/upload')
@@ -65,5 +66,8 @@ router.put('/profile', auth, upload.single('avatar'), updateProfile)
 
 // @route   GET /api/auth/user-count
 router.get('/user-count', getUserCount)
+
+// @route   GET /api/auth/users
+router.get('/users', auth, getAllUsers)
 
 module.exports = router
