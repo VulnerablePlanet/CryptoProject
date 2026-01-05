@@ -657,20 +657,6 @@ POST /api/auth/logout → Revokes refresh token</pre>
               </div>
             </div>
             <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
-              <span class="material-symbols-outlined text-primary">candlestick_chart</span>
-              <div>
-                <p class="font-medium text-slate-900 dark:text-white text-sm">Trading</p>
-                <p class="text-xs text-text-secondary">/trading</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
-              <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
-              <div>
-                <p class="font-medium text-slate-900 dark:text-white text-sm">Wallet</p>
-                <p class="text-xs text-text-secondary">/wallet</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
               <span class="material-symbols-outlined text-primary">receipt_long</span>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">Transactions</p>
@@ -702,7 +688,21 @@ POST /api/auth/logout → Revokes refresh token</pre>
               <span class="material-symbols-outlined text-primary">terminal</span>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">API Keys</p>
-                <p class="text-xs text-text-secondary">/api-keys</p>
+                <p class="text-xs text-text-secondary">/settings/api-keys</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">group</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Users</p>
+                <p class="text-xs text-text-secondary">/settings/users</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">description</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Documentation</p>
+                <p class="text-xs text-text-secondary">/docs</p>
               </div>
             </div>
             <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
@@ -712,18 +712,32 @@ POST /api/auth/logout → Revokes refresh token</pre>
                 <p class="text-xs text-text-secondary">/technical-analysis</p>
               </div>
             </div>
-            <div class="flex items-center gap-3 p-3 bg-warning dark:bg-warning/20 rounded-lg">
-              <span class="material-symbols-outlined text-white dark:text-warning">candlestick_chart</span>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">candlestick_chart</span>
               <div>
-                <p class="font-medium text-white dark:text-warning text-sm">TradingView Charts</p>
-                <p class="text-xs text-white/70 dark:text-warning/70">/tradingview</p>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">TradingView Charts</p>
+                <p class="text-xs text-text-secondary">/tradingview</p>
               </div>
             </div>
-            <div class="flex items-center gap-3 p-3 bg-warning dark:bg-warning/20 rounded-lg">
-              <span class="material-symbols-outlined text-white dark:text-warning">ssid_chart</span>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">ssid_chart</span>
               <div>
-                <p class="font-medium text-white dark:text-warning text-sm">Fibonacci Analysis</p>
-                <p class="text-xs text-white/70 dark:text-warning/70">/fibonacci</p>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Fibonacci Analysis</p>
+                <p class="text-xs text-text-secondary">/fibonacci</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">show_chart</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Pro Trading</p>
+                <p class="text-xs text-text-secondary">/pro-trading</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+              <span class="material-symbols-outlined text-primary">pets</span>
+              <div>
+                <p class="font-medium text-slate-900 dark:text-white text-sm">Pokemon</p>
+                <p class="text-xs text-text-secondary">/pokemon</p>
               </div>
             </div>
             <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">

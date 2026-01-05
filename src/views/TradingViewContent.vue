@@ -248,48 +248,7 @@ const handleCrosshairMove = (data) => {
       </div>
     </div>
 
-    <!-- API Status Card (Optional Debug Info) -->
-    <div 
-      v-if="store.apiStatus" 
-      class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4"
-    >
-      <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
-        <span class="material-symbols-outlined text-warning">speed</span>
-        API Status
-      </h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div>
-          <p class="text-text-secondary text-xs">Queue Length</p>
-          <p class="font-mono font-bold text-slate-900 dark:text-white">
-            {{ store.apiStatus.queueLength || 0 }}
-          </p>
-        </div>
-        <div>
-          <p class="text-text-secondary text-xs">Backoff Multiplier</p>
-          <p 
-            class="font-mono font-bold"
-            :class="(store.apiStatus.currentBackoffMultiplier || 1) > 1 ? 'text-warning' : 'text-success'"
-          >
-            {{ store.apiStatus.currentBackoffMultiplier || 1 }}x
-          </p>
-        </div>
-        <div>
-          <p class="text-text-secondary text-xs">Cache Size</p>
-          <p class="font-mono font-bold text-slate-900 dark:text-white">
-            {{ store.apiStatus.cacheSize || 0 }}
-          </p>
-        </div>
-        <div>
-          <p class="text-text-secondary text-xs">Status</p>
-          <p 
-            class="font-bold"
-            :class="store.apiStatus.isProcessing ? 'text-warning' : 'text-success'"
-          >
-            {{ store.apiStatus.isProcessing ? 'Processing' : 'Ready' }}
-          </p>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 
