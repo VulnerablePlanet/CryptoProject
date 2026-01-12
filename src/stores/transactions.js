@@ -191,6 +191,18 @@ export const useTransactionStore = defineStore('transactions', () => {
       
       if (response.data.success) {
         transactions.value = transactions.value.filter(t => t._id !== id)
+        
+        // Update portfolio store if portfolio data is returned
+        if (response.data.portfolio) {
+          const { usePortfolioStore } = await import('./portfolio')
+          const portfolioStore = usePortfolioStore()
+          // Use $patch for proper reactivity with composition API stores
+          portfolioStore.$patch({
+            holdings: response.data.portfolio.holdings || [],
+            totalInvested: response.data.portfolio.totalInvested || 0
+          })
+        }
+        
         return { success: true }
       }
     } catch (err) {

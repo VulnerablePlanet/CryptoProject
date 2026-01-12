@@ -107,6 +107,11 @@ const routes = [
         path: 'pro-trading',
         name: 'pro-trading',
         component: () => import('@/views/ProTradingContent.vue')
+      },
+      {
+        path: 'talib',
+        name: 'talib',
+        component: () => import('@/views/TALibContent.vue')
       }
     ]
   },

@@ -246,7 +246,8 @@ const createTransaction = async (req, res) => {
  */
 const deleteTransaction = async (req, res) => {
   try {
-    const transaction = await Transaction.findOneAndDelete({
+    // First, find the transaction to get its details before deleting
+    const transaction = await Transaction.findOne({
       _id: req.params.id,
       user: req.user._id
     })
@@ -258,9 +259,75 @@ const deleteTransaction = async (req, res) => {
       })
     }
 
+    console.log('Deleting transaction:', transaction._id, 'Type:', transaction.type, 'Amount:', transaction.amount)
+
+    // Revert the portfolio changes
+    let portfolio = await Portfolio.findOne({ user: req.user._id })
+    
+    if (portfolio) {
+      const { type, coinId, symbol, coinName, amount, priceAtTransaction, totalValue } = transaction
+      const holdingIndex = portfolio.holdings.findIndex(h => h.coinId === coinId)
+
+      console.log('Before update - Holdings:', portfolio.holdings.length, 'TotalInvested:', portfolio.totalInvested)
+      console.log('Transaction details - CoinId:', coinId, 'Amount:', amount, 'TotalValue:', totalValue)
+
+      // Reverse the original transaction effect
+      if (type === 'buy' || type === 'transfer_in' || type === 'deposit') {
+        // Original was adding, so now we subtract
+        if (holdingIndex >= 0) {
+          const existing = portfolio.holdings[holdingIndex]
+          console.log('Found holding at index', holdingIndex, '- Current amount:', existing.amount)
+          existing.amount = Math.max(0, existing.amount - amount)
+          console.log('New amount:', existing.amount)
+          
+          // Remove holding if amount becomes 0
+          if (existing.amount === 0) {
+            portfolio.holdings.splice(holdingIndex, 1)
+            console.log('Removed holding (amount was 0)')
+          }
+        }
+        portfolio.totalInvested = Math.max(0, portfolio.totalInvested - totalValue)
+      } else if (type === 'sell' || type === 'transfer_out' || type === 'withdraw') {
+        // Original was removing, so now we add back
+        if (holdingIndex >= 0) {
+          const existing = portfolio.holdings[holdingIndex]
+          existing.amount += amount
+        } else {
+          // Re-create the holding if it was removed
+          portfolio.holdings.push({
+            coinId,
+            symbol: symbol.toUpperCase(),
+            name: coinName,
+            amount,
+            avgBuyPrice: priceAtTransaction
+          })
+        }
+        // Add back to total invested
+        portfolio.totalInvested += amount * priceAtTransaction
+      }
+
+      console.log('After update - Holdings:', portfolio.holdings.length, 'TotalInvested:', portfolio.totalInvested)
+
+      // Mark holdings array as modified for Mongoose to detect changes
+      portfolio.markModified('holdings')
+      await portfolio.save()
+      
+      console.log('Portfolio saved successfully')
+
+      // Emit realtime portfolio update
+      const socketHelpers = req.app.get('socketHelpers')
+      if (socketHelpers) {
+        socketHelpers.emitPortfolioUpdate(req.user._id.toString(), portfolio)
+      }
+    }
+
+    // Now delete the transaction
+    await Transaction.findByIdAndDelete(req.params.id)
+
     res.json({
       success: true,
-      message: 'Transaction deleted'
+      message: 'Transaction deleted',
+      portfolio
     })
   } catch (error) {
     console.error('Delete transaction error:', error)

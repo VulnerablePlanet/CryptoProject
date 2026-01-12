@@ -20,6 +20,7 @@ const exchangeRoutes = require('./routes/exchange')
 const apikeysRoutes = require('./routes/apikeys')
 const initializeSocket = require('./socket')
 const { startPriceService } = require('./services/priceService')
+const talibRoutes = require('./routes/talib')
 
 const app = express()
 const server = http.createServer(app)
@@ -62,6 +63,7 @@ app.use('/api/trading', tradingRoutes)
 app.use('/api/fibonacci', fibonacciRoutes)
 app.use('/api/exchange', exchangeRoutes)
 app.use('/api/apikeys', apikeysRoutes)
+app.use('/api/talib', talibRoutes)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

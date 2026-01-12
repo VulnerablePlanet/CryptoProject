@@ -16,6 +16,7 @@ const mainNav = [
   { name: 'Transactions', path: '/transactions', icon: 'receipt_long' },
   { name: 'Watchlist', path: '/watchlist', icon: 'star' },
   { name: 'Technical Analysis', path: '/technical-analysis', icon: 'analytics' },
+  { name: 'TA-Lib Advanced', path: '/talib', icon: 'science' },
   { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
   { name: 'Pro Trading', path: '/pro-trading', icon: 'finance_mode' },
   { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },

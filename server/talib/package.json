@@ -1,0 +1,30 @@
+{
+  "name": "talib-advanced-analysis",
+  "version": "1.0.0",
+  "description": "Professional technical analysis module with 12 advanced features",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "technicalindicators": "^3.1.0",
+    "ml-kmeans": "^6.0.0",
+    "mathjs": "^12.0.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "technical-analysis",
+    "trading",
+    "indicators",
+    "crypto",
+    "market-regime",
+    "smart-money-concepts"
+  ],
+  "author": "",
+  "license": "MIT"
+}

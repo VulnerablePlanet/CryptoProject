@@ -13,7 +13,12 @@ const api = axios.create({
 
 export const useAuthStore = defineStore('auth', () => {
   // State - persisted to localStorage
-  const user = useLocalStorage('cryptodev-user', null)
+  const user = useLocalStorage('cryptodev-user', null, {
+    serializer: {
+      read: (v) => v ? JSON.parse(v) : null,
+      write: (v) => JSON.stringify(v)
+    }
+  })
   const accessToken = useLocalStorage('cryptodev-access-token', null)
   const refreshToken = useLocalStorage('cryptodev-refresh-token', null)
   const isLoading = ref(false)
