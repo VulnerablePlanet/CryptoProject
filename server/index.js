@@ -21,6 +21,8 @@ const apikeysRoutes = require('./routes/apikeys')
 const initializeSocket = require('./socket')
 const { startPriceService } = require('./services/priceService')
 const talibRoutes = require('./routes/talib')
+const predictionsRoutes = require('./routes/predictions')
+const fibonacciCcxtRoutes = require('./routes/fibonacciCcxt')
 
 const app = express()
 const server = http.createServer(app)
@@ -64,6 +66,8 @@ app.use('/api/fibonacci', fibonacciRoutes)
 app.use('/api/exchange', exchangeRoutes)
 app.use('/api/apikeys', apikeysRoutes)
 app.use('/api/talib', talibRoutes)
+app.use('/api/predictions', predictionsRoutes)
+app.use('/api/fibonacci-ccxt', fibonacciCcxtRoutes)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -115,5 +119,37 @@ const startServer = async () => {
     process.exit(1)
   }
 }
+
+// Graceful shutdown handler
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`)
+  
+  server.close(() => {
+    console.log('✅ HTTP server closed')
+    
+    // Close Socket.io connections
+    io.close(() => {
+      console.log('✅ Socket.io connections closed')
+      
+      // Close MongoDB connection
+      const mongoose = require('mongoose')
+      mongoose.connection.close(false, () => {
+        console.log('✅ MongoDB connection closed')
+        console.log('👋 Goodbye!')
+        process.exit(0)
+      })
+    })
+  })
+  
+  // Force close after 10 seconds if graceful shutdown fails
+  setTimeout(() => {
+    console.error('⚠️ Could not close connections in time, forcefully shutting down')
+    process.exit(1)
+  }, 10000)
+}
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 
 startServer()

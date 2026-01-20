@@ -112,6 +112,16 @@ const routes = [
         path: 'talib',
         name: 'talib',
         component: () => import('@/views/TALibContent.vue')
+      },
+      {
+        path: 'predictions',
+        name: 'predictions',
+        component: () => import('@/views/PredictionsContent.vue')
+      },
+      {
+        path: 'fibonacci-ccxt',
+        name: 'fibonacci-ccxt',
+        component: () => import('@/views/FibonacciCcxtContent.vue')
       }
     ]
   },

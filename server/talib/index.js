@@ -14,6 +14,24 @@ const mtf = require('./mtf/timeframeAnalyzer');
 const volume = require('./volume/volumeProfile');
 const orderbook = require('./orderbook/intelligence');
 
+// New high-priority modules
+const stops = require('./stops/dynamicStops');
+const risk = require('./risk/riskManager');
+
+// Additional analysis modules
+const adaptiveIndicators = require('./indicators/adaptiveIndicators');
+const candlestickPatterns = require('./patterns/candlestickPatterns');
+const cycleAnalysis = require('./analysis/cycleAnalysis');
+
+// Medium priority modules
+const marketStructure = require('./structure/marketStructure');
+const divergence = require('./divergence/divergenceDetector');
+
+// Low priority modules
+const walkForward = require('./backtest/walkForward');
+const featureStore = require('./ml/featureStore');
+const strategyAdapter = require('./adaptive/strategyAdapter');
+
 // Utilities
 const mathHelpers = require('./utils/mathHelpers');
 const dataValidator = require('./utils/dataValidator');
@@ -64,6 +82,12 @@ async function analyzeComplete(params) {
       obAnalysis = orderbook.analyzeOrderBook(ob, previousOrderbook);
     }
 
+    // 6. Candlestick Patterns
+    const patterns = candlestickPatterns.scanAllPatterns(candles);
+
+    // 7. Cycle Analysis
+    const cycles = cycleAnalysis.analyzeCycles(candles);
+
     const result = {
       regime,
       recommendedStrategies,
@@ -72,6 +96,8 @@ async function analyzeComplete(params) {
       mtf: mtfAnalysis,
       volume: volumeAnalysis,
       orderbook: obAnalysis,
+      patterns,
+      cycles,
       timestamp: new Date(),
       performance: Date.now() - startTime
     };
@@ -139,6 +165,111 @@ module.exports = {
     detectWalls: orderbook.detectWalls,
     detectSpoofing: orderbook.detectCancellations,
     analyzeSpread: orderbook.analyzeSpreadDepth
+  },
+
+  // Dynamic Stops & Take Profit (NEW)
+  stops: {
+    calculateATRStop: stops.calculateATRStop,
+    calculateVolatilityStop: stops.calculateVolatilityStop,
+    calculateStructureStop: stops.calculateStructureStop,
+    calculateDynamic: stops.calculateDynamicStop,
+    initializeTrailing: stops.initializeTrailingStop,
+    updateTrailing: stops.updateTrailingStop,
+    isTrailingHit: stops.isTrailingStopHit,
+    checkTimeStop: stops.checkTimeStop,
+    analyzeOptions: stops.analyzeStopOptions
+  },
+
+  // Risk Management (NEW)
+  risk: {
+    calculatePositionSize: risk.calculatePositionSize,
+    checkExposure: risk.checkExposure,
+    checkCorrelatedExposure: risk.checkCorrelatedExposure,
+    checkKillSwitch: risk.checkKillSwitch,
+    calculateMetrics: risk.calculateRiskMetrics,
+    validateTrade: risk.validateTrade,
+    adjustPositionSize: risk.adjustPositionSize
+  },
+
+  // Adaptive Indicators (previously unexported)
+  adaptive: {
+    calculateKAMA: adaptiveIndicators.calculateKAMA,
+    calculateMAMA: adaptiveIndicators.calculateMAMA,
+    calculateEfficiencyRatio: adaptiveIndicators.calculateEfficiencyRatio,
+    compareWithEMA: adaptiveIndicators.compareWithEMA,
+    analyze: adaptiveIndicators.analyzeAdaptive,
+    generateRecommendations: adaptiveIndicators.generateRecommendations
+  },
+
+  // Candlestick Patterns (previously unexported)
+  patterns: {
+    detectDoji: candlestickPatterns.detectDoji,
+    detectHammer: candlestickPatterns.detectHammer,
+    detectEngulfing: candlestickPatterns.detectEngulfing,
+    detectMorningStar: candlestickPatterns.detectMorningStar,
+    scanAll: candlestickPatterns.scanAllPatterns
+  },
+
+  // Cycle Analysis (previously unexported)
+  cycles: {
+    calculateLinearRegression: cycleAnalysis.calculateLinearRegression,
+    calculateRSquared: cycleAnalysis.calculateRSquared,
+    detectSqueezes: cycleAnalysis.detectSqueezes,
+    analyze: cycleAnalysis.analyzeCycles,
+    generateInsights: cycleAnalysis.generateCycleInsights
+  },
+
+  // Market Structure - Smart Money Concepts (NEW)
+  structure: {
+    findSwingPoints: marketStructure.findSwingPoints,
+    detectBOS: marketStructure.detectBOS,
+    detectCHOCH: marketStructure.detectCHOCH,
+    detectFVG: marketStructure.detectFVG,
+    detectLiquiditySweeps: marketStructure.detectLiquiditySweeps,
+    findEqualLevels: marketStructure.findEqualLevels,
+    determineBias: marketStructure.determineMarketBias,
+    analyze: marketStructure.analyzeMarketStructure
+  },
+
+  // Divergence Detection (NEW)
+  divergence: {
+    findPivots: divergence.findPivots,
+    detectDivergence: divergence.detectDivergence,
+    detectMultiOscillator: divergence.detectMultiOscillatorDivergence,
+    analyze: divergence.analyzeDivergences,
+    checkVolumeConfirmation: divergence.checkVolumeConfirmation
+  },
+
+  // Walk-Forward Testing (NEW)
+  backtest: {
+    generateWindows: walkForward.generateWindows,
+    calculateMetrics: walkForward.calculatePerformanceMetrics,
+    runMonteCarlo: walkForward.runMonteCarloSimulation,
+    optimizeParameters: walkForward.optimizeParameters,
+    runWalkForward: walkForward.runWalkForwardAnalysis,
+    validateRobustness: walkForward.validateRobustness
+  },
+
+  // ML Feature Store (NEW)
+  ml: {
+    extractFeatures: featureStore.extractFeatures,
+    storeFeatures: featureStore.storeFeatures,
+    getStoredFeatures: featureStore.getStoredFeatures,
+    generateDataset: featureStore.generateTrainingDataset,
+    getStatistics: featureStore.getFeatureStatistics,
+    calculateLagFeatures: featureStore.calculateLagFeatures,
+    calculateVolatilityFeatures: featureStore.calculateVolatilityFeatures
+  },
+
+  // Adaptive Strategies (NEW)
+  strategy: {
+    initialize: strategyAdapter.initializeStrategy,
+    recordTrade: strategyAdapter.recordTrade,
+    calculateSizeMultiplier: strategyAdapter.calculateSizeMultiplier,
+    checkEnabled: strategyAdapter.checkStrategyEnabled,
+    getRecommendations: strategyAdapter.getStrategyRecommendations,
+    getPerformanceSummary: strategyAdapter.getPerformanceSummary,
+    getRegimeRecommendations: strategyAdapter.getRegimeSpecificRecommendations
   },
 
   // Utilities

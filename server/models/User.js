@@ -63,6 +63,26 @@ const userSchema = new mongoose.Schema({
     notifications: {
       type: Boolean,
       default: true
+    },
+    chartSettings: {
+      predictions: {
+        visibleRange: {
+          from: { type: Number, default: null },
+          to: { type: Number, default: null }
+        },
+        lastSymbol: { type: String, default: null },
+        lastTimeframe: { type: String, default: null },
+        updatedAt: { type: Date, default: null }
+      },
+      fibonacci: {
+        visibleRange: {
+          from: { type: Number, default: null },
+          to: { type: Number, default: null }
+        },
+        lastSymbol: { type: String, default: null },
+        lastTimeframe: { type: String, default: null },
+        updatedAt: { type: Date, default: null }
+      }
     }
   }
 }, {

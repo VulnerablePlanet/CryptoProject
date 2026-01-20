@@ -389,6 +389,144 @@ const getAllUsers = async (req, res) => {
   }
 }
 
+/**
+ * @desc    Get chart settings for a module
+ * @route   GET /api/auth/settings/chart/:module
+ * @access  Private
+ */
+const getChartSettings = async (req, res) => {
+  try {
+    const { module } = req.params
+    const validModules = ['predictions', 'fibonacci']
+    
+    if (!validModules.includes(module)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid module. Valid options: ${validModules.join(', ')}`
+      })
+    }
+    
+    const user = await User.findById(req.user._id)
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+    
+    const chartSettings = user.settings?.chartSettings?.[module] || null
+    
+    res.json({
+      success: true,
+      module,
+      settings: chartSettings
+    })
+  } catch (error) {
+    console.error('Get chart settings error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching chart settings'
+    })
+  }
+}
+
+/**
+ * @desc    Update chart settings for a module
+ * @route   PUT /api/auth/settings/chart
+ * @access  Private
+ */
+const updateChartSettings = async (req, res) => {
+  try {
+    const { module, chartState, visibleRange, symbol, timeframe } = req.body
+    const validModules = ['predictions', 'fibonacci']
+    
+    if (!module || !validModules.includes(module)) {
+      return res.status(400).json({
+        success: false,
+        message: `Module is required. Valid options: ${validModules.join(', ')}`
+      })
+    }
+    
+    // Build update object
+    const updatePath = `settings.chartSettings.${module}`
+    const updateData = {
+      [`${updatePath}.updatedAt`]: new Date()
+    }
+    
+    // Handle new chartState format (complete chart state)
+    if (chartState) {
+      // Save time-based visibleRange to BOTH nested and flat locations
+      if (chartState.visibleRange) {
+        // Nested (for future use)
+        updateData[`${updatePath}.chartState.visibleRange.from`] = chartState.visibleRange.from
+        updateData[`${updatePath}.chartState.visibleRange.to`] = chartState.visibleRange.to
+        // Flat (for current frontend compatibility)
+        updateData[`${updatePath}.visibleRange.from`] = chartState.visibleRange.from
+        updateData[`${updatePath}.visibleRange.to`] = chartState.visibleRange.to
+      }
+      // Also save logicalRange for legacy compatibility
+      if (chartState.logicalRange) {
+        updateData[`${updatePath}.chartState.logicalRange.from`] = chartState.logicalRange.from
+        updateData[`${updatePath}.chartState.logicalRange.to`] = chartState.logicalRange.to
+      }
+      // Save barSpacing to BOTH locations
+      if (chartState.barSpacing !== undefined) {
+        updateData[`${updatePath}.chartState.barSpacing`] = chartState.barSpacing
+        updateData[`${updatePath}.barSpacing`] = chartState.barSpacing  // Flat for frontend
+      }
+      // Save other options to both locations
+      if (chartState.rightOffset !== undefined) {
+        updateData[`${updatePath}.chartState.rightOffset`] = chartState.rightOffset
+        updateData[`${updatePath}.rightOffset`] = chartState.rightOffset
+      }
+      if (chartState.scrollPosition !== undefined) {
+        updateData[`${updatePath}.chartState.scrollPosition`] = chartState.scrollPosition
+        updateData[`${updatePath}.scrollPosition`] = chartState.scrollPosition
+      }
+    }
+    
+    // Handle legacy visibleRange format for backwards compatibility
+    if (visibleRange && !chartState) {
+      if (visibleRange.from !== undefined) {
+        updateData[`${updatePath}.visibleRange.from`] = visibleRange.from
+      }
+      if (visibleRange.to !== undefined) {
+        updateData[`${updatePath}.visibleRange.to`] = visibleRange.to
+      }
+    }
+    
+    if (symbol !== undefined) {
+      updateData[`${updatePath}.lastSymbol`] = symbol
+    }
+    
+    if (timeframe !== undefined) {
+      updateData[`${updatePath}.lastTimeframe`] = timeframe
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updateData },
+      { new: true }
+    )
+    
+    const savedSettings = user.settings?.chartSettings?.[module]
+    
+    res.json({
+      success: true,
+      message: 'Chart settings saved',
+      module,
+      settings: savedSettings
+    })
+  } catch (error) {
+    console.error('Update chart settings error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error saving chart settings'
+    })
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -398,5 +536,7 @@ module.exports = {
   me,
   updateProfile,
   getUserCount,
-  getAllUsers
+  getAllUsers,
+  getChartSettings,
+  updateChartSettings
 }

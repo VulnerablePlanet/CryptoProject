@@ -20,6 +20,8 @@ const mainNav = [
   { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
   { name: 'Pro Trading', path: '/pro-trading', icon: 'finance_mode' },
   { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },
+  { name: 'Fibonacci CCXT', path: '/fibonacci-ccxt', icon: 'show_chart' },
+  { name: 'Predictions', path: '/predictions', icon: 'auto_graph' },
   { name: 'Pokemon', path: '/pokemon', icon: 'pets' },
   { name: 'Docs', path: '/docs', icon: 'description' },
 ]
