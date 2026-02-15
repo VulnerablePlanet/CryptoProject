@@ -305,6 +305,9 @@ export const useProTradingStore = defineStore('proTrading', () => {
   /**
    * Initialize the store with exchange data
    */
+  /**
+   * Initialize the store with exchange data
+   */
   const initialize = async () => {
     loading.value = true
     error.value = null
@@ -315,7 +318,31 @@ export const useProTradingStore = defineStore('proTrading', () => {
       exchanges.value = exchangeData.exchanges
       
       // Fetch initial candle data
-      await fetchCandles()
+      try {
+        await fetchCandles()
+      } catch (err) {
+        console.warn(`Initial fetch with ${selectedExchange.value} failed, trying fallback...`)
+        // Fallback for Railway/US restrictions
+        const fallbacks = ['coinbase', 'kraken']
+        for (const fb of fallbacks) {
+          if (fb !== selectedExchange.value) {
+            try {
+              console.log(`Trying fallback exchange: ${fb}`)
+              selectedExchange.value = fb
+              // Adjust symbol quote if needed (USDT -> USD for Coinbase/Kraken)
+              if (selectedSymbol.value.quote === 'USDT' && (fb === 'coinbase' || fb === 'kraken')) {
+                selectedSymbol.value.quote = 'USD'
+              }
+              await fetchCandles()
+              console.log(`Fallback to ${fb} successful`)
+              error.value = null // Clear error if fallback succeeded
+              break
+            } catch (fbErr) {
+              console.warn(`Fallback to ${fb} failed`)
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to initialize Pro Trading:', err)
       error.value = err.message
