@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from './auth'
+import { getMultiplePrices } from '@/services/ccxtPrice'
 
 const api = axios.create({
   baseURL: '/api/watchlist',
@@ -82,7 +83,9 @@ export const useWatchlistStore = defineStore('watchlist', () => {
         coinId: coinData.id || coinData.coinId,
         symbol: coinData.symbol,
         name: coinData.name,
-        notes: coinData.notes || ''
+        notes: coinData.notes || '',
+        exchange: coinData.exchange || 'binance',
+        tradingPair: coinData.tradingPair || `${coinData.symbol.toUpperCase()}/USDT`
       })
       
       if (response.data.success) {
@@ -183,6 +186,27 @@ export const useWatchlistStore = defineStore('watchlist', () => {
     error.value = null
   }
 
+  /**
+   * Fetch prices from CCXT exchanges for all watchlist coins
+   * @returns {Promise<Object>} Price data keyed by exchange:symbol
+   */
+  const fetchExchangePrices = async () => {
+    if (coins.value.length === 0) return {}
+    
+    try {
+      const coinsToFetch = coins.value.map(coin => ({
+        exchange: coin.exchange || 'binance',
+        symbol: coin.tradingPair || `${coin.symbol.toUpperCase()}/USDT`
+      }))
+      
+      const { results } = await getMultiplePrices(coinsToFetch)
+      return results
+    } catch (err) {
+      console.error('Error fetching exchange prices:', err)
+      return {}
+    }
+  }
+
   return {
     coins,
     alerts,
@@ -198,6 +222,7 @@ export const useWatchlistStore = defineStore('watchlist', () => {
     createAlert,
     deleteAlert,
     toggleAlert,
-    resetState
+    resetState,
+    fetchExchangePrices
   }
 })

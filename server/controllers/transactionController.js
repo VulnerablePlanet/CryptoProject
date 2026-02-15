@@ -124,7 +124,9 @@ const createTransaction = async (req, res) => {
       notes,
       fromAddress,
       toAddress,
-      txHash
+      txHash,
+      exchange,
+      tradingPair
     } = req.body
 
     const totalValue = amount * priceAtTransaction
@@ -144,6 +146,8 @@ const createTransaction = async (req, res) => {
       fromAddress,
       toAddress,
       txHash,
+      exchange: exchange || 'binance',
+      tradingPair: tradingPair || `${symbol.toUpperCase()}/USDT`,
       status: 'completed'
     })
 

@@ -63,6 +63,17 @@ const transactionSchema = new mongoose.Schema({
   txHash: {
     type: String,
     default: null
+  },
+  // Exchange source for the price
+  exchange: {
+    type: String,
+    default: 'binance',
+    lowercase: true
+  },
+  // Trading pair used (e.g., 'BTC/USDT')
+  tradingPair: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true

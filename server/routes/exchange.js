@@ -8,6 +8,7 @@
 const express = require('express')
 const router = express.Router()
 const ccxtService = require('../services/ccxtService')
+const ccxtPriceService = require('../services/ccxtPriceService')
 
 // ============================================================================
 // Routes
@@ -206,6 +207,76 @@ router.delete('/cache', (req, res) => {
       message: error.message
     })
   }
+})
+
+// ============================================================================
+// Price Endpoints (using ccxtPriceService)
+// ============================================================================
+
+/**
+ * GET /api/exchange/:exchange/price/:base/:quote
+ * Get price for a trading pair from an exchange
+ */
+router.get('/:exchange/price/:base/:quote', async (req, res) => {
+  try {
+    const { exchange, base, quote } = req.params
+    
+    const symbol = `${base.toUpperCase()}/${quote.toUpperCase()}`
+    const priceData = await ccxtPriceService.getPrice(exchange, symbol)
+    
+    res.json({
+      success: true,
+      ...priceData
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+})
+
+/**
+ * POST /api/exchange/prices
+ * Get multiple prices from different exchanges
+ * Body: { coins: [{ exchange, symbol }] }
+ */
+router.post('/prices', async (req, res) => {
+  try {
+    const { coins } = req.body
+    
+    if (!Array.isArray(coins) || coins.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'coins array is required'
+      })
+    }
+    
+    const { results, errors } = await ccxtPriceService.getMultiplePrices(coins)
+    
+    res.json({
+      success: true,
+      count: Object.keys(results).length,
+      results,
+      errors: errors.length > 0 ? errors : undefined
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+})
+
+/**
+ * GET /api/exchange/coin-symbols
+ * Get the CoinGecko to CCXT symbol mapping
+ */
+router.get('/coin-symbols', (req, res) => {
+  res.json({
+    success: true,
+    symbols: ccxtPriceService.COINGECKO_TO_SYMBOL
+  })
 })
 
 module.exports = router

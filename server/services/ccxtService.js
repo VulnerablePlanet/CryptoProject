@@ -14,6 +14,7 @@ const ccxt = require('ccxt')
 
 const SUPPORTED_EXCHANGES = {
   binance: { name: 'Binance', defaultSymbol: 'BTC/USDT', rateLimit: 1200 },
+  bitget: { name: 'Bitget', defaultSymbol: 'BTC/USDT', rateLimit: 200 },
   coinbase: { name: 'Coinbase', defaultSymbol: 'BTC/USD', rateLimit: 300 },
   kraken: { name: 'Kraken', defaultSymbol: 'BTC/USD', rateLimit: 3000 },
   kucoin: { name: 'KuCoin', defaultSymbol: 'BTC/USDT', rateLimit: 200 },
@@ -55,13 +56,34 @@ const getExchange = (exchangeId) => {
   
   if (!exchangeInstances.has(id)) {
     const ExchangeClass = ccxt[id]
-    const exchange = new ExchangeClass({
+    
+    // Exchange-specific configurations
+    let exchangeConfig = {
       enableRateLimit: true,
       timeout: 30000,
       options: {
         defaultType: 'spot'
       }
-    })
+    }
+    
+    // Bitget requires specific productType for spot markets
+    if (id === 'bitget') {
+      exchangeConfig.options = {
+        defaultType: 'spot',
+        defaultSubType: 'spot',
+        // For some Bitget API calls, the 'spot' type needs to be explicit
+        fetchMarkets: { type: 'spot' }
+      }
+    }
+    
+    // Bybit also benefits from explicit type configuration
+    if (id === 'bybit') {
+      exchangeConfig.options = {
+        defaultType: 'spot'
+      }
+    }
+    
+    const exchange = new ExchangeClass(exchangeConfig)
     exchangeInstances.set(id, exchange)
   }
   
@@ -118,8 +140,22 @@ const fetchMarkets = async (exchangeId) => {
     const exchange = getExchange(exchangeId)
     await exchange.loadMarkets()
     
+    const id = exchangeId.toLowerCase()
+    
+    // Filter markets - different exchanges have different structures
     const markets = Object.values(exchange.markets)
-      .filter(m => m.active && m.spot)
+      .filter(m => {
+        // Must be active
+        if (!m.active) return false
+        
+        // For Bitget, check type === 'spot' as well as the spot flag
+        if (id === 'bitget') {
+          return m.spot === true || m.type === 'spot'
+        }
+        
+        // Standard check for other exchanges
+        return m.spot === true
+      })
       .map(m => ({
         symbol: m.symbol,
         base: m.base,
@@ -132,6 +168,8 @@ const fetchMarkets = async (exchangeId) => {
         }
       }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol))
+    
+    console.log(`[ccxtService] Fetched ${markets.length} spot markets from ${exchangeId}`)
     
     setCache(cacheKey, markets)
     return markets

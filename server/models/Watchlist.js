@@ -21,6 +21,17 @@ const watchlistItemSchema = new mongoose.Schema({
   notes: {
     type: String,
     default: ''
+  },
+  // Exchange for price fetching
+  exchange: {
+    type: String,
+    default: 'binance',
+    lowercase: true
+  },
+  // Trading pair (e.g., 'BTC/USDT')
+  tradingPair: {
+    type: String,
+    required: true
   }
 }, { _id: true })
 

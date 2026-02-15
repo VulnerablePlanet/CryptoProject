@@ -1,4 +1,5 @@
 const coingeckoRateLimiter = require('./coingeckoRateLimiter')
+const alertMonitoringService = require('./alertMonitoringService')
 
 // Price service configuration
 const UPDATE_INTERVAL = 30000 // 30 seconds (respecting rate limits)
@@ -73,6 +74,9 @@ const broadcastPrices = async () => {
         timestamp: new Date().toISOString()
       })
     })
+
+    // Check price alerts after each price update
+    await alertMonitoringService.checkAlerts(prices)
   }
 }
 
@@ -82,6 +86,9 @@ const broadcastPrices = async () => {
  */
 const startPriceService = (helpers) => {
   socketHelpers = helpers
+  
+  // Initialize alert monitoring service
+  alertMonitoringService.initialize(helpers)
   
   // Fetch immediately on start
   console.log('🚀 Starting price service...')
@@ -100,6 +107,7 @@ const stopPriceService = () => {
   if (priceInterval) {
     clearInterval(priceInterval)
     priceInterval = null
+    alertMonitoringService.stop()
     console.log('🛑 Price service stopped')
   }
 }

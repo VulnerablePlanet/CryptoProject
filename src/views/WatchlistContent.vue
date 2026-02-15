@@ -2,9 +2,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { useWatchlistStore } from '@/stores/watchlist'
 import { useCryptoStore } from '@/stores/crypto'
+import { getSupportedExchanges, EXCHANGE_NAMES, QUOTE_CURRENCIES } from '@/services/ccxtPrice'
 
 const watchlistStore = useWatchlistStore()
 const cryptoStore = useCryptoStore()
+
+// Exchange and prices from CCXT
+const exchanges = ref([])
+const exchangePrices = ref({})
+const selectedExchange = ref('binance')
+const selectedQuote = ref('USDT')
 
 // Add coin modal
 const showAddModal = ref(false)
@@ -36,15 +43,20 @@ const filteredCoins = computed(() => {
     .slice(0, 5)
 })
 
-// Enhanced watchlist with current prices
+// Enhanced watchlist with current prices from CCXT exchanges
 const enhancedWatchlist = computed(() => {
   return watchlistStore.coins.map(coin => {
     const marketData = cryptoStore.coins.find(c => c.id === coin.coinId)
+    const priceKey = `${coin.exchange || 'binance'}:${coin.tradingPair || coin.symbol + '/USDT'}`
+    const ccxtPrice = exchangePrices.value[priceKey]
+    
     return {
       ...coin,
       image: marketData?.image || null,
-      current_price: marketData?.current_price || 0,
-      price_change_24h: marketData?.price_change_percentage_24h || 0
+      current_price: ccxtPrice?.price || marketData?.current_price || 0,
+      price_change_24h: ccxtPrice?.changePercent24h || marketData?.price_change_percentage_24h || 0,
+      exchange: coin.exchange || 'binance',
+      tradingPair: coin.tradingPair || `${coin.symbol}/USDT`
     }
   })
 })
@@ -86,9 +98,16 @@ const closeAddModal = () => {
 }
 
 const addCoin = async (coin) => {
-  const result = await watchlistStore.addCoin(coin)
+  const tradingPair = `${coin.symbol.toUpperCase()}/${selectedQuote.value}`
+  const result = await watchlistStore.addCoin({
+    ...coin,
+    exchange: selectedExchange.value,
+    tradingPair
+  })
   if (result.success) {
     closeAddModal()
+    // Refresh prices
+    refreshExchangePrices()
   }
 }
 
@@ -114,13 +133,27 @@ const closeAlertModal = () => {
   showAlertModal.value = false
 }
 
+// Sanitize price input - removes commas and parses to float
+const sanitizePrice = (value) => {
+  if (typeof value === 'number') return value
+  // Remove commas and other non-numeric chars except decimal point and minus
+  const cleaned = String(value).replace(/[^0-9.-]/g, '')
+  return parseFloat(cleaned) || 0
+}
+
 const createAlert = async () => {
   if (!alertForm.value.targetPrice) return
+  
+  const sanitizedPrice = sanitizePrice(alertForm.value.targetPrice)
+  if (sanitizedPrice <= 0) {
+    console.error('Invalid price entered')
+    return
+  }
   
   const result = await watchlistStore.createAlert({
     coinId: alertForm.value.coinId,
     symbol: alertForm.value.symbol,
-    targetPrice: parseFloat(alertForm.value.targetPrice),
+    targetPrice: sanitizedPrice,
     condition: alertForm.value.condition
   })
   
@@ -135,12 +168,32 @@ const deleteAlert = async (alertId) => {
   }
 }
 
+// Refresh exchange prices for watchlist coins
+const refreshExchangePrices = async () => {
+  try {
+    const prices = await watchlistStore.fetchExchangePrices()
+    exchangePrices.value = prices
+  } catch (err) {
+    console.error('Error refreshing prices:', err)
+  }
+}
+
 // Initialize
 onMounted(async () => {
+  // Load supported exchanges
+  try {
+    exchanges.value = await getSupportedExchanges()
+  } catch (err) {
+    exchanges.value = Object.entries(EXCHANGE_NAMES).map(([id, name]) => ({ id, name }))
+  }
+  
   if (cryptoStore.coins.length === 0) {
     await cryptoStore.fetchCoins()
   }
   await watchlistStore.fetchWatchlist()
+  
+  // Fetch exchange prices after loading watchlist
+  await refreshExchangePrices()
 })
 </script>
 
@@ -234,6 +287,10 @@ onMounted(async () => {
               :class="coin.price_change_24h >= 0 ? 'text-success' : 'text-danger'"
             >
               {{ formatPercent(coin.price_change_24h) }}
+            </p>
+            <p class="text-[10px] text-text-secondary mt-1">
+              <span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{{ coin.exchange }}</span>
+              <span class="ml-1 opacity-60">{{ coin.tradingPair }}</span>
             </p>
           </div>
           
@@ -335,6 +392,39 @@ onMounted(async () => {
             </div>
 
             <div class="p-6">
+              <!-- Exchange and Quote selectors -->
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label class="block text-xs font-medium text-text-secondary mb-1">Exchange</label>
+                  <select
+                    v-model="selectedExchange"
+                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
+                  >
+                    <option value="binance">Binance</option>
+                    <option value="coinbase">Coinbase</option>
+                    <option value="kraken">Kraken</option>
+                    <option value="kucoin">KuCoin</option>
+                    <option value="bybit">Bybit</option>
+                    <option value="okx">OKX</option>
+                    <option value="bitget">Bitget</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-secondary mb-1">Quote Currency</label>
+                  <select
+                    v-model="selectedQuote"
+                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
+                  >
+                    <option value="USDT">USDT</option>
+                    <option value="USD">USD</option>
+                    <option value="BUSD">BUSD</option>
+                    <option value="USDC">USDC</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                  </select>
+                </div>
+              </div>
+
               <div class="relative">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
                 <input
@@ -357,7 +447,13 @@ onMounted(async () => {
                   <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
                   <div class="flex-1">
                     <p class="font-medium text-slate-900 dark:text-white">{{ coin.name }}</p>
-                    <p class="text-xs text-text-secondary uppercase">{{ coin.symbol }}</p>
+                    <p class="text-xs text-text-secondary">
+                      <span class="uppercase">{{ coin.symbol }}</span>
+                      <span class="mx-1">•</span>
+                      <span class="text-primary">{{ selectedExchange }}</span>
+                      <span class="mx-1">•</span>
+                      <span>{{ coin.symbol.toUpperCase() }}/{{ selectedQuote }}</span>
+                    </p>
                   </div>
                   <span class="font-mono text-sm text-slate-700 dark:text-gray-300">{{ formatCurrency(coin.current_price) }}</span>
                 </button>
@@ -433,11 +529,10 @@ onMounted(async () => {
                 <div class="relative">
                   <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">$</span>
                   <input
-                    v-model.number="alertForm.targetPrice"
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="0.00"
+                    v-model="alertForm.targetPrice"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="90000.00"
                     class="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
                   />
                 </div>

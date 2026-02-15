@@ -46,7 +46,7 @@ const addCoin = async (req, res) => {
       })
     }
 
-    const { coinId, symbol, name, notes } = req.body
+    const { coinId, symbol, name, notes, exchange, tradingPair } = req.body
 
     let watchlist = await Watchlist.findOne({ user: req.user._id })
     
@@ -70,7 +70,9 @@ const addCoin = async (req, res) => {
       coinId,
       symbol: symbol.toUpperCase(),
       name,
-      notes: notes || ''
+      notes: notes || '',
+      exchange: exchange || 'binance',
+      tradingPair: tradingPair || `${symbol.toUpperCase()}/USDT`
     })
 
     await watchlist.save()

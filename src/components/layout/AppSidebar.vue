@@ -10,20 +10,25 @@ const uiStore = useUIStore()
 
 // Dropdown states
 const settingsOpen = ref(false)
+const coingeckoOpen = ref(false)
 
 const mainNav = [
   { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
   { name: 'Transactions', path: '/transactions', icon: 'receipt_long' },
   { name: 'Watchlist', path: '/watchlist', icon: 'star' },
-  { name: 'Technical Analysis', path: '/technical-analysis', icon: 'analytics' },
   { name: 'TA-Lib Advanced', path: '/talib', icon: 'science' },
-  { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
   { name: 'Pro Trading', path: '/pro-trading', icon: 'finance_mode' },
-  { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },
   { name: 'Fibonacci CCXT', path: '/fibonacci-ccxt', icon: 'show_chart' },
   { name: 'Predictions', path: '/predictions', icon: 'auto_graph' },
   { name: 'Pokemon', path: '/pokemon', icon: 'pets' },
   { name: 'Docs', path: '/docs', icon: 'description' },
+]
+
+// CoinGecko submenu (modules that use CoinGecko API)
+const coingeckoNav = [
+  { name: 'Technical Analysis', path: '/technical-analysis', icon: 'analytics' },
+  { name: 'TradingView', path: '/tradingview', icon: 'candlestick_chart' },
+  { name: 'Fibonacci', path: '/fibonacci', icon: 'ssid_chart' },
 ]
 
 // App Settings submenu
@@ -34,9 +39,14 @@ const settingsNav = [
 
 const isActive = (path) => route.path === path
 const isSettingsActive = () => settingsNav.some(item => route.path === item.path)
+const isCoingeckoActive = () => coingeckoNav.some(item => route.path === item.path)
 
 const toggleSettings = () => {
   settingsOpen.value = !settingsOpen.value
+}
+
+const toggleCoingecko = () => {
+  coingeckoOpen.value = !coingeckoOpen.value
 }
 </script>
 
@@ -99,6 +109,59 @@ const toggleSettings = () => {
           <span class="material-symbols-outlined text-[22px]">{{ link.icon }}</span>
           <p v-if="!uiStore.sidebarCollapsed" class="text-sm font-medium">{{ link.name }}</p>
         </RouterLink>
+
+        <!-- CoinGecko Dropdown -->
+        <div>
+          <button
+            @click="toggleCoingecko"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all"
+            :class="[
+              isCoingeckoActive() 
+                ? 'bg-primary/10 text-primary' 
+                : 'text-slate-600 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-card-dark hover:text-slate-900 dark:hover:text-white',
+              uiStore.sidebarCollapsed ? 'justify-center px-0' : ''
+            ]"
+            :title="uiStore.sidebarCollapsed ? 'CoinGecko' : ''"
+          >
+            <span class="material-symbols-outlined text-[22px]">currency_bitcoin</span>
+            <p v-if="!uiStore.sidebarCollapsed" class="text-sm font-medium flex-1 text-left">CoinGecko</p>
+            <span 
+              v-if="!uiStore.sidebarCollapsed" 
+              class="material-symbols-outlined text-[18px] transition-transform duration-200"
+              :class="{ 'rotate-180': coingeckoOpen }"
+            >
+              expand_more
+            </span>
+          </button>
+
+          <!-- CoinGecko Submenu -->
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 max-h-0"
+            enter-to-class="opacity-100 translate-y-0 max-h-40"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 max-h-40"
+            leave-to-class="opacity-0 -translate-y-2 max-h-0"
+          >
+            <div v-if="coingeckoOpen && !uiStore.sidebarCollapsed" class="overflow-hidden">
+              <RouterLink
+                v-for="sublink in coingeckoNav"
+                :key="sublink.path"
+                :to="sublink.path"
+                @click="uiStore.closeSidebar"
+                class="flex items-center gap-3 px-3 py-2 ml-6 rounded-lg transition-all text-sm"
+                :class="[
+                  isActive(sublink.path) 
+                    ? 'bg-primary/10 text-primary border-l-2 border-primary' 
+                    : 'text-slate-500 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-card-dark hover:text-slate-900 dark:hover:text-white'
+                ]"
+              >
+                <span class="material-symbols-outlined text-[18px]">{{ sublink.icon }}</span>
+                <p class="font-medium">{{ sublink.name }}</p>
+              </RouterLink>
+            </div>
+          </Transition>
+        </div>
 
         <!-- App Settings Dropdown -->
         <div>

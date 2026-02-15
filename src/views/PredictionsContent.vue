@@ -259,7 +259,7 @@ function handleVisibleRangeChange(chartState) {
       <div class="flex flex-wrap items-end gap-4 lg:gap-6">
         <!-- Exchange Selector -->
         <ExchangeSelector
-          v-model="store.selectedExchange"
+          :model-value="store.selectedExchange"
           :exchanges="store.exchanges"
           :disabled="isLoading"
           @change="handleExchangeChange"
@@ -267,7 +267,7 @@ function handleVisibleRangeChange(chartState) {
         
         <!-- Crypto Selector -->
         <CryptoSelector
-          v-model="store.selectedSymbol"
+          :model-value="store.selectedSymbol"
           :symbols="store.symbols"
           :loading="store.isLoadingSymbols"
           :disabled="isLoading"

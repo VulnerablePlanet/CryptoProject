@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useTransactionStore } from '@/stores/transactions'
 import { useCryptoStore } from '@/stores/crypto'
+import { getPrice, EXCHANGE_NAMES } from '@/services/ccxtPrice'
 
 const transactionStore = useTransactionStore()
 const cryptoStore = useCryptoStore()
@@ -9,6 +10,11 @@ const cryptoStore = useCryptoStore()
 // Filters
 const typeFilter = ref('')
 const dateFilter = ref('all')
+
+// Exchange state
+const selectedExchange = ref('binance')
+const selectedQuote = ref('USDT')
+const fetchingPrice = ref(false)
 
 // Modal state
 const showRecordModal = ref(false)
@@ -19,7 +25,9 @@ const recordForm = ref({
   coinName: '',
   amount: '',
   priceAtTransaction: '',
-  notes: ''
+  notes: '',
+  exchange: 'binance',
+  tradingPair: ''
 })
 const searchQuery = ref('')
 const isSearching = ref(false)
@@ -114,14 +122,31 @@ const getTypeColor = (type) => {
   return colors[type] || 'text-gray-500 bg-gray-500/10'
 }
 
-const selectCoin = (coin) => {
+const selectCoin = async (coin) => {
   selectedCoin.value = coin
   searchQuery.value = coin.name
   recordForm.value.coinId = coin.id
   recordForm.value.symbol = coin.symbol
   recordForm.value.coinName = coin.name
-  recordForm.value.priceAtTransaction = coin.current_price
+  recordForm.value.exchange = selectedExchange.value
+  recordForm.value.tradingPair = `${coin.symbol.toUpperCase()}/${selectedQuote.value}`
   isSearching.value = false
+  
+  // Fetch real price from selected exchange
+  fetchingPrice.value = true
+  try {
+    const priceData = await getPrice(
+      selectedExchange.value,
+      coin.symbol.toUpperCase(),
+      selectedQuote.value
+    )
+    recordForm.value.priceAtTransaction = priceData.price || coin.current_price
+  } catch (err) {
+    console.warn('Could not fetch exchange price, using fallback:', err)
+    recordForm.value.priceAtTransaction = coin.current_price
+  } finally {
+    fetchingPrice.value = false
+  }
 }
 
 const openRecordModal = () => {
@@ -142,7 +167,9 @@ const resetForm = () => {
     coinName: '',
     amount: '',
     priceAtTransaction: '',
-    notes: ''
+    notes: '',
+    exchange: selectedExchange.value,
+    tradingPair: ''
   }
   searchQuery.value = ''
   selectedCoin.value = null
@@ -159,7 +186,9 @@ const handleSubmit = async () => {
     coinName: recordForm.value.coinName,
     amount: parseFloat(recordForm.value.amount),
     priceAtTransaction: parseFloat(recordForm.value.priceAtTransaction),
-    notes: recordForm.value.notes
+    notes: recordForm.value.notes,
+    exchange: recordForm.value.exchange,
+    tradingPair: recordForm.value.tradingPair
   })
 
   if (result.success) {
@@ -281,9 +310,15 @@ onMounted(async () => {
               
               <!-- Asset -->
               <td class="px-4 py-4">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-slate-900 dark:text-white">{{ tx.coinName }}</span>
-                  <span class="text-xs text-text-secondary uppercase">{{ tx.symbol }}</span>
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-900 dark:text-white">{{ tx.coinName }}</span>
+                    <span class="text-xs text-text-secondary uppercase">{{ tx.symbol }}</span>
+                  </div>
+                  <p class="text-[10px] text-text-secondary">
+                    <span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{{ tx.exchange || 'binance' }}</span>
+                    <span class="ml-1 opacity-60">{{ tx.tradingPair || (tx.symbol + '/USDT') }}</span>
+                  </p>
                 </div>
               </td>
               
@@ -390,6 +425,39 @@ onMounted(async () => {
                   >
                     {{ type }}
                   </button>
+                </div>
+              </div>
+
+              <!-- Exchange and Quote selectors -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Exchange</label>
+                  <select
+                    v-model="selectedExchange"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+                  >
+                    <option value="binance">Binance</option>
+                    <option value="coinbase">Coinbase</option>
+                    <option value="kraken">Kraken</option>
+                    <option value="kucoin">KuCoin</option>
+                    <option value="bybit">Bybit</option>
+                    <option value="okx">OKX</option>
+                    <option value="bitget">Bitget</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Quote Currency</label>
+                  <select
+                    v-model="selectedQuote"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+                  >
+                    <option value="USDT">USDT</option>
+                    <option value="USD">USD</option>
+                    <option value="BUSD">BUSD</option>
+                    <option value="USDC">USDC</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                  </select>
                 </div>
               </div>
 
