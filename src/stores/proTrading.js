@@ -324,10 +324,18 @@ export const useProTradingStore = defineStore('proTrading', () => {
       
       // Clean up common prefixes
       let cleanMsg = err.message
-      if (cleanMsg.includes('451')) return 'Service unavailable in your region (Geo-blocked)'
-      if (cleanMsg.includes('403')) return 'Access forbidden (Geo-blocked)'
-      if (cleanMsg.includes('Net failed')) return 'Network connection failed'
       
+      // Handle HTML/CloudFront Errors
+      if (cleanMsg.includes('CloudFront') || cleanMsg.includes('<!DOCTYPE HTML')) {
+        if (cleanMsg.includes('403')) return 'Access Forbidden (Geo-restricted by CloudFront)'
+        return 'Network Error (Content Blocked by CloudFront)'
+      }
+
+      if (cleanMsg.includes('451')) return 'Service unavailable in your region (Geo-blocked)'
+      if (cleanMsg.includes('403')) return 'Access Forbidden (Geo-blocked)'
+      if (cleanMsg.includes('Net failed')) return 'Network connection failed'
+      if (cleanMsg.includes('500')) return 'Exchange API Error (Internal Server 500)'
+
       return cleanMsg
     }
     

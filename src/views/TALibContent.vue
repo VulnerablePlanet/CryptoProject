@@ -192,9 +192,9 @@ const formatNumber = (value, decimals = 2) => {
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
-      <p class="text-danger text-sm flex-1">{{ talibStore.error }}</p>
+      <p class="text-danger text-sm flex-1">{{ talibStore.error || proTradingStore.error }}</p>
       <button 
-        @click="talibStore.clearError()" 
+        @click="talibStore.clearError(); proTradingStore.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
         <span class="material-symbols-outlined text-[18px]">close</span>
