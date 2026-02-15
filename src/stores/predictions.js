@@ -15,7 +15,10 @@ import axios from 'axios'
 import { useAuthStore } from './auth'
 
 // API base URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// API base URL
+const API_URL = import.meta.env.PROD 
+  ? '/api' 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
 
 // Cache configuration
 const CACHE_TTL_MS = 60 * 1000 // 1 minute

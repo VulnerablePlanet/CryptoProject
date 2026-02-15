@@ -33,6 +33,18 @@ const TIMEFRAME_MAP = {
   '1w': '1w'
 }
 
+// Exchange specific timeframe overrides
+const EXCHANGE_TIMEFRAMES = {
+  coinbase: {
+    '1m': 60,
+    '5m': 300,
+    '15m': 900,
+    '1h': 3600,
+    '6h': 21600,
+    '1d': 86400
+  }
+}
+
 // Cache for exchange instances and data
 const exchangeInstances = new Map()
 const dataCache = new Map()
@@ -61,6 +73,7 @@ const getExchange = (exchangeId) => {
     let exchangeConfig = {
       enableRateLimit: true,
       timeout: 30000,
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       options: {
         defaultType: 'spot'
       }
@@ -198,7 +211,17 @@ const fetchOHLCV = async (exchangeId, symbol, timeframe = '1h', limit = 100) => 
     const exchange = getExchange(exchangeId)
     await exchange.loadMarkets()
     
-    const tf = TIMEFRAME_MAP[timeframe] || '1h'
+    let tf = (EXCHANGE_TIMEFRAMES[exchangeId] && EXCHANGE_TIMEFRAMES[exchangeId][timeframe]) 
+      ? EXCHANGE_TIMEFRAMES[exchangeId][timeframe] 
+      : (TIMEFRAME_MAP[timeframe] || '1h')
+      
+    // Coinbase doesn't support 4h directly. 
+    // Fallback logic: Use 1h (3600s) because 6h is too big of a jump for "intraday" checking
+    if (exchangeId === 'coinbase' && timeframe === '4h') {
+        console.warn('Coinbase does not support 4h candles, fallback to 1h (3600s)')
+        tf = 3600 
+    }
+
     const ohlcv = await exchange.fetchOHLCV(symbol, tf, undefined, limit)
     
     const candles = ohlcv.map(([timestamp, open, high, low, close, volume]) => ({
