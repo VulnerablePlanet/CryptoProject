@@ -26,15 +26,21 @@ export const initSocket = () => {
     return null
   }
   
-  socket = io(window.location.origin, {
+  // Determine socket URL based on environment
+  const socketUrl = import.meta.env.PROD 
+    ? window.location.origin 
+    : 'http://localhost:5000'
+
+  socket = io(socketUrl, {
     auth: {
       token: authStore.token
     },
-    transports: ['websocket', 'polling'],
+    transports: ['websocket'], // Force websocket only to avoid sticky session issues
+    path: '/socket.io/',
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,
     reconnectionDelay: 1000,
-    timeout: 10000
+    timeout: 20000
   })
 
   // Connection events
