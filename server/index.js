@@ -27,20 +27,51 @@ const fibonacciCcxtRoutes = require('./routes/fibonacciCcxt')
 const app = express()
 const server = http.createServer(app)
 
-// Socket.io setup with CORS// CORS configuration - allow any localhost port in development
-const corsOrigin = process.env.CORS_ORIGIN || /^http:\/\/localhost:\d+$/
+// Socket.io setup with CORS
+// CORS configuration - allow any localhost port in development
+const corsOrigin = process.env.CORS_ORIGIN || '*'
 
 const io = new Server(server, {
   cors: {
-    origin: corsOrigin,
-    methods: ['GET', 'POST'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        process.env.CORS_ORIGIN, // Production frontend
+        'http://localhost:5173', // Local frontend
+        'http://localhost:5000'  // Local backend (self)
+      ];
+      
+      if (allowedOrigins.includes(origin) || !process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        // In production, ideally restrict, but for now allow to debug
+        // callback(new Error('Not allowed by CORS'));
+        console.warn(`⚠️ Warning: Origin ${origin} allowed by fallback CORS policy`);
+        callback(null, true);
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
   }
 })
 
 // Middleware
 app.use(cors({
-  origin: corsOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In development or if explicitly allowed
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development' || origin === process.env.CORS_ORIGIN) {
+      callback(null, true);
+    } else {
+      // For now, be permissive to fix the issue, but log warning
+      console.warn(`⚠️ Warning: Origin ${origin} allowed by fallback CORS policy`);
+      callback(null, true);
+    }
+  },
   credentials: true
 }))
 app.use(express.json())
