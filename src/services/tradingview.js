@@ -4,7 +4,10 @@
  */
 
 // API endpoint for OHLC data
-const API_BASE = 'http://localhost:5000/api/ohlc'
+// API endpoint for OHLC data
+const API_BASE = import.meta.env.PROD 
+  ? '/api/ohlc'
+  : 'http://localhost:5000/api/ohlc'
 
 // ============================================================================
 // Data Transformation

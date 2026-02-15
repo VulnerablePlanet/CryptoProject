@@ -3,7 +3,9 @@
  * API client for Fibonacci analysis endpoints
  */
 
-const API_BASE = 'http://localhost:5000/api/fibonacci'
+const API_BASE = import.meta.env.PROD 
+  ? '/api/fibonacci' 
+  : 'http://localhost:5000/api/fibonacci'
 
 /**
  * Get full Fibonacci analysis for a coin

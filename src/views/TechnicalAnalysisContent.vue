@@ -4,7 +4,9 @@ import CandlestickChart from '@/components/crypto/CandlestickChart.vue'
 import { calculateAllIndicators, getRSIInterpretation, generateSparklinePath } from '@/utils/technicalIndicators'
 
 // API endpoints for OHLC data
-const API_BASE = 'http://localhost:5000/api/ohlc'
+const API_BASE = import.meta.env.PROD 
+  ? '/api/ohlc' 
+  : 'http://localhost:5000/api/ohlc'
 
 // State
 const selectedCoin = ref('bitcoin')

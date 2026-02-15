@@ -37,9 +37,8 @@ const lastUpdatedText = computed(() => {
 const fetchCandleData = async () => {
   loadingCandles.value = true
   try {
-    const response = await fetch(
-      `http://localhost:5000/api/ohlc/${store.selectedCoin}/candles?timeframe=${store.selectedTimeframe}&limit=100`
-    )
+    const baseUrl = import.meta.env.PROD ? '/api/ohlc' : 'http://localhost:5000/api/ohlc'
+    const response = await fetch(`${baseUrl}/${store.selectedCoin}/candles?timeframe=${store.selectedTimeframe}&limit=100`)
     const data = await response.json()
     if (data.success) {
       candleData.value = data.candles || []

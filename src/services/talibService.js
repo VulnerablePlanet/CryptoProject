@@ -3,7 +3,9 @@
  * Service layer for communicating with TA-Lib backend API
  */
 
-const API_BASE = 'http://localhost:5000/api/talib'
+const API_BASE = import.meta.env.PROD 
+  ? '/api/talib' 
+  : 'http://localhost:5000/api/talib'
 
 /**
  * Detect market regime for a symbol

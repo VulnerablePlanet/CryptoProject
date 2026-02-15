@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const API_URL = 'http://localhost:5000/api/pokemon'
+const API_URL = import.meta.env.PROD 
+  ? '/api/pokemon' 
+  : 'http://localhost:5000/api/pokemon'
 
 /**
  * Obtener lista de pokémons con paginación

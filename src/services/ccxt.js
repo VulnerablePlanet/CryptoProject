@@ -5,7 +5,9 @@
  * Service for calling backend exchange API endpoints.
  */
 
-const API_BASE = 'http://localhost:5000/api/exchange'
+const API_BASE = import.meta.env.PROD 
+  ? '/api/exchange' 
+  : 'http://localhost:5000/api/exchange'
 
 /**
  * Fetch list of supported exchanges

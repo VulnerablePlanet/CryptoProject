@@ -3,7 +3,9 @@
  * API client for CCXT-based Fibonacci analysis endpoints
  */
 
-const API_BASE = 'http://localhost:5000/api/fibonacci-ccxt'
+const API_BASE = import.meta.env.PROD 
+  ? '/api/fibonacci-ccxt' 
+  : 'http://localhost:5000/api/fibonacci-ccxt'
 
 /**
  * Get full Fibonacci analysis with confluence for a trading pair
