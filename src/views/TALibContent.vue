@@ -12,15 +12,19 @@
  */
 
 import { onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useTALibStore } from '@/stores/talib'
 import { useProTradingStore } from '@/stores/proTrading'
 
 const talibStore = useTALibStore()
 const proTradingStore = useProTradingStore()
 
+// Destructure reactive state from proTradingStore
+const { exchanges, selectedExchange } = storeToRefs(proTradingStore)
+
 // Computed
-const isLoading = computed(() => talibStore.loading)
-const hasError = computed(() => !!talibStore.error)
+const isLoading = computed(() => talibStore.loading || proTradingStore.loading)
+const hasError = computed(() => !!talibStore.error || !!proTradingStore.error)
 const hasData = computed(() => talibStore.hasData)
 
 // Lifecycle
@@ -31,8 +35,18 @@ onMounted(async () => {
 })
 
 // Event Handlers
+const handleExchangeChange = async (event) => {
+  const exchangeId = event.target.value
+  await proTradingStore.changeExchange(exchangeId)
+  // Re-analyze after exchange change (new candles fetched automatically by store)
+  await handleAnalyze()
+}
+
 const handleSymbolSelect = async (base, quote) => {
+  // Update both stores
+  await proTradingStore.changeSymbol(base, quote)
   talibStore.changeSymbol(base, quote)
+  
   // Auto-analyze when symbol changes
   await handleAnalyze()
 }
@@ -46,7 +60,7 @@ const handleAnalyze = async () => {
   const rawCandles = proTradingStore.candles || []
   
   if (!rawCandles || rawCandles.length < 50) {
-    talibStore.error = 'No candle data available. Please load historical data in Pro Trading first.'
+    talibStore.error = 'No candle data available. Please load historical data first.'
     return
   }
   
@@ -118,28 +132,56 @@ const formatNumber = (value, decimals = 2) => {
       </div>
     </div>
 
-    <!-- Symbol Selector -->
+    <!-- Controls Selector -->
     <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
-      <div class="flex flex-wrap items-center gap-4">
-        <label class="text-sm text-text-secondary font-medium">Select Symbol:</label>
-        <div class="flex gap-2 flex-wrap">
-          <button
-            v-for="symbol in talibStore.POPULAR_SYMBOLS"
-            :key="`${symbol.base}${symbol.quote}`"
-            @click="handleSymbolSelect(symbol.base, symbol.quote)"
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-            :class="talibStore.selectedSymbol.base === symbol.base && talibStore.selectedSymbol.quote === symbol.quote
-              ? 'bg-primary text-white'
-              : 'bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-text-secondary hover:bg-gray-200 dark:hover:bg-border-dark'"
-          >
-            {{ symbol.base }}/{{ symbol.quote }}
-          </button>
+      <div class="flex flex-col md:flex-row gap-6">
+        <!-- Exchange Selector -->
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-text-secondary font-medium">Exchange</label>
+          <div class="relative">
+            <select
+              :value="selectedExchange"
+              @change="handleExchangeChange"
+              class="w-full md:w-48 appearance-none bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-border-dark rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+            >
+              <option 
+                v-for="exchange in exchanges" 
+                :key="exchange.id" 
+                :value="exchange.id"
+              >
+                {{ exchange.name }}
+              </option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none text-[18px]">
+              expand_more
+            </span>
+          </div>
         </div>
-        
-        <div class="ml-auto flex items-center gap-2">
-          <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">
-            {{ talibStore.currentSymbol }}
-          </span>
+
+        <!-- Symbol Selector -->
+        <div class="flex flex-col gap-2 flex-1">
+          <label class="text-sm text-text-secondary font-medium">Select Symbol</label>
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="flex gap-2 flex-wrap">
+              <button
+                v-for="symbol in talibStore.POPULAR_SYMBOLS"
+                :key="`${symbol.base}${symbol.quote}`"
+                @click="handleSymbolSelect(symbol.base, symbol.quote)"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                :class="talibStore.selectedSymbol.base === symbol.base && talibStore.selectedSymbol.quote === symbol.quote
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-text-secondary hover:bg-gray-200 dark:hover:bg-border-dark'"
+              >
+                {{ symbol.base }}/{{ symbol.quote }}
+              </button>
+            </div>
+            
+            <div class="ml-auto flex items-center gap-2">
+              <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">
+                {{ talibStore.currentSymbol }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
