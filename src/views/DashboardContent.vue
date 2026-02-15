@@ -2,17 +2,14 @@
 import { onMounted, computed, ref } from 'vue'
 import { useCryptoStore } from '@/stores/crypto'
 import { usePortfolioStore } from '@/stores/portfolio'
-import PriceChart from '@/components/crypto/PriceChart.vue'
+
 import AssetTable from '@/components/crypto/AssetTable.vue'
 
 const cryptoStore = useCryptoStore()
 const portfolioStore = usePortfolioStore()
 
 const selectedCoinId = ref('bitcoin')
-const chartDays = ref('7')
 
-// Computed - Real portfolio data
-const chartData = computed(() => cryptoStore.chartData)
 
 // Calculate real portfolio value using holdings from DB + live prices
 const portfolioValue = computed(() => {
@@ -67,15 +64,11 @@ const portfolioChange = computed(() => {
 })
 
 // Actions
-const handleTimeframeChange = async (days) => {
-  chartDays.value = days
-  await cryptoStore.fetchChartData(selectedCoinId.value, days)
-}
+
 
 // Handle coin selection from asset table
 const handleCoinSelect = async (coin) => {
   selectedCoinId.value = coin.id || coin.coinId
-  await cryptoStore.fetchChartData(selectedCoinId.value, chartDays.value)
 }
 
 // Get selected coin data
@@ -116,7 +109,7 @@ onMounted(async () => {
     cryptoStore.initializeData(),
     portfolioStore.fetchPortfolio()
   ])
-  await cryptoStore.fetchChartData(selectedCoinId.value, chartDays.value)
+
 })
 </script>
 
@@ -131,7 +124,7 @@ onMounted(async () => {
         <div class="absolute -right-10 -top-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500"></div>
         
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 relative z-10">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center relative z-10">
           <div>
             <div class="flex items-center gap-2 mb-1">
               <p class="text-text-secondary text-sm font-medium">Total Portfolio Value</p>
@@ -165,13 +158,6 @@ onMounted(async () => {
           </div>
         </div>
         
-        <!-- Chart -->
-        <PriceChart 
-          :data="chartData"
-          :loading="cryptoStore.loading && (!chartData || chartData.length === 0)"
-          :height="220"
-          @timeframe-change="handleTimeframeChange"
-        />
       </div>
     </div>
     
