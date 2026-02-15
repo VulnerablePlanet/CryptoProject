@@ -36,11 +36,17 @@ export const useCryptoStore = defineStore('crypto', () => {
     
     try {
       const data = await getCoinsMarkets(params)
-      coins.value = data
-      lastUpdated.value = new Date()
+      if (Array.isArray(data)) {
+        coins.value = data
+        lastUpdated.value = new Date()
+      } else {
+        throw new Error('Invalid data format received from API')
+      }
     } catch (err) {
       error.value = err.message || 'Error fetching coins'
       console.error('Error fetching coins:', err)
+      // If error occurs, fail silently for now or keep old data
+      if (!Array.isArray(coins.value)) coins.value = []
     } finally {
       loading.value = false
     }
@@ -101,6 +107,12 @@ export const useCryptoStore = defineStore('crypto', () => {
    */
   const updatePrices = (priceData) => {
     if (!priceData?.prices || !Array.isArray(priceData.prices)) return
+    
+    // Ensure coins.value is an array before proceeding
+    if (!Array.isArray(coins.value)) {
+      console.warn('coins.value is not an array, initializing as empty array')
+      coins.value = []
+    }
     
     // Update coins with new prices
     priceData.prices.forEach(newCoin => {
