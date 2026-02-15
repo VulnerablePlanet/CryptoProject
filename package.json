@@ -8,6 +8,8 @@
     "kill-port": "npx kill-port 5000",
     "preserver": "npm run kill-port",
     "server": "node server/index.js",
+    "start": "node server/index.js",
+    "postinstall": "cd server && npm install",
     "dev:all": "concurrently --kill-others \"npm run dev\" \"npm run server\"",
     "build": "vite build",
     "preview": "vite preview"

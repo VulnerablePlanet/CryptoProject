@@ -67,7 +67,19 @@ app.use('/api/exchange', exchangeRoutes)
 app.use('/api/apikeys', apikeysRoutes)
 app.use('/api/talib', talibRoutes)
 app.use('/api/predictions', predictionsRoutes)
+app.use('/api/predictions', predictionsRoutes)
 app.use('/api/fibonacci-ccxt', fibonacciCcxtRoutes)
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../dist')))
+
+  // Any route not handled by API will be handled by the frontend
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'))
+  })
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -2,7 +2,16 @@ const mongoose = require('mongoose')
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI)
+    const isProduction = process.env.NODE_ENV === 'production'
+    const mongoURI = isProduction ? process.env.MONGODB_URI_PROD : process.env.MONGODB_URI_LOCAL
+    
+    console.log(`🔌 Connecting to MongoDB (${isProduction ? 'Production' : 'Local'})...`)
+
+    if (!mongoURI) {
+        throw new Error(`MongoDB URI not found for ${process.env.NODE_ENV} environment`)
+    }
+
+    const conn = await mongoose.connect(mongoURI)
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`)
     
