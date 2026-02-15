@@ -34,15 +34,9 @@ const TIMEFRAME_MAP = {
 }
 
 // Exchange specific timeframe overrides
+// Exchange specific timeframe overrides
 const EXCHANGE_TIMEFRAMES = {
-  coinbase: {
-    '1m': 60,
-    '5m': 300,
-    '15m': 900,
-    '1h': 3600,
-    '6h': 21600,
-    '1d': 86400
-  }
+  // Leaving empty to rely on CCXT defaults which have improved
 }
 
 // Cache for exchange instances and data

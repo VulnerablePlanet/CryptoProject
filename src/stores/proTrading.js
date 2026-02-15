@@ -302,9 +302,42 @@ export const useProTradingStore = defineStore('proTrading', () => {
   // Actions
   // ============================================================================
   
-  /**
-   * Initialize the store with exchange data
-   */
+  // Helper to extract clean error message
+  const extractErrorMessage = (err) => {
+    if (!err) return 'Unknown error occurred'
+    
+    // Check for specific backend error structure
+    if (err.message) {
+      // If message is a JSON string (often from backend proxy), parse it
+      try {
+        // Example: "Error: binance GET ... 451 ... {"code":0,"msg":"..."}"
+        const jsonMatch = err.message.match(/({.*})/)
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[1])
+          if (parsed && (parsed.msg || parsed.message)) {
+            return `${parsed.msg || parsed.message}`
+          }
+        }
+      } catch (e) {
+        // If parsing fails, use the original message
+      }
+      
+      // Clean up common prefixes
+      let cleanMsg = err.message
+      if (cleanMsg.includes('451')) return 'Service unavailable in your region (Geo-blocked)'
+      if (cleanMsg.includes('403')) return 'Access forbidden (Geo-blocked)'
+      if (cleanMsg.includes('Net failed')) return 'Network connection failed'
+      
+      return cleanMsg
+    }
+    
+    return 'Unknown error'
+  }
+
+  // ============================================================================
+  // Actions
+  // ============================================================================
+  
   /**
    * Initialize the store with exchange data
    */
@@ -345,7 +378,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       }
     } catch (err) {
       console.error('Failed to initialize Pro Trading:', err)
-      error.value = err.message
+      error.value = extractErrorMessage(err)
     } finally {
       loading.value = false
     }
@@ -375,7 +408,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       calculateIndicators()
     } catch (err) {
       console.error('Failed to fetch candles:', err)
-      error.value = err.message
+      error.value = extractErrorMessage(err)
     } finally {
       loading.value = false
     }
@@ -434,7 +467,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       }
     } catch (err) {
       console.error('Sync failed:', err)
-      error.value = err.message
+      error.value = extractErrorMessage(err)
     } finally {
       syncing.value = false
     }
@@ -459,15 +492,43 @@ export const useProTradingStore = defineStore('proTrading', () => {
   /**
    * Change selected exchange
    */
+  /**
+   * Change selected exchange
+   */
   const changeExchange = async (exchangeId) => {
     selectedExchange.value = exchangeId
+    
+    // Auto-adjust symbol quote currency
+    if (exchangeId === 'coinbase' || exchangeId === 'kraken') {
+      if (selectedSymbol.value.quote === 'USDT') {
+        selectedSymbol.value.quote = 'USD'
+      }
+    } else {
+      // For Binance, Bybit, etc. prefer USDT
+      if (selectedSymbol.value.quote === 'USD') {
+        selectedSymbol.value.quote = 'USDT'
+      }
+    }
+    
     await fetchCandles()
   }
   
   /**
    * Change selected symbol
    */
-  const changeSymbol = async (base, quote) => {
+  /**
+   * Change selected symbol
+   */
+  const changeSymbol = async (base, _quote) => { // _quote is user input, but we might override it
+    let quote = _quote
+    
+    // Auto-adjust quote based on exchange constraints
+    if (selectedExchange.value === 'coinbase' || selectedExchange.value === 'kraken') {
+      if (quote === 'USDT') quote = 'USD'
+    } else {
+      if (quote === 'USD') quote = 'USDT'
+    }
+    
     selectedSymbol.value = { base, quote }
     await fetchCandles()
     
