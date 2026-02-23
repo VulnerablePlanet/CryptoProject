@@ -72,6 +72,10 @@ const getRateLimitMetrics = () => ({
  * Log rate limit activity
  */
 const logRateLimit = (action, details = {}) => {
+  // Only log significant events to avoid terminal noise
+  const significantActions = ['ERROR', 'RATE_LIMITED', 'BACKOFF_APPLIED', 'BACKOFF_RESET']
+  if (!significantActions.includes(action)) return
+
   const timestamp = new Date().toISOString()
   const queueLen = callQueue.length
   console.log(`⏱️ [RateLimit] ${timestamp} | ${action} | Queue: ${queueLen} | Backoff: ${currentBackoffMultiplier}x`, 
@@ -130,7 +134,7 @@ const rateLimitedCall = async (requestFn) => {
       metrics.queueHighWaterMark = callQueue.length
     }
     
-    logRateLimit('ENQUEUED', { position: callQueue.length })
+    // logRateLimit('ENQUEUED', { position: callQueue.length })
     processQueue()
   })
 }
@@ -193,7 +197,7 @@ const processQueue = async () => {
   }
   
   isProcessingQueue = false
-  logRateLimit('QUEUE_EMPTY')
+  // logRateLimit('QUEUE_EMPTY')
 }
 
 /**

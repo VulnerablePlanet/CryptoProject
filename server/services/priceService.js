@@ -58,7 +58,7 @@ const broadcastPrices = async () => {
   const prices = await fetchPrices()
   
   if (prices) {
-    console.log(`📊 Broadcasting prices for ${prices.length} coins`)
+    // console.log(`📊 Broadcasting prices for ${prices.length} coins`)
     socketHelpers.emitPriceUpdate({
       prices,
       timestamp: new Date().toISOString()

@@ -209,11 +209,12 @@ const fetchOHLCV = async (exchangeId, symbol, timeframe = '1h', limit = 100) => 
       ? EXCHANGE_TIMEFRAMES[exchangeId][timeframe] 
       : (TIMEFRAME_MAP[timeframe] || '1h')
       
-    // Coinbase doesn't support 4h directly. 
+    // Coinbase doesn't support 4h directly (native timeframes: 1m, 5m, 15m, 1h, 6h, 1d)
     // Fallback logic: Use 1h (3600s) because 6h is too big of a jump for "intraday" checking
     if (exchangeId === 'coinbase' && timeframe === '4h') {
-        console.warn('Coinbase does not support 4h candles, fallback to 1h (3600s)')
-        tf = 3600 
+        // Reduced to log just once or on demand, but keeping it as a clear implementation note
+        // console.warn('[ccxtService] Coinbase does not support native 4h candles, falling back to 1h.')
+        tf = '1h' 
     }
 
     const ohlcv = await exchange.fetchOHLCV(symbol, tf, undefined, limit)
