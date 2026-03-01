@@ -906,4 +906,4 @@ npm run build
 
 ## 📝 Licencia
 
-MIT
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.

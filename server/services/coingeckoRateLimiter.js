@@ -47,14 +47,17 @@ const metrics = {
 const getApiKey = () => process.env.COINGECKO_API_KEY || ''
 
 /**
- * Add API key to params if available
+ * Get headers with API key if available
  */
-const addApiKeyToParams = (params = {}) => {
+const getHeadersWithApiKey = (existingHeaders = {}) => {
   const apiKey = getApiKey()
   if (apiKey) {
-    params.x_cg_demo_api_key = apiKey
+    return {
+      ...existingHeaders,
+      'x-cg-demo-api-key': apiKey
+    }
   }
-  return params
+  return existingHeaders
 }
 
 /**
@@ -209,7 +212,8 @@ const processQueue = async () => {
 const get = async (endpoint, params = {}, timeout = 15000) => {
   return rateLimitedCall(async () => {
     const response = await axios.get(`${COINGECKO_API}${endpoint}`, {
-      params: addApiKeyToParams(params),
+      params,
+      headers: getHeadersWithApiKey(),
       timeout
     })
     return response.data
@@ -230,7 +234,7 @@ const getServiceStatus = () => ({
 module.exports = {
   get,
   rateLimitedCall,
-  addApiKeyToParams,
+  getHeadersWithApiKey,
   getRateLimitMetrics,
   getServiceStatus,
   COINGECKO_API,
