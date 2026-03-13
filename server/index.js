@@ -27,34 +27,60 @@ const fibonacciCcxtRoutes = require('./routes/fibonacciCcxt')
 const app = express()
 const server = http.createServer(app)
 
-// Socket.io setup with CORS// CORS configuration - allow any localhost port in development
-const corsOrigin = process.env.CORS_ORIGIN || /^http:\/\/localhost:\d+$/
+const parseAllowedOrigins = () => {
+  const fromEnv = process.env.CORS_ALLOWED_ORIGINS || process.env.CORS_ORIGIN
+  if (!fromEnv) return ['http://localhost:5173']
+
+  return fromEnv
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+}
+
+const allowedOrigins = parseAllowedOrigins()
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    return callback(new Error('Not allowed by CORS'))
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true
+}
 
 const io = new Server(server, {
-  cors: {
-    origin: corsOrigin,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+  cors: corsOptions
 })
 
-// Middleware
-app.use(cors({
-  origin: corsOrigin,
-  credentials: true
+app.use(cors(corsOptions))
+app.use(express.json({ limit: '1mb' }))
+app.use(express.urlencoded({ extended: true, limit: '1mb' }))
+
+// Basic security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('Referrer-Policy', 'no-referrer')
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains')
+  }
+
+  next()
+})
+
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads'), {
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:;")
+  }
 }))
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-// Serve static files for uploads
-app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')))
-
-// Initialize Socket.io
 const socketHelpers = initializeSocket(io)
 app.set('socketHelpers', socketHelpers)
 
-// API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/portfolio', portfolioRoutes)
 app.use('/api/transactions', transactionRoutes)
@@ -68,21 +94,16 @@ app.use('/api/exchange', exchangeRoutes)
 app.use('/api/apikeys', apikeysRoutes)
 app.use('/api/talib', talibRoutes)
 app.use('/api/predictions', predictionsRoutes)
-app.use('/api/predictions', predictionsRoutes)
 app.use('/api/fibonacci-ccxt', fibonacciCcxtRoutes)
 
-// Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-  // Set static folder
   app.use(express.static(path.join(__dirname, '../dist')))
 
-  // Any route not handled by API will be handled by the frontend
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../dist', 'index.html'))
   })
 }
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -91,7 +112,6 @@ app.get('/api/health', (req, res) => {
   })
 })
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -99,32 +119,25 @@ app.use((req, res) => {
   })
 })
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err)
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ success: false, message: err.message })
+  }
   res.status(500).json({
     success: false,
     message: 'Internal server error'
   })
 })
 
-// Start server
 const PORT = process.env.PORT || 5000
 
 const startServer = async () => {
   try {
-    // Connect to MongoDB
     await connectDB()
-    
-    // Start listening
+
     server.listen(PORT, () => {
-      console.log(`
-🚀 Server running on port ${PORT}
-📡 Socket.io ready
-🌐 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}
-      `)
-      
-      // Start price update service
+      console.log(`\n🚀 Server running on port ${PORT}\n📡 Socket.io ready\n🌐 CORS allowed origins: ${allowedOrigins.join(', ')}\n      `)
       startPriceService(socketHelpers)
     })
   } catch (error) {
@@ -133,18 +146,15 @@ const startServer = async () => {
   }
 }
 
-// Graceful shutdown handler
 const gracefulShutdown = (signal) => {
   console.log(`\n${signal} received. Shutting down gracefully...`)
-  
+
   server.close(() => {
     console.log('✅ HTTP server closed')
-    
-    // Close Socket.io connections
+
     io.close(() => {
       console.log('✅ Socket.io connections closed')
-      
-      // Close MongoDB connection
+
       const mongoose = require('mongoose')
       mongoose.connection.close(false, () => {
         console.log('✅ MongoDB connection closed')
@@ -153,15 +163,13 @@ const gracefulShutdown = (signal) => {
       })
     })
   })
-  
-  // Force close after 10 seconds if graceful shutdown fails
+
   setTimeout(() => {
     console.error('⚠️ Could not close connections in time, forcefully shutting down')
     process.exit(1)
   }, 10000)
 }
 
-// Listen for termination signals
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 

@@ -1,6 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const ohlcController = require('../controllers/ohlcController')
+const { auth } = require('../middleware/auth')
+const requireRole = require('../middleware/requireRole')
+const { heavyOpsRateLimiter } = require('../middleware/rateLimit')
 
 /**
  * @route   GET /api/ohlc/coins
@@ -35,7 +38,7 @@ router.get('/:coinId/candles', ohlcController.getCandles)
  * @body    vs_currency - quote currency
  * @access  Public
  */
-router.post('/:coinId/sync', ohlcController.syncCoin)
+router.post('/:coinId/sync', auth, requireRole('admin'), heavyOpsRateLimiter, ohlcController.syncCoin)
 
 /**
  * @route   POST /api/ohlc/:coinId/sync-all
@@ -43,6 +46,6 @@ router.post('/:coinId/sync', ohlcController.syncCoin)
  * @body    vs_currency - quote currency
  * @access  Public
  */
-router.post('/:coinId/sync-all', ohlcController.syncAllTimeframes)
+router.post('/:coinId/sync-all', auth, requireRole('admin'), heavyOpsRateLimiter, ohlcController.syncAllTimeframes)
 
 module.exports = router

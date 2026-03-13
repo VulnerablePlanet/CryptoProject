@@ -3,53 +3,41 @@ import { ref, computed } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import axios from 'axios'
 
-// Create axios instance for auth requests
 const api = axios.create({
   baseURL: '/api/auth',
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 })
 
 export const useAuthStore = defineStore('auth', () => {
-  // State - persisted to localStorage
   const user = useLocalStorage('cryptodev-user', null, {
     serializer: {
-      read: (v) => v ? JSON.parse(v) : null,
+      read: (v) => (v ? JSON.parse(v) : null),
       write: (v) => JSON.stringify(v)
     }
   })
-  const accessToken = useLocalStorage('cryptodev-access-token', null)
-  const refreshToken = useLocalStorage('cryptodev-refresh-token', null)
+
+  const accessToken = ref(null)
   const isLoading = ref(false)
   const error = ref(null)
   const isRefreshing = ref(false)
   let refreshPromise = null
 
-  // Getters
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value && !!user.value?.name)
   const userName = computed(() => user.value?.name || '')
   const userEmail = computed(() => user.value?.email || '')
   const userAvatar = computed(() => user.value?.avatar || null)
-  // Legacy getter for compatibility
   const token = computed(() => accessToken.value)
 
-  /**
-   * Refresh the access token using refresh token
-   */
   const refreshAccessToken = async () => {
-    // If already refreshing, return the existing promise
     if (isRefreshing.value && refreshPromise) {
       return refreshPromise
     }
 
-    if (!refreshToken.value) {
-      logout()
-      return null
-    }
-
     isRefreshing.value = true
-    refreshPromise = api.post('/refresh', { refreshToken: refreshToken.value })
+    refreshPromise = api.post('/refresh')
       .then(response => {
         if (response.data.success) {
           accessToken.value = response.data.accessToken
@@ -62,7 +50,6 @@ export const useAuthStore = defineStore('auth', () => {
       })
       .catch(err => {
         console.error('Token refresh failed:', err)
-        // Refresh token is invalid, logout user
         logout()
         return null
       })
@@ -74,7 +61,6 @@ export const useAuthStore = defineStore('auth', () => {
     return refreshPromise
   }
 
-  // Axios request interceptor - add token to requests
   api.interceptors.request.use((config) => {
     if (accessToken.value) {
       config.headers.Authorization = `Bearer ${accessToken.value}`
@@ -82,17 +68,14 @@ export const useAuthStore = defineStore('auth', () => {
     return config
   })
 
-  // Axios response interceptor - handle 401 and auto-refresh
   api.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config
 
-      // If 401 and we haven't retried yet
       if (error.response?.status === 401 && !originalRequest._retry) {
-        // Don't retry on login/register/refresh endpoints
-        if (originalRequest.url?.includes('/refresh') || 
-            originalRequest.url?.includes('/login') || 
+        if (originalRequest.url?.includes('/refresh') ||
+            originalRequest.url?.includes('/login') ||
             originalRequest.url?.includes('/register')) {
           return Promise.reject(error)
         }
@@ -110,26 +93,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   )
 
-  // Actions
-
-  /**
-   * Login with email and password
-   */
   const login = async (email, password) => {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await api.post('/login', { email, password })
-      
+
       if (response.data.success) {
         user.value = response.data.user
         accessToken.value = response.data.accessToken
-        refreshToken.value = response.data.refreshToken
         return { success: true, user: response.data.user }
-      } else {
-        throw new Error(response.data.message || 'Login failed')
       }
+
+      throw new Error(response.data.message || 'Login failed')
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Login failed'
       error.value = message
@@ -139,33 +116,28 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Register new user
-   */
   const register = async (name, email, password, confirmPassword) => {
     isLoading.value = true
     error.value = null
 
     try {
-      // Client-side validation
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match')
       }
 
       const response = await api.post('/register', { name, email, password })
-      
+
       if (response.data.success) {
         user.value = response.data.user
         accessToken.value = response.data.accessToken
-        refreshToken.value = response.data.refreshToken
         return { success: true, user: response.data.user }
-      } else {
-        throw new Error(response.data.message || 'Registration failed')
       }
+
+      throw new Error(response.data.message || 'Registration failed')
     } catch (err) {
-      const message = err.response?.data?.message 
+      const message = err.response?.data?.message
         || err.response?.data?.errors?.[0]?.msg
-        || err.message 
+        || err.message
         || 'Registration failed'
       error.value = message
       return { success: false, error: message }
@@ -174,43 +146,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Fetch current user data from server
-   */
   const fetchUser = async () => {
     if (!accessToken.value) return null
 
     try {
       const response = await api.get('/me')
-      
+
       if (response.data.success) {
         user.value = response.data.user
         return response.data.user
       }
     } catch (err) {
-      // Token might be expired, the interceptor will handle refresh
       console.error('Error fetching user:', err)
     }
-    
+
     return null
   }
 
-  /**
-   * Update user profile
-   */
   const updateProfile = async (data) => {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await api.put('/profile', data)
-      
+
       if (response.data.success) {
         user.value = response.data.user
         return { success: true, user: response.data.user }
-      } else {
-        throw new Error(response.data.message || 'Update failed')
       }
+
+      throw new Error(response.data.message || 'Update failed')
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Update failed'
       error.value = message
@@ -220,59 +185,40 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Logout user
-   */
   const logout = async () => {
     try {
-      // Revoke refresh token on server
-      if (refreshToken.value) {
-        await api.post('/logout', { refreshToken: refreshToken.value }).catch(() => {})
-      }
+      await api.post('/logout').catch(() => {})
     } finally {
-      // Clear local state regardless of server response
       user.value = null
       accessToken.value = null
-      refreshToken.value = null
       error.value = null
     }
   }
 
-  /**
-   * Logout from all devices
-   */
   const logoutAll = async () => {
     try {
       await api.post('/logout-all')
     } finally {
       user.value = null
       accessToken.value = null
-      refreshToken.value = null
       error.value = null
     }
   }
 
-  /**
-   * Clear error
-   */
   const clearError = () => {
     error.value = null
   }
 
   return {
-    // State
     user,
-    token, // Legacy compatibility
+    token,
     accessToken,
-    refreshToken,
     isLoading,
     error,
-    // Getters
     isAuthenticated,
     userName,
     userEmail,
     userAvatar,
-    // Actions
     login,
     register,
     logout,

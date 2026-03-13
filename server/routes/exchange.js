@@ -9,6 +9,9 @@ const express = require('express')
 const router = express.Router()
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
+const { auth } = require('../middleware/auth')
+const requireRole = require('../middleware/requireRole')
+const { heavyOpsRateLimiter } = require('../middleware/rateLimit')
 
 // ============================================================================
 // Routes
@@ -192,7 +195,7 @@ router.get('/:exchange/timeframes', (req, res) => {
  * DELETE /api/exchange/cache
  * Clear cache (optionally for specific exchange)
  */
-router.delete('/cache', (req, res) => {
+router.delete('/cache', auth, requireRole('admin'), heavyOpsRateLimiter, (req, res) => {
   try {
     const { exchange } = req.query
     ccxtService.clearCache(exchange)
@@ -241,7 +244,7 @@ router.get('/:exchange/price/:base/:quote', async (req, res) => {
  * Get multiple prices from different exchanges
  * Body: { coins: [{ exchange, symbol }] }
  */
-router.post('/prices', async (req, res) => {
+router.post('/prices', heavyOpsRateLimiter, async (req, res) => {
   try {
     const { coins } = req.body
     
