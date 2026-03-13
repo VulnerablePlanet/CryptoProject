@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 
+mongoose.set('sanitizeFilter', true)
+
 const connectDB = async () => {
   try {
     const isProduction = process.env.NODE_ENV === 'production'

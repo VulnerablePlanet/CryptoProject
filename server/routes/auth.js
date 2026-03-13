@@ -14,6 +14,8 @@ const {
   updateChartSettings
 } = require('../controllers/authController')
 const { auth } = require('../middleware/auth')
+const requireRole = require('../middleware/requireRole')
+const { authRateLimiter } = require('../middleware/rateLimit')
 const { upload } = require('../middleware/upload')
 
 const router = express.Router()
@@ -46,13 +48,13 @@ const loginValidation = [
 
 // Routes
 // @route   POST /api/auth/register
-router.post('/register', registerValidation, register)
+router.post('/register', authRateLimiter, registerValidation, register)
 
 // @route   POST /api/auth/login
-router.post('/login', loginValidation, login)
+router.post('/login', authRateLimiter, loginValidation, login)
 
 // @route   POST /api/auth/refresh
-router.post('/refresh', refreshAccessToken)
+router.post('/refresh', authRateLimiter, refreshAccessToken)
 
 // @route   POST /api/auth/logout
 router.post('/logout', logout)
@@ -70,7 +72,7 @@ router.put('/profile', auth, upload.single('avatar'), updateProfile)
 router.get('/user-count', getUserCount)
 
 // @route   GET /api/auth/users
-router.get('/users', auth, getAllUsers)
+router.get('/users', auth, requireRole('admin'), getAllUsers)
 
 // @route   GET /api/auth/settings/chart/:module - Get chart settings for a module
 router.get('/settings/chart/:module', auth, getChartSettings)

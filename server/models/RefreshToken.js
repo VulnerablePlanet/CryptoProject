@@ -1,8 +1,10 @@
 const mongoose = require('mongoose')
 const crypto = require('crypto')
 
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
+
 const refreshTokenSchema = new mongoose.Schema({
-  token: {
+  tokenHash: {
     type: String,
     required: true,
     unique: true
@@ -20,7 +22,6 @@ const refreshTokenSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Track device/browser info for security
   userAgent: {
     type: String,
     default: null
@@ -31,64 +32,57 @@ const refreshTokenSchema = new mongoose.Schema({
   }
 })
 
-// Indexes
 refreshTokenSchema.index({ user: 1 })
-refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }) // TTL index for auto-delete
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
-/**
- * Generate a secure random refresh token
- */
 refreshTokenSchema.statics.generateToken = function() {
   return crypto.randomBytes(64).toString('hex')
 }
 
-/**
- * Create a new refresh token for a user
- */
 refreshTokenSchema.statics.createToken = async function(userId, expiresInDays = 7, metadata = {}) {
-  const token = this.generateToken()
+  const rawToken = this.generateToken()
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-  
-  const refreshToken = await this.create({
-    token,
+
+  const tokenDoc = await this.create({
+    tokenHash: hashToken(rawToken),
     user: userId,
     expiresAt,
     userAgent: metadata.userAgent || null,
     ipAddress: metadata.ipAddress || null
   })
-  
-  return refreshToken
+
+  return { token: rawToken, tokenDoc }
 }
 
-/**
- * Find valid token and return with user
- */
-refreshTokenSchema.statics.findValidToken = async function(token) {
-  const refreshToken = await this.findOne({
-    token,
+refreshTokenSchema.statics.findValidToken = async function(rawToken) {
+  return this.findOne({
+    tokenHash: hashToken(rawToken),
     expiresAt: { $gt: new Date() }
   }).populate('user')
-  
-  return refreshToken
 }
 
-/**
- * Revoke a specific token
- */
-refreshTokenSchema.statics.revokeToken = async function(token) {
-  return this.deleteOne({ token })
+refreshTokenSchema.statics.rotateToken = async function(rawToken, metadata = {}, expiresInDays = 7) {
+  const current = await this.findOne({
+    tokenHash: hashToken(rawToken),
+    expiresAt: { $gt: new Date() }
+  })
+
+  if (!current) return null
+
+  const userId = current.user
+  await this.deleteOne({ _id: current._id })
+
+  return this.createToken(userId, expiresInDays, metadata)
 }
 
-/**
- * Revoke all tokens for a user (logout from all devices)
- */
+refreshTokenSchema.statics.revokeToken = async function(rawToken) {
+  return this.deleteOne({ tokenHash: hashToken(rawToken) })
+}
+
 refreshTokenSchema.statics.revokeAllUserTokens = async function(userId) {
   return this.deleteMany({ user: userId })
 }
 
-/**
- * Clean up expired tokens (optional manual cleanup)
- */
 refreshTokenSchema.statics.cleanupExpired = async function() {
   return this.deleteMany({ expiresAt: { $lt: new Date() } })
 }

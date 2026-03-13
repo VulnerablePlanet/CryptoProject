@@ -21,7 +21,7 @@ export const initSocket = () => {
   const authStore = useAuthStore()
   
   // Only connect if user is authenticated
-  if (!authStore.isAuthenticated || !authStore.token) {
+  if (!authStore.isAuthenticated.value || !authStore.token.value) {
     console.log('🔌 Socket: Skipping connection (not authenticated)')
     return null
   }
@@ -33,7 +33,7 @@ export const initSocket = () => {
 
   socket = io(socketUrl, {
     auth: {
-      token: authStore.token
+      token: authStore.token.value
     },
     transports: ['websocket'], // Force websocket only to avoid sticky session issues
     path: '/socket.io/',
