@@ -23,6 +23,7 @@ const { startPriceService } = require('./services/priceService')
 const talibRoutes = require('./routes/talib')
 const predictionsRoutes = require('./routes/predictions')
 const fibonacciCcxtRoutes = require('./routes/fibonacciCcxt')
+const agentRoutes = require('./routes/agent')
 
 const app = express()
 const server = http.createServer(app)
@@ -68,8 +69,8 @@ app.use('/api/exchange', exchangeRoutes)
 app.use('/api/apikeys', apikeysRoutes)
 app.use('/api/talib', talibRoutes)
 app.use('/api/predictions', predictionsRoutes)
-app.use('/api/predictions', predictionsRoutes)
 app.use('/api/fibonacci-ccxt', fibonacciCcxtRoutes)
+app.use('/api/agent', agentRoutes)
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {

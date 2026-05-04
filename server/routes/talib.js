@@ -6,6 +6,10 @@
 const express = require('express');
 const router = express.Router();
 const talibController = require('../controllers/talibController');
+const { auth } = require('../middleware/auth');
+
+// All TA-Lib routes require authentication
+router.use(auth);
 
 // Market Regime Detection
 router.post('/regime/:symbol', talibController.detectRegime);

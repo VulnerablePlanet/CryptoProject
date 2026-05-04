@@ -9,6 +9,10 @@ const express = require('express')
 const router = express.Router()
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
+const { auth } = require('../middleware/auth')
+
+// All exchange routes require authentication
+router.use(auth)
 
 // ============================================================================
 // Routes

@@ -14,6 +14,11 @@
 
 const express = require('express')
 const router = express.Router()
+const { auth } = require('../middleware/auth')
+
+// All predictions routes require authentication
+router.use(auth)
+
 const predictionService = require('../services/predictionService')
 const ccxtService = require('../services/ccxtService')
 

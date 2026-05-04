@@ -6,6 +6,10 @@
 const express = require('express')
 const router = express.Router()
 const fibonacciCcxtController = require('../controllers/fibonacciCcxtController')
+const { auth } = require('../middleware/auth')
+
+// All Fibonacci CCXT routes require authentication
+router.use(auth)
 
 // ============================================================================
 // Static Routes (must come before parameterized routes)

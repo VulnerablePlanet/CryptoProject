@@ -8,6 +8,10 @@
 const express = require('express')
 const router = express.Router()
 const tradingController = require('../controllers/tradingController')
+const { auth } = require('../middleware/auth')
+
+// All trading routes require authentication
+router.use(auth)
 
 // GET /api/trading/:symbol/indicators - Calculate indicators
 router.get('/:symbol/indicators', tradingController.getIndicators)

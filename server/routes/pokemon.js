@@ -1,11 +1,15 @@
 const express = require('express')
-const { 
-  getPokemons, 
+const {
+  getPokemons,
   getPokemonById,
-  getPokemonTypes 
+  getPokemonTypes
 } = require('../controllers/pokeController')
+const { auth } = require('../middleware/auth')
 
 const router = express.Router()
+
+// All Pokemon routes require authentication
+router.use(auth)
 
 // GET /api/pokemon - Obtener lista de pokémons
 router.get('/', getPokemons)

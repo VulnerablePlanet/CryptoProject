@@ -1,6 +1,10 @@
 const express = require('express')
 const router = express.Router()
 const ohlcController = require('../controllers/ohlcController')
+const { auth } = require('../middleware/auth')
+
+// All OHLC routes require authentication
+router.use(auth)
 
 /**
  * @route   GET /api/ohlc/coins

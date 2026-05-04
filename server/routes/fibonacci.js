@@ -6,6 +6,10 @@
 const express = require('express')
 const router = express.Router()
 const fibonacciController = require('../controllers/fibonacciController')
+const { auth } = require('../middleware/auth')
+
+// All Fibonacci routes require authentication
+router.use(auth)
 
 // Get Fibonacci ratios configuration
 router.get('/ratios', fibonacciController.getRatios)
