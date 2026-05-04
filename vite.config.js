@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
@@ -24,6 +24,15 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true
       }
+    }
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['test/**/*.test.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html']
     }
   }
 })
