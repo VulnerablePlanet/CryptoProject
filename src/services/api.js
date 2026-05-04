@@ -1,19 +1,23 @@
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
-// Create a shared axios instance with auth interceptors
-const api = axios.create({
-  baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
+/**
+ * Shared API client factory with automatic auth interceptors.
+ *
+ * Usage:
+ *   import { createApiClient } from '@/services/api'
+ *   const api = createApiClient('/api/watchlist')
+ *   const response = await api.get('/')
+ *
+ * This replaces the old pattern of each store creating its own
+ * axios instance + duplicate interceptors.
+ */
 
-// State for refresh handling
+// Shared refresh state (prevents multiple simultaneous refreshes)
 let isRefreshing = false
 let refreshPromise = null
 let failedQueue = []
 
-// Process queued requests after token refresh
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -25,31 +29,43 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
-// Setup interceptors with auth store
-export const setupInterceptors = (authStore) => {
-  // Request interceptor - add token
-  api.interceptors.request.use((config) => {
-    const token = authStore.accessToken
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+/**
+ * Create an authenticated API client for a specific base URL.
+ * Automatically attaches JWT token and handles 401 refresh.
+ *
+ * @param {string} baseURL - The base URL for the API (e.g. '/api/watchlist')
+ * @returns {import('axios').AxiosInstance} Configured axios instance
+ */
+export function createApiClient(baseURL) {
+  const instance = axios.create({
+    baseURL,
+    headers: { 'Content-Type': 'application/json' }
+  })
+
+  // Request interceptor — attach token lazily (authStore may not exist yet at import time)
+  instance.interceptors.request.use((config) => {
+    const authStore = useAuthStore()
+    if (authStore.accessToken) {
+      config.headers.Authorization = `Bearer ${authStore.accessToken}`
     }
     return config
   })
 
-  // Response interceptor - handle 401 and refresh
-  api.interceptors.response.use(
+  // Response interceptor — handle 401 with token refresh + request queue
+  instance.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config
 
-      // If 401 and not a retry
       if (error.response?.status === 401 && !originalRequest._retry) {
-        // Don't retry on auth endpoints
-        if (originalRequest.url?.includes('/auth/refresh') || 
-            originalRequest.url?.includes('/auth/login') || 
+        // Don't retry on auth endpoints (would cause infinite loop)
+        if (originalRequest.url?.includes('/auth/refresh') ||
+            originalRequest.url?.includes('/auth/login') ||
             originalRequest.url?.includes('/auth/register')) {
           return Promise.reject(error)
         }
+
+        originalRequest._retry = true
 
         // If already refreshing, queue this request
         if (isRefreshing) {
@@ -57,20 +73,20 @@ export const setupInterceptors = (authStore) => {
             failedQueue.push({ resolve, reject })
           }).then(token => {
             originalRequest.headers.Authorization = `Bearer ${token}`
-            return api(originalRequest)
+            return instance(originalRequest)
           }).catch(err => Promise.reject(err))
         }
 
-        originalRequest._retry = true
         isRefreshing = true
 
         try {
+          const authStore = useAuthStore()
           const newToken = await authStore.refreshAccessToken()
-          
+
           if (newToken) {
             processQueue(null, newToken)
             originalRequest.headers.Authorization = `Bearer ${newToken}`
-            return api(originalRequest)
+            return instance(originalRequest)
           } else {
             processQueue(new Error('Refresh failed'), null)
             return Promise.reject(error)
@@ -86,6 +102,20 @@ export const setupInterceptors = (authStore) => {
       return Promise.reject(error)
     }
   )
+
+  return instance
+}
+
+// Default client for general /api usage (backwards compatible)
+const api = createApiClient('/api')
+
+/**
+ * Legacy setup function — kept for backwards compatibility.
+ * No-op now since interceptors are configured at creation time.
+ * @deprecated Use createApiClient() instead
+ */
+export const setupInterceptors = () => {
+  // Interceptors are already set up by createApiClient
 }
 
 export default api

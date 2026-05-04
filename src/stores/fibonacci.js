@@ -7,6 +7,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAnalysis, getPivots } from '@/services/fibonacciService'
 import { getPriceZone } from '@/utils/fibonacci'
+import { logger } from '@/utils/logger'
 
 // Cache configuration
 const CACHE_TTL_MS = 2 * 60 * 1000 // 2 minutes cache
@@ -68,7 +69,7 @@ export const useFibonacciStore = defineStore('fibonacci', () => {
       return null
     }
     
-    console.log(`📐 [Fibonacci Cache] Hit: ${key}`)
+    logger.debug(`📐 [Fibonacci Cache] Hit: ${key}`)
     return cached.data
   }
 
@@ -162,7 +163,7 @@ export const useFibonacciStore = defineStore('fibonacci', () => {
     error.value = null
 
     try {
-      console.log(`📐 [Fibonacci] Fetching analysis for ${coinId}/${timeframe}`)
+      logger.debug(`📐 [Fibonacci] Fetching analysis for ${coinId}/${timeframe}`)
       
       const result = await getAnalysis(coinId, {
         timeframe,
@@ -179,7 +180,7 @@ export const useFibonacciStore = defineStore('fibonacci', () => {
         throw new Error(result.message || 'Analysis failed')
       }
     } catch (err) {
-      console.error('Fibonacci Store - fetchAnalysis error:', err)
+      logger.error('Fibonacci Store - fetchAnalysis error:', err)
       error.value = err.message
     } finally {
       loading.value = false

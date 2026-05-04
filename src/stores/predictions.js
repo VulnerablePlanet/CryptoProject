@@ -13,6 +13,7 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 import { useAuthStore } from './auth'
+import { logger } from '@/utils/logger'
 
 // API base URL
 // API base URL
@@ -209,7 +210,7 @@ export const usePredictionsStore = defineStore('predictions', () => {
         }
       }
     } catch (err) {
-      console.error('Error fetching symbols:', err)
+      logger.error('Error fetching symbols:', err)
       // Set default symbols on error
       symbols.value = [
         { symbol: 'BTC/USDT', base: 'BTC', quote: 'USDT', label: 'BTC/USDT' },
@@ -272,7 +273,7 @@ export const usePredictionsStore = defineStore('predictions', () => {
         throw new Error(response.data.error || 'Failed to fetch prediction')
       }
     } catch (err) {
-      console.error('Error fetching prediction:', err)
+      logger.error('Error fetching prediction:', err)
       error.value = err.response?.data?.message || err.message || 'Failed to fetch prediction'
     } finally {
       isLoading.value = false
@@ -355,14 +356,14 @@ export const usePredictionsStore = defineStore('predictions', () => {
    * @param {number} chartState.scrollPosition - Scroll position
    */
   async function saveChartSettings(chartState) {
-    console.log('📊 [Store] saveChartSettings called with:', JSON.stringify(chartState))
-    console.log('📊 [Store] barSpacing being saved:', chartState?.barSpacing)
+    logger.debug('📊 [Store] saveChartSettings called with:', JSON.stringify(chartState))
+    logger.debug('📊 [Store] barSpacing being saved:', chartState?.barSpacing)
     
     try {
       const authStore = useAuthStore()
       const token = authStore.accessToken
       if (!token) {
-        console.log('📊 [Store] No token, skipping save')
+        logger.debug('📊 [Store] No token, skipping save')
         return
       }
       
@@ -372,7 +373,7 @@ export const usePredictionsStore = defineStore('predictions', () => {
         symbol: selectedSymbol.value,
         timeframe: selectedTimeframe.value
       }
-      console.log('📊 [Store] Saving payload:', JSON.stringify(payload))
+      logger.debug('📊 [Store] Saving payload:', JSON.stringify(payload))
       
       await axios.put(
         `${API_URL}/auth/settings/chart`,
@@ -385,9 +386,9 @@ export const usePredictionsStore = defineStore('predictions', () => {
       chartSettings.value.lastSymbol = selectedSymbol.value
       chartSettings.value.lastTimeframe = selectedTimeframe.value
       
-      console.log('📊 [Store] Chart settings saved successfully. barSpacing:', chartState?.barSpacing)
+      logger.debug('📊 [Store] Chart settings saved successfully. barSpacing:', chartState?.barSpacing)
     } catch (err) {
-      console.warn('Could not save chart settings:', err.message)
+      logger.warn('Could not save chart settings:', err.message)
     }
   }
   
@@ -395,10 +396,10 @@ export const usePredictionsStore = defineStore('predictions', () => {
    * Load chart settings from database
    */
   async function loadChartSettings() {
-    console.log('📊 [Store] loadChartSettings called')
+    logger.debug('📊 [Store] loadChartSettings called')
     
     if (chartSettingsLoaded.value) {
-      console.log('📊 [Store] Returning cached settings. barSpacing:', chartSettings.value?.chartState?.barSpacing)
+      logger.debug('📊 [Store] Returning cached settings. barSpacing:', chartSettings.value?.chartState?.barSpacing)
       return chartSettings.value
     }
     
@@ -411,29 +412,29 @@ export const usePredictionsStore = defineStore('predictions', () => {
       
       const token = authStore.accessToken
       if (!token) {
-        console.log('📊 [Store] No token available')
+        logger.debug('📊 [Store] No token available')
         return null
       }
       
-      console.log('📊 [Store] Fetching chart settings from API...')
+      logger.debug('📊 [Store] Fetching chart settings from API...')
       const response = await axios.get(
         `${API_URL}/auth/settings/chart/predictions`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       
-      console.log('📊 [Store] API raw response:', JSON.stringify(response.data))
+      logger.debug('📊 [Store] API raw response:', JSON.stringify(response.data))
       
       if (response.data.success && response.data.settings) {
         chartSettings.value = response.data.settings
         chartSettingsLoaded.value = true
         const cs = response.data.settings?.chartState
-        console.log('📊 [Store] Loaded barSpacing:', cs?.barSpacing)
-        console.log('📊 [Store] Loaded visibleRange:', JSON.stringify(cs?.visibleRange))
-        console.log('📊 [Store] Loaded logicalRange (legacy):', JSON.stringify(cs?.logicalRange))
+        logger.debug('📊 [Store] Loaded barSpacing:', cs?.barSpacing)
+        logger.debug('📊 [Store] Loaded visibleRange:', JSON.stringify(cs?.visibleRange))
+        logger.debug('📊 [Store] Loaded logicalRange (legacy):', JSON.stringify(cs?.logicalRange))
         return response.data.settings
       }
     } catch (err) {
-      console.warn('Could not load chart settings:', err.message)
+      logger.warn('Could not load chart settings:', err.message)
     }
     
     return null

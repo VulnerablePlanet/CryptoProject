@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import talibService from '@/services/talibService'
+import { logger } from '@/utils/logger'
 
 const STORAGE_KEY = 'talib_analysis_data'
 
@@ -12,7 +13,7 @@ const saveToStorage = (data) => {
       timestamp: Date.now()
     }))
   } catch (err) {
-    console.warn('Failed to save TA-Lib data to localStorage:', err)
+    logger.warn('Failed to save TA-Lib data to localStorage:', err)
   }
 }
 
@@ -31,7 +32,7 @@ const loadFromStorage = () => {
     }
     return data
   } catch (err) {
-    console.warn('Failed to load TA-Lib data from localStorage:', err)
+    logger.warn('Failed to load TA-Lib data from localStorage:', err)
     return null
   }
 }
@@ -159,7 +160,7 @@ export const useTALibStore = defineStore('talib', () => {
         health.value = result
       }
     } catch (err) {
-      console.error('Health check failed:', err)
+      logger.error('Health check failed:', err)
     }
   }
 

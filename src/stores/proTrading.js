@@ -11,6 +11,7 @@ import { ref, computed } from 'vue'
 import * as ccxtService from '@/services/ccxt'
 import { transformToHeikinAshi, detectHATrend } from '@/utils/heikinAshi'
 import { calculateAllIndicators, getRSIInterpretation } from '@/utils/technicalIndicators'
+import { logger } from '@/utils/logger'
 
 // ============================================================================
 // Supported Exchanges & Configuration
@@ -362,30 +363,30 @@ export const useProTradingStore = defineStore('proTrading', () => {
       try {
         await fetchCandles()
       } catch (err) {
-        console.warn(`Initial fetch with ${selectedExchange.value} failed, trying fallback...`)
+        logger.warn(`Initial fetch with ${selectedExchange.value} failed, trying fallback...`)
         // Fallback for Railway/US restrictions
         const fallbacks = ['coinbase', 'kraken']
         for (const fb of fallbacks) {
           if (fb !== selectedExchange.value) {
             try {
-              console.log(`Trying fallback exchange: ${fb}`)
+              logger.debug(`Trying fallback exchange: ${fb}`)
               selectedExchange.value = fb
               // Adjust symbol quote if needed (USDT -> USD for Coinbase/Kraken)
               if (selectedSymbol.value.quote === 'USDT' && (fb === 'coinbase' || fb === 'kraken')) {
                 selectedSymbol.value.quote = 'USD'
               }
               await fetchCandles()
-              console.log(`Fallback to ${fb} successful`)
+              logger.debug(`Fallback to ${fb} successful`)
               error.value = null // Clear error if fallback succeeded
               break
             } catch (fbErr) {
-              console.warn(`Fallback to ${fb} failed`)
+              logger.warn(`Fallback to ${fb} failed`)
             }
           }
         }
       }
     } catch (err) {
-      console.error('Failed to initialize Pro Trading:', err)
+      logger.error('Failed to initialize Pro Trading:', err)
       error.value = extractErrorMessage(err)
     } finally {
       loading.value = false
@@ -415,7 +416,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       // Calculate indicators after fetching candles
       calculateIndicators()
     } catch (err) {
-      console.error('Failed to fetch candles:', err)
+      logger.error('Failed to fetch candles:', err)
       error.value = extractErrorMessage(err)
     } finally {
       loading.value = false
@@ -436,7 +437,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       
       orderBook.value = result.orderBook
     } catch (err) {
-      console.error('Failed to fetch order book:', err)
+      logger.error('Failed to fetch order book:', err)
     }
   }
   
@@ -453,7 +454,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
       
       ticker.value = result.ticker
     } catch (err) {
-      console.error('Failed to fetch ticker:', err)
+      logger.error('Failed to fetch ticker:', err)
     }
   }
   
@@ -474,7 +475,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
         await fetchDepthData()
       }
     } catch (err) {
-      console.error('Sync failed:', err)
+      logger.error('Sync failed:', err)
       error.value = extractErrorMessage(err)
     } finally {
       syncing.value = false
@@ -493,7 +494,7 @@ export const useProTradingStore = defineStore('proTrading', () => {
     try {
       indicators.value = calculateAllIndicators(candles.value)
     } catch (err) {
-      console.error('Failed to calculate indicators:', err)
+      logger.error('Failed to calculate indicators:', err)
     }
   }
   

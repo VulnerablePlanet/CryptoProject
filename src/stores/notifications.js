@@ -1,13 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from './auth'
+import { createApiClient } from '@/services/api'
 import { onNotification } from '@/services/socket'
+import { logger } from '@/utils/logger'
 
-const api = axios.create({
-  baseURL: '/api/notifications',
-  headers: { 'Content-Type': 'application/json' }
-})
+const api = createApiClient('/api/notifications')
 
 export const useNotificationStore = defineStore('notifications', () => {
   // State
@@ -23,35 +20,6 @@ export const useNotificationStore = defineStore('notifications', () => {
   // Getters
   const hasUnread = computed(() => unreadCount.value > 0)
   const recentNotifications = computed(() => notifications.value.slice(0, 5))
-
-  // Axios interceptor
-  api.interceptors.request.use((config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-    return config
-  })
-
-  // Response interceptor - handle 401 and refresh token
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const authStore = useAuthStore()
-      const originalRequest = error.config
-
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
-        
-        const newToken = await authStore.refreshAccessToken()
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return api(originalRequest)
-        }
-      }
-      return Promise.reject(error)
-    }
-  )
 
   // Actions
   const fetchNotifications = async (params = {}) => {
@@ -149,7 +117,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     if (unsubscribe) return
     
     unsubscribe = onNotification((notification) => {
-      console.log('🔔 New notification:', notification.title)
+      logger.debug('🔔 New notification:', notification.title)
       addRealtimeNotification(notification)
     })
   }

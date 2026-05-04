@@ -1,13 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from './auth'
+import { createApiClient } from '@/services/api'
 import { getMultiplePrices } from '@/services/ccxtPrice'
+import { logger } from '@/utils/logger'
 
-const api = axios.create({
-  baseURL: '/api/watchlist',
-  headers: { 'Content-Type': 'application/json' }
-})
+const api = createApiClient('/api/watchlist')
 
 export const useWatchlistStore = defineStore('watchlist', () => {
   // State
@@ -21,37 +18,8 @@ export const useWatchlistStore = defineStore('watchlist', () => {
   const activeAlerts = computed(() => alerts.value.filter(a => a.active && !a.triggered))
   const triggeredAlerts = computed(() => alerts.value.filter(a => a.triggered))
   
-  const isInWatchlist = computed(() => (coinId) => 
+  const isInWatchlist = computed(() => (coinId) =>
     coins.value.some(c => c.coinId === coinId)
-  )
-
-  // Axios interceptor
-  api.interceptors.request.use((config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-    return config
-  })
-
-  // Response interceptor - handle 401 and refresh token
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const authStore = useAuthStore()
-      const originalRequest = error.config
-
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
-        
-        const newToken = await authStore.refreshAccessToken()
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return api(originalRequest)
-        }
-      }
-      return Promise.reject(error)
-    }
   )
 
   // Actions
@@ -202,7 +170,7 @@ export const useWatchlistStore = defineStore('watchlist', () => {
       const { results } = await getMultiplePrices(coinsToFetch)
       return results
     } catch (err) {
-      console.error('Error fetching exchange prices:', err)
+      logger.error('Error fetching exchange prices:', err)
       return {}
     }
   }

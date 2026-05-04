@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import axios from 'axios'
+import { logger } from '@/utils/logger'
 
 // Create axios instance for auth requests
 const api = axios.create({
@@ -61,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Refresh failed')
       })
       .catch(err => {
-        console.error('Token refresh failed:', err)
+        logger.error('Token refresh failed:', err)
         // Refresh token is invalid, logout user
         logout()
         return null
@@ -189,7 +190,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err) {
       // Token might be expired, the interceptor will handle refresh
-      console.error('Error fetching user:', err)
+      logger.error('Error fetching user:', err)
     }
     
     return null

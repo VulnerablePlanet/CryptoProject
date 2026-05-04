@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getCoinsMarkets, getCoinDetails, getCoinMarketChart, getTrendingCoins, getGlobalStats } from '@/services/coingecko'
 import { initSocket, onPriceUpdate } from '@/services/socket'
+import { logger } from '@/utils/logger'
 
 export const useCryptoStore = defineStore('crypto', () => {
   // State
@@ -44,7 +45,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       }
     } catch (err) {
       error.value = err.message || 'Error fetching coins'
-      console.error('Error fetching coins:', err)
+      logger.error('Error fetching coins:', err)
       // If error occurs, fail silently for now or keep old data
       if (!Array.isArray(coins.value)) coins.value = []
     } finally {
@@ -62,7 +63,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       return data
     } catch (err) {
       error.value = err.message || 'Error fetching coin details'
-      console.error('Error fetching coin details:', err)
+      logger.error('Error fetching coin details:', err)
     } finally {
       loading.value = false
     }
@@ -78,7 +79,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       return data
     } catch (err) {
       error.value = err.message || 'Error fetching chart data'
-      console.error('Error fetching chart data:', err)
+      logger.error('Error fetching chart data:', err)
     } finally {
       loading.value = false
     }
@@ -89,7 +90,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       const data = await getTrendingCoins()
       trendingCoins.value = data.coins || []
     } catch (err) {
-      console.error('Error fetching trending:', err)
+      logger.error('Error fetching trending:', err)
     }
   }
 
@@ -98,7 +99,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       const data = await getGlobalStats()
       globalStats.value = data
     } catch (err) {
-      console.error('Error fetching global stats:', err)
+      logger.error('Error fetching global stats:', err)
     }
   }
 
@@ -110,7 +111,7 @@ export const useCryptoStore = defineStore('crypto', () => {
     
     // Ensure coins.value is an array before proceeding
     if (!Array.isArray(coins.value)) {
-      console.warn('coins.value is not an array, initializing as empty array')
+      logger.warn('coins.value is not an array, initializing as empty array')
       coins.value = []
     }
     
@@ -136,7 +137,7 @@ export const useCryptoStore = defineStore('crypto', () => {
     })
     
     lastUpdated.value = new Date(priceData.timestamp)
-    console.log(`📊 Realtime update: ${priceData.prices.length} coins updated`)
+    logger.debug(`📊 Realtime update: ${priceData.prices.length} coins updated`)
   }
 
   /**
@@ -149,9 +150,9 @@ export const useCryptoStore = defineStore('crypto', () => {
       initSocket()
       unsubscribePrices = onPriceUpdate(updatePrices)
       realtimeEnabled.value = true
-      console.log('🔴 Realtime prices enabled')
+      logger.info('🔴 Realtime prices enabled')
     } catch (err) {
-      console.error('Failed to enable realtime prices:', err)
+      logger.error('Failed to enable realtime prices:', err)
     }
   }
 
@@ -164,7 +165,7 @@ export const useCryptoStore = defineStore('crypto', () => {
       unsubscribePrices = null
     }
     realtimeEnabled.value = false
-    console.log('⚪ Realtime prices disabled')
+    logger.debug('⚪ Realtime prices disabled')
   }
 
   // Initialize data

@@ -1,15 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from './auth'
+import { createApiClient } from '@/services/api'
+import { logger } from '@/utils/logger'
 
-// Create axios instance for transaction requests
-const api = axios.create({
-  baseURL: '/api/transactions',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
+const api = createApiClient('/api/transactions')
 
 export const useTransactionStore = defineStore('transactions', () => {
   // State
@@ -38,39 +32,10 @@ export const useTransactionStore = defineStore('transactions', () => {
       .reduce((sum, t) => sum + t.totalValue, 0)
   )
 
-  const totalSells = computed(() => 
+  const totalSells = computed(() =>
     transactions.value
       .filter(t => t.type === 'sell')
       .reduce((sum, t) => sum + t.totalValue, 0)
-  )
-
-  // Axios interceptor to add token
-  api.interceptors.request.use((config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-    return config
-  })
-
-  // Response interceptor - handle 401 and refresh token
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const authStore = useAuthStore()
-      const originalRequest = error.config
-
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
-        
-        const newToken = await authStore.refreshAccessToken()
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return api(originalRequest)
-        }
-      }
-      return Promise.reject(error)
-    }
   )
 
   // Actions
@@ -101,7 +66,7 @@ export const useTransactionStore = defineStore('transactions', () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Error fetching transactions'
       error.value = message
-      console.error('Fetch transactions error:', err)
+      logger.error('Fetch transactions error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false
@@ -120,7 +85,7 @@ export const useTransactionStore = defineStore('transactions', () => {
         return { success: true }
       }
     } catch (err) {
-      console.error('Fetch stats error:', err)
+      logger.error('Fetch stats error:', err)
       return { success: false }
     }
   }
@@ -149,7 +114,7 @@ export const useTransactionStore = defineStore('transactions', () => {
         || err.response?.data?.errors?.[0]?.msg
         || 'Error creating transaction'
       error.value = message
-      console.error('Create transaction error:', err)
+      logger.error('Create transaction error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false

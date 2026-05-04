@@ -1,15 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from './auth'
+import { createApiClient } from '@/services/api'
+import { logger } from '@/utils/logger'
 
-// Create axios instance for portfolio requests
-const api = axios.create({
-  baseURL: '/api/portfolio',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
+const api = createApiClient('/api/portfolio')
 
 export const usePortfolioStore = defineStore('portfolio', () => {
   // State
@@ -28,37 +22,8 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     return totalInvested.value
   })
 
-  const holdingByCoinId = computed(() => (coinId) => 
+  const holdingByCoinId = computed(() => (coinId) =>
     holdings.value.find(h => h.coinId === coinId)
-  )
-
-  // Axios interceptor to add token
-  api.interceptors.request.use((config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-    return config
-  })
-
-  // Response interceptor - handle 401 and refresh token
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const authStore = useAuthStore()
-      const originalRequest = error.config
-
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
-        
-        const newToken = await authStore.refreshAccessToken()
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return api(originalRequest)
-        }
-      }
-      return Promise.reject(error)
-    }
   )
 
   // Actions
@@ -82,7 +47,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Error fetching portfolio'
       error.value = message
-      console.error('Fetch portfolio error:', err)
+      logger.error('Fetch portfolio error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false
@@ -117,7 +82,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
         || err.response?.data?.errors?.[0]?.msg
         || 'Error adding holding'
       error.value = message
-      console.error('Add holding error:', err)
+      logger.error('Add holding error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false
@@ -143,7 +108,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Error updating holding'
       error.value = message
-      console.error('Update holding error:', err)
+      logger.error('Update holding error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false
@@ -169,7 +134,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Error deleting holding'
       error.value = message
-      console.error('Delete holding error:', err)
+      logger.error('Delete holding error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false
@@ -195,7 +160,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Error clearing portfolio'
       error.value = message
-      console.error('Clear portfolio error:', err)
+      logger.error('Clear portfolio error:', err)
       return { success: false, error: message }
     } finally {
       loading.value = false

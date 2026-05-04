@@ -10,14 +10,15 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { 
-  fetchHistoricalData, 
-  syncCoinData, 
+import {
+  fetchHistoricalData,
+  syncCoinData,
   getApiStatus,
   transformToTVFormat,
   transformVolumeData,
   transformLineData
 } from '@/services/tradingview'
+import { logger } from '@/utils/logger'
 
 // ============================================================================
 // Rate Limit Configuration
@@ -106,11 +107,11 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     const age = Date.now() - cached.timestamp
     if (age > CACHE_TTL_MS) {
       dataCache.delete(key)
-      console.log(`📦 [Cache] Expired: ${key} (age: ${Math.round(age/1000)}s)`)
+      logger.debug(`📦 [Cache] Expired: ${key} (age: ${Math.round(age/1000)}s)`)
       return null
     }
     
-    console.log(`📦 [Cache] Hit: ${key} (age: ${Math.round(age/1000)}s)`)
+    logger.debug(`📦 [Cache] Hit: ${key} (age: ${Math.round(age/1000)}s)`)
     return cached.data
   }
 
@@ -120,7 +121,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
   const saveToCache = (coinId, timeframe, data) => {
     const key = getCacheKey(coinId, timeframe)
     dataCache.set(key, { data, timestamp: Date.now() })
-    console.log(`📦 [Cache] Saved: ${key} (${data.length} candles)`)
+    logger.debug(`📦 [Cache] Saved: ${key} (${data.length} candles)`)
   }
 
   /**
@@ -128,7 +129,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
    */
   const clearCache = () => {
     dataCache.clear()
-    console.log('📦 [Cache] Cleared all entries')
+    logger.debug('📦 [Cache] Cleared all entries')
   }
 
   // ============================================================================
@@ -234,7 +235,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     cacheHit.value = false
     
     try {
-      console.log(`🌐 [Fetch] ${coinId}/${timeframe} (limit: ${limit})`)
+      logger.debug(`🌐 [Fetch] ${coinId}/${timeframe} (limit: ${limit})`)
       const result = await fetchHistoricalData(coinId, timeframe, limit)
       
       if (result.success) {
@@ -247,7 +248,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
       }
     } catch (err) {
       error.value = err.message
-      console.error('TradingView Store - fetchChartData error:', err)
+      logger.error('TradingView Store - fetchChartData error:', err)
     } finally {
       loading.value = false
     }
@@ -259,7 +260,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
   const syncData = async () => {
     // Check cooldown
     if (!canSync.value) {
-      console.log(`⏳ [Sync] Cooldown active: ${syncCooldownRemaining.value}s remaining`)
+      logger.info(`⏳ [Sync] Cooldown active: ${syncCooldownRemaining.value}s remaining`)
       return { success: false, message: `Please wait ${syncCooldownRemaining.value}s before syncing again` }
     }
     
@@ -267,7 +268,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     error.value = null
     
     try {
-      console.log(`🔄 [Sync] Starting sync for ${selectedCoin.value}/${selectedTimeframe.value}`)
+      logger.debug(`🔄 [Sync] Starting sync for ${selectedCoin.value}/${selectedTimeframe.value}`)
       const result = await syncCoinData(selectedCoin.value, selectedTimeframe.value)
       
       if (result.success) {
@@ -288,7 +289,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
       }
     } catch (err) {
       error.value = err.message
-      console.error('TradingView Store - syncData error:', err)
+      logger.error('TradingView Store - syncData error:', err)
       return { success: false, message: err.message }
     } finally {
       syncing.value = false
@@ -304,7 +305,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     // Clear pending debounce
     if (debounceTimer) {
       clearTimeout(debounceTimer)
-      console.log(`⏱️ [Debounce] Cancelled pending fetch`)
+      logger.debug('⏱️ [Debounce] Cancelled pending fetch')
     }
     
     selectedCoin.value = coinId
@@ -323,7 +324,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     
     // Debounce the API call
     debounceTimer = setTimeout(async () => {
-      console.log(`⏱️ [Debounce] Executing fetch after ${DEBOUNCE_MS}ms`)
+      logger.debug(`⏱️ [Debounce] Executing fetch after ${DEBOUNCE_MS}ms`)
       await fetchChartData()
       debounceTimer = null
     }, DEBOUNCE_MS)
@@ -338,7 +339,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     // Clear pending debounce
     if (debounceTimer) {
       clearTimeout(debounceTimer)
-      console.log(`⏱️ [Debounce] Cancelled pending fetch`)
+      logger.debug('⏱️ [Debounce] Cancelled pending fetch')
     }
     
     selectedTimeframe.value = timeframe
@@ -357,7 +358,7 @@ export const useTradingViewStore = defineStore('tradingview', () => {
     
     // Debounce the API call
     debounceTimer = setTimeout(async () => {
-      console.log(`⏱️ [Debounce] Executing fetch after ${DEBOUNCE_MS}ms`)
+      logger.debug(`⏱️ [Debounce] Executing fetch after ${DEBOUNCE_MS}ms`)
       await fetchChartData()
       debounceTimer = null
     }, DEBOUNCE_MS)
