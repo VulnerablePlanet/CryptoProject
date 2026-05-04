@@ -3,9 +3,11 @@
  * API client for Fibonacci analysis endpoints
  */
 
-const API_BASE = import.meta.env.PROD 
-  ? '/api/fibonacci' 
+const API_BASE = import.meta.env.PROD
+  ? '/api/fibonacci'
   : 'http://localhost:5000/api/fibonacci'
+
+import { logger } from '@/utils/logger'
 
 /**
  * Get full Fibonacci analysis for a coin
@@ -38,7 +40,7 @@ export const getAnalysis = async (coinId, options = {}) => {
 
     return data
   } catch (error) {
-    console.error('Fibonacci Service - getAnalysis error:', error)
+    logger.error('Fibonacci Service - getAnalysis error:', error)
     throw error
   }
 }
@@ -74,7 +76,7 @@ export const getPivots = async (coinId, options = {}) => {
 
     return data
   } catch (error) {
-    console.error('Fibonacci Service - getPivots error:', error)
+    logger.error('Fibonacci Service - getPivots error:', error)
     throw error
   }
 }
@@ -94,7 +96,7 @@ export const getRatios = async () => {
 
     return data
   } catch (error) {
-    console.error('Fibonacci Service - getRatios error:', error)
+    logger.error('Fibonacci Service - getRatios error:', error)
     throw error
   }
 }

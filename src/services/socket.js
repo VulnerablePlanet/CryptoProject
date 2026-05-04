@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client'
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { logger } from '@/utils/logger'
 
 // Socket instance
 let socket = null
@@ -22,7 +23,7 @@ export const initSocket = () => {
   
   // Only connect if user is authenticated
   if (!authStore.isAuthenticated || !authStore.token) {
-    console.log('🔌 Socket: Skipping connection (not authenticated)')
+    logger.debug('🔌 Socket: Skipping connection (not authenticated)')
     return null
   }
   
@@ -45,24 +46,24 @@ export const initSocket = () => {
 
   // Connection events
   socket.on('connect', () => {
-    console.log('🔌 Socket connected:', socket.id)
+    logger.debug('🔌 Socket connected:', socket.id)
     isConnected.value = true
     connectionError.value = null
   })
 
   socket.on('disconnect', (reason) => {
-    console.log('🔌 Socket disconnected:', reason)
+    logger.debug('🔌 Socket disconnected:', reason)
     isConnected.value = false
   })
 
   socket.on('connect_error', (error) => {
-    console.warn('Socket connection error:', error.message)
+    logger.warn('Socket connection error:', error.message)
     connectionError.value = error.message
     isConnected.value = false
   })
 
   socket.on('connected', (data) => {
-    console.log('✅ Server confirmed connection:', data)
+    logger.debug('✅ Server confirmed connection:', data)
   })
 
   return socket

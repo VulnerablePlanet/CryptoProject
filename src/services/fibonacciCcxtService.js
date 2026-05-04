@@ -3,9 +3,11 @@
  * API client for CCXT-based Fibonacci analysis endpoints
  */
 
-const API_BASE = import.meta.env.PROD 
-  ? '/api/fibonacci-ccxt' 
+const API_BASE = import.meta.env.PROD
+  ? '/api/fibonacci-ccxt'
   : 'http://localhost:5000/api/fibonacci-ccxt'
+
+import { logger } from '@/utils/logger'
 
 /**
  * Get full Fibonacci analysis with confluence for a trading pair
@@ -37,7 +39,7 @@ export const getAnalysis = async (exchange, symbol, timeframe = '4h', options = 
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - getAnalysis error:', error)
+    logger.error('FibonacciCCXT Service - getAnalysis error:', error)
     throw error
   }
 }
@@ -60,7 +62,7 @@ export const getLevels = async (exchange, symbol, timeframe = '4h') => {
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - getLevels error:', error)
+    logger.error('FibonacciCCXT Service - getLevels error:', error)
     throw error
   }
 }
@@ -83,7 +85,7 @@ export const getConfluence = async (exchange, symbol, timeframe = '4h') => {
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - getConfluence error:', error)
+    logger.error('FibonacciCCXT Service - getConfluence error:', error)
     throw error
   }
 }
@@ -111,7 +113,7 @@ export const compareExchanges = async (symbol, timeframe = '4h', exchanges = nul
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - compareExchanges error:', error)
+    logger.error('FibonacciCCXT Service - compareExchanges error:', error)
     throw error
   }
 }
@@ -130,7 +132,7 @@ export const getRatios = async () => {
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - getRatios error:', error)
+    logger.error('FibonacciCCXT Service - getRatios error:', error)
     throw error
   }
 }
@@ -149,7 +151,7 @@ export const getSupported = async () => {
 
     return data
   } catch (error) {
-    console.error('FibonacciCCXT Service - getSupported error:', error)
+    logger.error('FibonacciCCXT Service - getSupported error:', error)
     throw error
   }
 }

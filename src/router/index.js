@@ -122,6 +122,11 @@ const routes = [
         path: 'fibonacci-ccxt',
         name: 'fibonacci-ccxt',
         component: () => import('@/views/FibonacciCcxtContent.vue')
+      },
+      {
+        path: 'bot-trading',
+        name: 'bot-trading',
+        component: () => import('@/views/BotTradingContent.vue')
       }
     ]
   },

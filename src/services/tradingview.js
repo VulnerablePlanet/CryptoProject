@@ -5,9 +5,11 @@
 
 // API endpoint for OHLC data
 // API endpoint for OHLC data
-const API_BASE = import.meta.env.PROD 
+const API_BASE = import.meta.env.PROD
   ? '/api/ohlc'
   : 'http://localhost:5000/api/ohlc'
+
+import { logger } from '@/utils/logger'
 
 // ============================================================================
 // Data Transformation
@@ -114,7 +116,7 @@ export const fetchHistoricalData = async (coinId, timeframe = '1h', limit = 100)
       }
     }
   } catch (error) {
-    console.error('TradingView Service - fetchHistoricalData error:', error)
+    logger.error('TradingView Service - fetchHistoricalData error:', error)
     return {
       success: false,
       error: error.message,
@@ -148,7 +150,7 @@ export const syncCoinData = async (coinId, timeframe = '1h') => {
       syncedCount: data.syncedCount || 0
     }
   } catch (error) {
-    console.error('TradingView Service - syncCoinData error:', error)
+    logger.error('TradingView Service - syncCoinData error:', error)
     return {
       success: false,
       error: error.message
@@ -171,7 +173,7 @@ export const getApiStatus = async () => {
       status: data.service || {}
     }
   } catch (error) {
-    console.error('TradingView Service - getApiStatus error:', error)
+    logger.error('TradingView Service - getApiStatus error:', error)
     return {
       success: false,
       error: error.message,
