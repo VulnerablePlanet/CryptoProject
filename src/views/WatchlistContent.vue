@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useWatchlistStore } from '@/stores/watchlist'
 import { useCryptoStore } from '@/stores/crypto'
 import { getSupportedExchanges, EXCHANGE_NAMES, QUOTE_CURRENCIES } from '@/services/ccxtPrice'
+import { logger } from '@/utils/logger'
+import { formatUSD, formatCOP } from '@/utils/currency'
 
 const watchlistStore = useWatchlistStore()
 const cryptoStore = useCryptoStore()
@@ -60,26 +62,6 @@ const enhancedWatchlist = computed(() => {
     }
   })
 })
-
-// Exchange rate USD to COP
-const copRate = 4400
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(value)
-}
-
-const formatCOP = (value) => {
-  const cop = value * copRate
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(cop)
-}
 
 const formatPercent = (value) => {
   const sign = value >= 0 ? '+' : ''
@@ -146,7 +128,7 @@ const createAlert = async () => {
   
   const sanitizedPrice = sanitizePrice(alertForm.value.targetPrice)
   if (sanitizedPrice <= 0) {
-    console.error('Invalid price entered')
+    logger.error('Invalid price entered')
     return
   }
   
@@ -174,7 +156,7 @@ const refreshExchangePrices = async () => {
     const prices = await watchlistStore.fetchExchangePrices()
     exchangePrices.value = prices
   } catch (err) {
-    console.error('Error refreshing prices:', err)
+    logger.error('Error refreshing prices:', err)
   }
 }
 
@@ -280,7 +262,7 @@ onMounted(async () => {
           
           <!-- Price -->
           <div class="text-right">
-            <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatCurrency(coin.current_price) }}</p>
+            <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatUSD(coin.current_price) }}</p>
             <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</p>
             <p 
               class="text-xs font-medium"
@@ -341,7 +323,7 @@ onMounted(async () => {
           
           <div class="flex-1">
             <p class="font-medium text-slate-900 dark:text-white">
-              {{ alert.symbol }} {{ alert.condition === 'above' ? 'above' : 'below' }} {{ formatCurrency(alert.targetPrice) }}
+              {{ alert.symbol }} {{ alert.condition === 'above' ? 'above' : 'below' }} {{ formatUSD(alert.targetPrice) }}
             </p>
             <p class="text-xs text-text-secondary">
               {{ alert.active ? 'Active' : 'Inactive' }}
@@ -455,7 +437,7 @@ onMounted(async () => {
                       <span>{{ coin.symbol.toUpperCase() }}/{{ selectedQuote }}</span>
                     </p>
                   </div>
-                  <span class="font-mono text-sm text-slate-700 dark:text-gray-300">{{ formatCurrency(coin.current_price) }}</span>
+                  <span class="font-mono text-sm text-slate-700 dark:text-gray-300">{{ formatUSD(coin.current_price) }}</span>
                 </button>
               </div>
 
@@ -492,7 +474,7 @@ onMounted(async () => {
                 <span class="material-symbols-outlined text-primary">monetization_on</span>
                 <div>
                   <p class="font-medium text-slate-900 dark:text-white">{{ alertForm.name }}</p>
-                  <p class="text-xs text-text-secondary">Current: {{ formatCurrency(alertForm.currentPrice) }}</p>
+                  <p class="text-xs text-text-secondary">Current: {{ formatUSD(alertForm.currentPrice) }}</p>
                 </div>
               </div>
 

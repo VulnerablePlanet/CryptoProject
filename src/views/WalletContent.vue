@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCryptoStore } from '@/stores/crypto'
 import { usePortfolioStore } from '@/stores/portfolio'
+import { formatUSD } from '@/utils/currency'
 import BalanceCard from '@/components/wallet/BalanceCard.vue'
 import QuickTradeWidget from '@/components/wallet/QuickTradeWidget.vue'
 import ActivityList from '@/components/wallet/ActivityList.vue'
@@ -99,15 +100,6 @@ const handleDelete = async (holdingId) => {
   if (confirm('Are you sure you want to delete this holding?')) {
     await portfolioStore.deleteHolding(holdingId)
   }
-}
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value)
 }
 
 const formatNumber = (value, decimals = 4) => {
@@ -211,17 +203,17 @@ onMounted(async () => {
               <!-- Current Price -->
               <div class="text-right hidden md:block">
                 <p class="text-sm text-text-secondary">Price</p>
-                <p class="font-mono text-slate-700 dark:text-gray-300">{{ formatCurrency(holding.currentPrice) }}</p>
+                <p class="font-mono text-slate-700 dark:text-gray-300">{{ formatUSD(holding.currentPrice) }}</p>
               </div>
               
               <!-- Current Value -->
               <div class="text-right">
-                <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatCurrency(holding.currentValue) }}</p>
+                <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatUSD(holding.currentValue) }}</p>
                 <p 
                   class="text-xs font-medium"
                   :class="holding.profitLoss >= 0 ? 'text-success' : 'text-danger'"
                 >
-                  {{ holding.profitLoss >= 0 ? '+' : '' }}{{ formatCurrency(holding.profitLoss) }}
+                  {{ holding.profitLoss >= 0 ? '+' : '' }}{{ formatUSD(holding.profitLoss) }}
                   ({{ holding.profitLossPercent >= 0 ? '+' : '' }}{{ holding.profitLossPercent.toFixed(2) }}%)
                 </p>
               </div>
@@ -251,7 +243,7 @@ onMounted(async () => {
             <div class="flex justify-between items-center">
               <span class="text-sm text-text-secondary">Total Invested</span>
               <span class="font-mono font-bold text-slate-900 dark:text-white">
-                {{ formatCurrency(portfolioStore.totalInvested) }}
+                {{ formatUSD(portfolioStore.totalInvested) }}
               </span>
             </div>
           </div>

@@ -14,7 +14,7 @@
 
 import { onMounted, computed } from 'vue'
 import { useProTradingStore } from '@/stores/proTrading'
-import { formatUSD, formatCOPWithFlag, getCopRate } from '@/utils/currency'
+import { formatUSD, formatCOPWithFlag, getCopRate, formatCOP, formatCompact } from '@/utils/currency'
 
 // Components
 import ProTradingChart from '@/components/protrading/ProTradingChart.vue'
@@ -74,26 +74,6 @@ const handleIndicatorSettingUpdate = (indicator, setting, value) => {
 }
 
 // Format helpers
-const formatPrice = (value) => {
-  if (!value) return '$0.00'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: value < 1 ? 6 : 2
-  }).format(value)
-}
-
-const formatCOP = (value) => {
-  if (!value) return 'COP $0'
-  const cop = value * getCopRate()
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(cop)
-}
 
 const formatVolume = (value) => {
   if (!value) return '-'
@@ -244,7 +224,7 @@ const formatVolume = (value) => {
       <div class="col-span-2 lg:col-span-1 bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">Current Price</p>
         <p class="text-xl lg:text-2xl font-bold font-mono text-slate-900 dark:text-white">
-          {{ formatPrice(store.currentPrice) }}
+          {{ formatUSD(store.currentPrice) }}
         </p>
         <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.currentPrice) }}
@@ -265,7 +245,7 @@ const formatVolume = (value) => {
       <!-- High -->
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">High</p>
-        <p class="text-lg font-bold font-mono text-success">{{ formatPrice(store.highPrice) }}</p>
+        <p class="text-lg font-bold font-mono text-success">{{ formatUSD(store.highPrice) }}</p>
         <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.highPrice) }}
         </p>
@@ -274,7 +254,7 @@ const formatVolume = (value) => {
       <!-- Low -->
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">Low</p>
-        <p class="text-lg font-bold font-mono text-danger">{{ formatPrice(store.lowPrice) }}</p>
+        <p class="text-lg font-bold font-mono text-danger">{{ formatUSD(store.lowPrice) }}</p>
         <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.lowPrice) }}
         </p>

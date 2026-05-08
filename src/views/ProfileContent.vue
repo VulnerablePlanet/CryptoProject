@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { logger } from '@/utils/logger'
 
 const authStore = useAuthStore()
 
@@ -186,7 +187,7 @@ const saveProfile = async () => {
       showSuccess.value = false
     }, 3000)
   } catch (error) {
-    console.error('Error saving profile:', error)
+    logger.error('Error saving profile:', error)
     errorMessage.value = error.message || 'Error al guardar los cambios'
   } finally {
     isSaving.value = false

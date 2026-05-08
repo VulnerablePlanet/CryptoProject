@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { logger } from '@/utils/logger'
 
 const authStore = useAuthStore()
 
@@ -51,7 +52,7 @@ const loadApiKeys = async () => {
       error.value = 'Error al cargar las API keys'
     }
   } catch (err) {
-    console.error('Error loading API keys:', err)
+    logger.error('Error loading API keys:', err)
     error.value = 'Error de conexión'
   } finally {
     isLoading.value = false
@@ -111,7 +112,7 @@ const createApiKey = async () => {
       error.value = errData.message || 'Error al crear la API key'
     }
   } catch (err) {
-    console.error('Error creating API key:', err)
+    logger.error('Error creating API key:', err)
     error.value = 'Error de conexión'
   } finally {
     isCreating.value = false
@@ -137,7 +138,7 @@ const deleteKey = async (id) => {
       error.value = 'Error al eliminar la API key'
     }
   } catch (err) {
-    console.error('Error deleting API key:', err)
+    logger.error('Error deleting API key:', err)
     error.value = 'Error de conexión'
   }
 }
@@ -161,7 +162,7 @@ const toggleKey = async (id) => {
       error.value = 'Error al actualizar la API key'
     }
   } catch (err) {
-    console.error('Error toggling API key:', err)
+    logger.error('Error toggling API key:', err)
     error.value = 'Error de conexión'
   }
 }

@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     res.json(apiKeys)
   } catch (error) {
     console.error('Error fetching API keys:', error)
-    res.status(500).json({ message: 'Error al obtener las API keys' })
+    res.status(500).json({ success: false, message: 'Error al obtener las API keys' })
   }
 })
 
@@ -32,11 +32,11 @@ router.post('/', async (req, res) => {
     const { name, apiKey: userApiKey, provider, rateLimit } = req.body
 
     if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'El nombre es requerido' })
+      return res.status(400).json({ success: false, message: 'El nombre es requerido' })
     }
 
     if (!userApiKey || !userApiKey.trim()) {
-      return res.status(400).json({ message: 'La API Key es requerida' })
+      return res.status(400).json({ success: false, message: 'La API Key es requerida' })
     }
 
     // Create preview from user's key
@@ -67,9 +67,9 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating API key:', error)
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message })
+      return res.status(400).json({ success: false, message: 'Datos de validación inválidos' })
     }
-    res.status(500).json({ message: 'Error al guardar la API key' })
+    res.status(500).json({ success: false, message: 'Error al guardar la API key' })
   }
 })
 
@@ -85,13 +85,13 @@ router.delete('/:id', async (req, res) => {
     })
 
     if (!apiKey) {
-      return res.status(404).json({ message: 'API key no encontrada' })
+      return res.status(404).json({ success: false, message: 'API key no encontrada' })
     }
 
     res.json({ message: 'API key eliminada exitosamente' })
   } catch (error) {
     console.error('Error deleting API key:', error)
-    res.status(500).json({ message: 'Error al eliminar la API key' })
+    res.status(500).json({ success: false, message: 'Error al eliminar la API key' })
   }
 })
 
@@ -107,7 +107,7 @@ router.patch('/:id/toggle', async (req, res) => {
     })
 
     if (!apiKey) {
-      return res.status(404).json({ message: 'API key no encontrada' })
+      return res.status(404).json({ success: false, message: 'API key no encontrada' })
     }
 
     apiKey.active = !apiKey.active
@@ -119,7 +119,7 @@ router.patch('/:id/toggle', async (req, res) => {
     })
   } catch (error) {
     console.error('Error toggling API key:', error)
-    res.status(500).json({ message: 'Error al actualizar la API key' })
+    res.status(500).json({ success: false, message: 'Error al actualizar la API key' })
   }
 })
 

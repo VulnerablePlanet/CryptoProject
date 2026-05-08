@@ -29,6 +29,7 @@ function getOrchestrator() {
   if (!tradingAgentOrchestrator) {
     try {
       const { TradingAgentOrchestrator } = require('../trading/agent/orchestrator')
+      const { KillSwitch } = require('../trading/agent/killSwitch')
       agentConfig = agentConfig || require('../trading/agent/config')
 
       // Attach mongoose if available
@@ -36,7 +37,12 @@ function getOrchestrator() {
       if (mongoose.connection.readyState === 1) {
         tradingAgentOrchestrator = new TradingAgentOrchestrator(agentConfig)
         tradingAgentOrchestrator.setMongoose(mongoose)
-        console.log('[Agent API] Orchestrator initialized with MongoDB')
+
+        // Initialize and attach the kill switch with configured thresholds
+        const killSwitch = new KillSwitch(agentConfig.RISK?.KILL_SWITCH || {})
+        tradingAgentOrchestrator.setKillSwitch(killSwitch)
+
+        console.log('[Agent API] Orchestrator initialized with MongoDB + Kill Switch')
       } else {
         console.warn('[Agent API] MongoDB not connected yet')
       }

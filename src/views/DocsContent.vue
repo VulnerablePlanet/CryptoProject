@@ -734,13 +734,6 @@ POST /api/auth/logout → Revokes refresh token</pre>
               </div>
             </div>
             <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
-              <span class="material-symbols-outlined text-primary">pets</span>
-              <div>
-                <p class="font-medium text-slate-900 dark:text-white text-sm">Pokemon</p>
-                <p class="text-xs text-text-secondary">/pokemon</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
               <span class="material-symbols-outlined text-primary">person</span>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">Profile</p>

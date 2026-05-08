@@ -12,6 +12,7 @@
  */
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
+import { logger } from '@/utils/logger'
 
 // State
 const agentStatus = ref(null)
@@ -50,7 +51,7 @@ const fetchAgentStatus = async () => {
     agentStatus.value = response.data
     lastUpdate.value = new Date().toLocaleTimeString()
   } catch (err) {
-    console.error('[AgentMonitor] Status error:', err)
+    logger.error('[AgentMonitor] Status error:', err)
   }
 }
 
@@ -59,7 +60,7 @@ const fetchSignal = async () => {
     const response = await api.get('/agent/signal')
     currentSignal.value = response.data
   } catch (err) {
-    console.error('[AgentMonitor] Signal error:', err)
+    logger.error('[AgentMonitor] Signal error:', err)
   }
 }
 
@@ -68,7 +69,7 @@ const fetchPositions = async () => {
     const response = await api.get('/agent/positions')
     positions.value = response.data.positions || []
   } catch (err) {
-    console.error('[AgentMonitor] Positions error:', err)
+    logger.error('[AgentMonitor] Positions error:', err)
   }
 }
 

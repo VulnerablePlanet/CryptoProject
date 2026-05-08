@@ -14,6 +14,7 @@ import { onMounted, computed, ref } from 'vue'
 import { useFibonacciStore } from '@/stores/fibonacci'
 import FibonacciChart from '@/components/fibonacci/FibonacciChart.vue'
 import FibonacciLevels from '@/components/fibonacci/FibonacciLevels.vue'
+import { logger } from '@/utils/logger'
 
 // Store
 const store = useFibonacciStore()
@@ -44,7 +45,7 @@ const fetchCandleData = async () => {
       candleData.value = data.candles || []
     }
   } catch (error) {
-    console.error('Error fetching candles:', error)
+    logger.error('Error fetching candles:', error)
   } finally {
     loadingCandles.value = false
   }

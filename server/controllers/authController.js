@@ -74,7 +74,7 @@ const register = async (req, res) => {
     // Generate tokens
     const accessToken = generateAccessToken(user._id)
     const refreshExpiresDays = parseDurationToDays(process.env.JWT_REFRESH_EXPIRES_IN || '7d')
-    const refreshTokenDoc = await RefreshToken.createToken(user._id, refreshExpiresDays, {
+    const { token: refreshToken } = await RefreshToken.createToken(user._id, refreshExpiresDays, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip
     })
@@ -83,11 +83,13 @@ const register = async (req, res) => {
       success: true,
       message: 'User registered successfully',
       accessToken,
-      refreshToken: refreshTokenDoc.token,
+      refreshToken,
       user: user.toJSON()
     })
   } catch (error) {
-    console.error('Register error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Register error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error registering user'
@@ -136,7 +138,7 @@ const login = async (req, res) => {
     // Generate tokens
     const accessToken = generateAccessToken(user._id)
     const refreshExpiresDays = parseDurationToDays(process.env.JWT_REFRESH_EXPIRES_IN || '7d')
-    const refreshTokenDoc = await RefreshToken.createToken(user._id, refreshExpiresDays, {
+    const { token: refreshToken } = await RefreshToken.createToken(user._id, refreshExpiresDays, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip
     })
@@ -145,11 +147,13 @@ const login = async (req, res) => {
       success: true,
       message: 'Login successful',
       accessToken,
-      refreshToken: refreshTokenDoc.token,
+      refreshToken,
       user: user.toJSON()
     })
   } catch (error) {
-    console.error('Login error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Login error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error logging in'
@@ -158,9 +162,14 @@ const login = async (req, res) => {
 }
 
 /**
- * @desc    Refresh access token
+ * @desc    Refresh access token (with token rotation)
  * @route   POST /api/auth/refresh
  * @access  Public
+ *
+ * TOKEN ROTATION: When a refresh token is used, it is immediately revoked
+ * and a NEW refresh token is issued. This prevents stolen refresh tokens
+ * from being usable — if a stolen token is used after the legitimate user
+ * has already rotated it, the theft is detected.
  */
 const refreshAccessToken = async (req, res) => {
   try {
@@ -183,16 +192,29 @@ const refreshAccessToken = async (req, res) => {
       })
     }
     
-    // Generate new access token
+    // TOKEN ROTATION: Revoke the old token immediately
+    await RefreshToken.revokeToken(refreshToken)
+    
+    // Generate NEW access token
     const accessToken = generateAccessToken(tokenDoc.user._id)
+    
+    // Generate NEW refresh token
+    const refreshExpiresDays = parseDurationToDays(process.env.JWT_REFRESH_EXPIRES_IN || '7d')
+    const { token: newRefreshToken } = await RefreshToken.createToken(tokenDoc.user._id, refreshExpiresDays, {
+      userAgent: req.headers['user-agent'] || tokenDoc.userAgent,
+      ipAddress: req.ip || tokenDoc.ipAddress
+    })
     
     res.json({
       success: true,
       accessToken,
+      refreshToken: newRefreshToken,
       user: tokenDoc.user.toJSON()
     })
   } catch (error) {
-    console.error('Refresh token error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Refresh token error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error refreshing token'
@@ -218,7 +240,9 @@ const logout = async (req, res) => {
       message: 'Logged out successfully'
     })
   } catch (error) {
-    console.error('Logout error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Logout error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error logging out'
@@ -240,7 +264,9 @@ const logoutAll = async (req, res) => {
       message: 'Logged out from all devices'
     })
   } catch (error) {
-    console.error('Logout all error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Logout all error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error logging out from all devices'
@@ -255,7 +281,6 @@ const logoutAll = async (req, res) => {
  */
 const me = async (req, res) => {
   try {
-    // User is already attached by auth middleware
     const user = await User.findById(req.user._id)
     
     if (!user) {
@@ -270,7 +295,9 @@ const me = async (req, res) => {
       user: user.toJSON()
     })
   } catch (error) {
-    console.error('Get me error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Get me error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error fetching user'
@@ -291,35 +318,29 @@ const updateProfile = async (req, res) => {
     
     const updateData = {}
     
-    // Basic info fields
     if (name !== undefined) updateData.name = name
     if (phone !== undefined) updateData.phone = phone
     if (birthDate !== undefined) updateData.birthDate = birthDate || null
     if (location !== undefined) updateData.location = location
     if (bio !== undefined) updateData.bio = bio
     
-    // Social links - merge with existing (parse JSON if string from FormData)
     if (socialLinks) {
       const existingSocialLinks = req.user.socialLinks || {}
       const parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks
       updateData.socialLinks = { ...existingSocialLinks, ...parsedSocialLinks }
     }
     
-    // Settings - merge with existing
     if (settings) {
       updateData.settings = { ...req.user.settings, ...settings }
     }
     
-    // Handle avatar upload
     if (req.file) {
-      // Delete old avatar if exists
       if (req.user.avatar) {
         const oldAvatarPath = path.join(__dirname, '..', '..', 'public', req.user.avatar)
         if (fs.existsSync(oldAvatarPath)) {
           fs.unlinkSync(oldAvatarPath)
         }
       }
-      // Set new avatar path (relative to public folder)
       updateData.avatar = `/uploads/avatars/${req.file.filename}`
     }
     
@@ -335,7 +356,9 @@ const updateProfile = async (req, res) => {
       user: user.toJSON()
     })
   } catch (error) {
-    console.error('Update profile error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Update profile error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: error.message || 'Error updating profile'
@@ -344,9 +367,9 @@ const updateProfile = async (req, res) => {
 }
 
 /**
- * @desc    Get total user count
+ * @desc    Get total user count (protected — requires auth)
  * @route   GET /api/auth/user-count
- * @access  Public
+ * @access  Private
  */
 const getUserCount = async (req, res) => {
   try {
@@ -357,7 +380,9 @@ const getUserCount = async (req, res) => {
       count
     })
   } catch (error) {
-    console.error('Get user count error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Get user count error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error fetching user count'
@@ -381,7 +406,9 @@ const getAllUsers = async (req, res) => {
       users
     })
   } catch (error) {
-    console.error('Get all users error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Get all users error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error fetching users'
@@ -423,7 +450,9 @@ const getChartSettings = async (req, res) => {
       settings: chartSettings
     })
   } catch (error) {
-    console.error('Get chart settings error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Get chart settings error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error fetching chart settings'
@@ -448,34 +477,26 @@ const updateChartSettings = async (req, res) => {
       })
     }
     
-    // Build update object
     const updatePath = `settings.chartSettings.${module}`
     const updateData = {
       [`${updatePath}.updatedAt`]: new Date()
     }
     
-    // Handle new chartState format (complete chart state)
     if (chartState) {
-      // Save time-based visibleRange to BOTH nested and flat locations
       if (chartState.visibleRange) {
-        // Nested (for future use)
         updateData[`${updatePath}.chartState.visibleRange.from`] = chartState.visibleRange.from
         updateData[`${updatePath}.chartState.visibleRange.to`] = chartState.visibleRange.to
-        // Flat (for current frontend compatibility)
         updateData[`${updatePath}.visibleRange.from`] = chartState.visibleRange.from
         updateData[`${updatePath}.visibleRange.to`] = chartState.visibleRange.to
       }
-      // Also save logicalRange for legacy compatibility
       if (chartState.logicalRange) {
         updateData[`${updatePath}.chartState.logicalRange.from`] = chartState.logicalRange.from
         updateData[`${updatePath}.chartState.logicalRange.to`] = chartState.logicalRange.to
       }
-      // Save barSpacing to BOTH locations
       if (chartState.barSpacing !== undefined) {
         updateData[`${updatePath}.chartState.barSpacing`] = chartState.barSpacing
-        updateData[`${updatePath}.barSpacing`] = chartState.barSpacing  // Flat for frontend
+        updateData[`${updatePath}.barSpacing`] = chartState.barSpacing
       }
-      // Save other options to both locations
       if (chartState.rightOffset !== undefined) {
         updateData[`${updatePath}.chartState.rightOffset`] = chartState.rightOffset
         updateData[`${updatePath}.rightOffset`] = chartState.rightOffset
@@ -486,7 +507,6 @@ const updateChartSettings = async (req, res) => {
       }
     }
     
-    // Handle legacy visibleRange format for backwards compatibility
     if (visibleRange && !chartState) {
       if (visibleRange.from !== undefined) {
         updateData[`${updatePath}.visibleRange.from`] = visibleRange.from
@@ -519,7 +539,9 @@ const updateChartSettings = async (req, res) => {
       settings: savedSettings
     })
   } catch (error) {
-    console.error('Update chart settings error:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Update chart settings error:', error.message)
+    }
     res.status(500).json({
       success: false,
       message: 'Error saving chart settings'

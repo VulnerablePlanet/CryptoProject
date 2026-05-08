@@ -84,11 +84,6 @@ const routes = [
         component: () => import('@/views/ProfileContent.vue')
       },
       {
-        path: 'pokemon',
-        name: 'pokemon',
-        component: () => import('@/views/PokemonContent.vue')
-      },
-      {
         path: 'technical-analysis',
         name: 'technical-analysis',
         component: () => import('@/views/TechnicalAnalysisContent.vue')
@@ -131,10 +126,11 @@ const routes = [
     ]
   },
   
-  // Catch-all redirect
+  // 404 Not Found
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
+    name: 'not-found',
+    component: () => import('@/views/NotFoundContent.vue')
   }
 ]
 

@@ -8,6 +8,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { createChart } from 'lightweight-charts'
 import { useThemeStore } from '@/stores/theme'
+import { logger } from '@/utils/logger'
 
 const props = defineProps({
   candleData: {
@@ -213,7 +214,7 @@ watch(() => props.fibLevels, updateFibLines, { deep: true })
 
 // Watch for theme changes - recreate chart
 watch(isDark, async () => {
-  console.log('📐 [Fibonacci Chart] Theme changed, recreating chart...')
+  logger.debug('📐 [Fibonacci Chart] Theme changed, recreating chart...')
   await nextTick()
   initChart()
 })

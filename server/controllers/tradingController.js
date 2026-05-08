@@ -33,7 +33,7 @@ const getIndicators = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found. Run sync first.' })
+      return res.status(404).json({ success: false, message: 'No candle data found. Run sync first.' })
     }
     
     // Calculate all indicators
@@ -52,7 +52,7 @@ const getIndicators = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getIndicators error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -74,7 +74,7 @@ const getAnalysis = async (req, res) => {
     )
     
     if (!rawCandles || rawCandles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     // Mark data quality
@@ -117,7 +117,7 @@ const getAnalysis = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getAnalysis error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -138,7 +138,7 @@ const getSignals = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const cleanCandles = filterCleanData(markDataQuality(candles))
@@ -166,7 +166,7 @@ const getSignals = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getSignals error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -187,7 +187,7 @@ const getDataQuality = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const markedCandles = markDataQuality(candles)
@@ -204,7 +204,7 @@ const getDataQuality = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getDataQuality error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -225,7 +225,7 @@ const getPatterns = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const patterns = analyzePatterns(candles)
@@ -239,7 +239,7 @@ const getPatterns = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getPatterns error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -260,7 +260,7 @@ const getLevels = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const levels = detectLevels(candles)
@@ -275,7 +275,7 @@ const getLevels = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getLevels error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -296,7 +296,7 @@ const getContext = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const hourContext = getCurrentHourContext(candles)
@@ -314,7 +314,7 @@ const getContext = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getContext error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -336,7 +336,7 @@ const getMTF = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     // Perform MTF analysis
@@ -356,7 +356,7 @@ const getMTF = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getMTF error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -377,7 +377,7 @@ const getCompleteSignal = async (req, res) => {
     )
     
     if (!candles || candles.length === 0) {
-      return res.status(404).json({ error: 'No candle data found' })
+      return res.status(404).json({ success: false, message: 'No candle data found' })
     }
     
     const signal = generateSignal(candles)
@@ -393,7 +393,7 @@ const getCompleteSignal = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getCompleteSignal error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 
@@ -414,7 +414,7 @@ const getBacktest = async (req, res) => {
     )
     
     if (!candles || candles.length < 150) {
-      return res.status(400).json({ error: 'Insufficient data for backtesting (need at least 150 candles)' })
+      return res.status(400).json({ success: false, message: 'Insufficient data for backtesting (need at least 150 candles)' })
     }
     
     const results = runBacktest(candles, {
@@ -435,7 +435,7 @@ const getBacktest = async (req, res) => {
     })
   } catch (error) {
     console.error('[TradingController] getBacktest error:', error)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
 }
 

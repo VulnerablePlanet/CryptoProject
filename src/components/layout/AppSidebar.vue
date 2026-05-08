@@ -21,7 +21,6 @@ const mainNav = [
   { name: 'Fibonacci CCXT', path: '/fibonacci-ccxt', icon: 'show_chart' },
   { name: 'Predictions', path: '/predictions', icon: 'auto_graph' },
   { name: 'Trading Bot', path: '/bot-trading', icon: 'smart_toy' },
-  { name: 'Pokemon', path: '/pokemon', icon: 'pets' },
   { name: 'Docs', path: '/docs', icon: 'description' },
 ]
 

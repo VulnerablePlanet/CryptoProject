@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { logger } from '@/utils/logger'
 
 const authStore = useAuthStore()
 
@@ -48,7 +49,7 @@ const passwordForm = ref({
 
 const changePassword = async () => {
   // TODO: Implement password change API call
-  console.log('Changing password...')
+  logger.debug('Changing password...')
   showPasswordModal.value = false
 }
 

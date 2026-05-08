@@ -22,9 +22,8 @@ export const useCryptoStore = defineStore('crypto', () => {
   // Getters
   const topCoins = computed(() => coins.value.slice(0, 10))
   
-  const coinById = computed(() => (id) => 
+  const coinById = (id) => 
     coins.value.find(coin => coin.id === id)
-  )
 
   const totalMarketCap = computed(() => 
     globalStats.value?.data?.total_market_cap?.usd || 0

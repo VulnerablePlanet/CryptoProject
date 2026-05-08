@@ -2,6 +2,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { useCryptoStore } from '@/stores/crypto'
 import { usePortfolioStore } from '@/stores/portfolio'
+import { formatUSD, formatCOP } from '@/utils/currency'
 
 import AssetTable from '@/components/crypto/AssetTable.vue'
 
@@ -81,28 +82,6 @@ const selectedCoinData = computed(() => {
   return cryptoStore.coins.find(c => c.id === coinId) || { name: 'Bitcoin', symbol: 'BTC' }
 })
 
-// Exchange rate USD to COP (Colombian Peso)
-const copRate = 4400
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value)
-}
-
-const formatCOP = (value) => {
-  const cop = value * copRate
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(cop)
-}
-
 // Initialize - Load both crypto data and user portfolio
 onMounted(async () => {
   await Promise.all([
@@ -135,7 +114,7 @@ onMounted(async () => {
             <div class="flex flex-col gap-1">
               <div class="flex items-baseline gap-3">
                 <h3 v-if="!cryptoStore.loading" class="text-slate-900 dark:text-white text-3xl md:text-4xl font-bold tracking-tight font-mono">
-                  {{ formatCurrency(portfolioValue) }}
+                  {{ formatUSD(portfolioValue) }}
                 </h3>
                 <div v-else class="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 

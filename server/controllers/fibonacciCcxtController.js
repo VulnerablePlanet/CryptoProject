@@ -77,15 +77,18 @@ const getAnalysis = async (req, res) => {
 
     // Combine results
     res.json({
-      ...fibAnalysis,
-      confluence,
-      signals
+      success: true,
+      data: {
+        ...fibAnalysis,
+        confluence,
+        signals
+      }
     })
   } catch (error) {
     console.error('Fibonacci CCXT analysis error:', error.message)
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to perform Fibonacci analysis'
+      message: 'Failed to perform Fibonacci analysis'
     })
   }
 }
@@ -133,7 +136,7 @@ const getLevels = async (req, res) => {
     console.error('Fibonacci levels error:', error.message)
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch Fibonacci levels'
+      message: 'Failed to fetch Fibonacci levels'
     })
   }
 }
@@ -201,7 +204,7 @@ const getConfluence = async (req, res) => {
     console.error('Confluence analysis error:', error.message)
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to calculate confluence indicators'
+      message: 'Failed to calculate confluence indicators'
     })
   }
 }
@@ -242,7 +245,7 @@ const compareExchanges = async (req, res) => {
     console.error('Exchange comparison error:', error.message)
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to compare exchanges'
+      message: 'Failed to compare exchanges'
     })
   }
 }

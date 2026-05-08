@@ -11,23 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Agent workflow artifacts
-.atl/
-
-# Environment variables (contains secrets)
 .env
+.coverage
+coverage
 
 # Graphify
 .graphify/

@@ -14,6 +14,7 @@
 import { onMounted, computed } from 'vue'
 import { useTradingViewStore } from '@/stores/tradingview'
 import { formatUSD, formatCOPWithFlag, getCopRate } from '@/utils/currency'
+import { logger } from '@/utils/logger'
 
 // Components
 import TradingViewChart from '@/components/tradingview/TradingViewChart.vue'
@@ -60,7 +61,7 @@ const handleSync = () => {
 
 const handleCrosshairMove = (data) => {
   // Future: Update crosshair display
-  console.log('Crosshair move:', data)
+  logger.debug('Crosshair move:', data)
 }
 </script>
 

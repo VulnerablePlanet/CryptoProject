@@ -16,6 +16,14 @@ const refreshTokenSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  revoked: {
+    type: Boolean,
+    default: false
+  },
+  replacedBy: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -43,29 +51,42 @@ refreshTokenSchema.statics.generateToken = function() {
 }
 
 /**
+ * Hash token for storage (prevents token theft from DB compromise)
+ */
+refreshTokenSchema.statics.hashToken = function(token) {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+/**
  * Create a new refresh token for a user
+ * Returns the PLAINTEXT token (only once) and stores the HASHED version
  */
 refreshTokenSchema.statics.createToken = async function(userId, expiresInDays = 7, metadata = {}) {
-  const token = this.generateToken()
+  const plainToken = this.generateToken()
+  const hashedToken = this.hashToken(plainToken)
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
   
-  const refreshToken = await this.create({
-    token,
+  await this.create({
+    token: hashedToken,
     user: userId,
     expiresAt,
     userAgent: metadata.userAgent || null,
     ipAddress: metadata.ipAddress || null
   })
   
-  return refreshToken
+  return { token: plainToken, expiresAt }
 }
 
 /**
- * Find valid token and return with user
+ * Find valid token by plaintext (hashes and looks up)
+ * Returns token doc with populated user
  */
-refreshTokenSchema.statics.findValidToken = async function(token) {
+refreshTokenSchema.statics.findValidToken = async function(plainToken) {
+  const hashedToken = this.hashToken(plainToken)
+  
   const refreshToken = await this.findOne({
-    token,
+    token: hashedToken,
+    revoked: false,
     expiresAt: { $gt: new Date() }
   }).populate('user')
   
@@ -73,17 +94,18 @@ refreshTokenSchema.statics.findValidToken = async function(token) {
 }
 
 /**
- * Revoke a specific token
+ * Revoke a specific token (by plaintext)
  */
-refreshTokenSchema.statics.revokeToken = async function(token) {
-  return this.deleteOne({ token })
+refreshTokenSchema.statics.revokeToken = async function(plainToken) {
+  const hashedToken = this.hashToken(plainToken)
+  return this.updateOne({ token: hashedToken }, { revoked: true })
 }
 
 /**
  * Revoke all tokens for a user (logout from all devices)
  */
 refreshTokenSchema.statics.revokeAllUserTokens = async function(userId) {
-  return this.deleteMany({ user: userId })
+  return this.updateMany({ user: userId, revoked: false }, { revoked: true })
 }
 
 /**

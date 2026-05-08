@@ -7,6 +7,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { createChart } from 'lightweight-charts'
 import { useThemeStore } from '@/stores/theme'
+import { logger } from '@/utils/logger'
 
 const props = defineProps({
   depthData: {
@@ -157,7 +158,7 @@ const updateData = () => {
       chart.timeScale().fitContent()
     }
   } catch (err) {
-    console.error('Error updating depth chart:', err)
+    logger.error('Error updating depth chart:', err)
   }
 }
 

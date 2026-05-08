@@ -7,9 +7,19 @@
 
 const express = require('express')
 const router = express.Router()
+const { body, validationResult } = require('express-validator')
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
 const { auth } = require('../middleware/auth')
+
+// Validation check middleware
+const validate = (req, res, next) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() })
+  }
+  next()
+}
 
 // All exchange routes require authentication
 router.use(auth)
@@ -33,7 +43,7 @@ router.get('/supported', (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -53,7 +63,7 @@ router.get('/status', (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -83,7 +93,7 @@ router.get('/:exchange/markets', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -112,7 +122,7 @@ router.get('/:exchange/ohlcv/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -139,7 +149,7 @@ router.get('/:exchange/orderbook/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -165,7 +175,7 @@ router.get('/:exchange/ticker/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -187,7 +197,7 @@ router.get('/:exchange/timeframes', (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -208,7 +218,7 @@ router.delete('/cache', (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -235,7 +245,7 @@ router.get('/:exchange/price/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -245,7 +255,12 @@ router.get('/:exchange/price/:base/:quote', async (req, res) => {
  * Get multiple prices from different exchanges
  * Body: { coins: [{ exchange, symbol }] }
  */
-router.post('/prices', async (req, res) => {
+router.post('/prices', 
+  body('coins').isArray({ min: 1 }).withMessage('coins must be a non-empty array'),
+  body('coins.*.exchange').optional().trim().notEmpty().withMessage('each coin must have an exchange'),
+  body('coins.*.symbol').optional().trim().notEmpty().withMessage('each coin must have a symbol'),
+  validate,
+  async (req, res) => {
   try {
     const { coins } = req.body
     
@@ -267,7 +282,7 @@ router.post('/prices', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })

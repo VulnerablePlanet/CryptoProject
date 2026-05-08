@@ -23,6 +23,7 @@ import {
   MethodologyInfo
 } from '@/components/predictions'
 import { formatCOPWithFlag } from '@/utils/currency'
+import { logger } from '@/utils/logger'
 
 // Store
 const store = usePredictionsStore()
@@ -78,14 +79,14 @@ const predictedPrice = computed(() => {
 onMounted(async () => {
   // Load chart settings FIRST to know if we should skip fitContent
   const settings = await store.loadChartSettings()
-  console.log('📊 [PredictionsContent] loadChartSettings returned:', settings)
+  logger.debug('📊 [PredictionsContent] loadChartSettings returned:', settings)
   
   // Check for chartState (new nested format) or construct from flat settings
   let chartStateToRestore = null
   if (settings?.chartState) {
     // New format: chartState is nested inside settings
     chartStateToRestore = settings.chartState
-    console.log('📊 [PredictionsContent] Found nested chartState:', chartStateToRestore)
+    logger.debug('📊 [PredictionsContent] Found nested chartState:', chartStateToRestore)
   } else if (settings) {
     // Flat format: extract visibleRange/barSpacing directly from settings
     // Check if we have any valid data to restore
@@ -99,19 +100,19 @@ onMounted(async () => {
         rightOffset: settings.rightOffset || 0,
         scrollPosition: settings.scrollPosition || 0
       }
-      console.log('📊 [PredictionsContent] Converted flat settings to chartState:', chartStateToRestore)
+      logger.debug('📊 [PredictionsContent] Converted flat settings to chartState:', chartStateToRestore)
     } else {
-      console.log('📊 [PredictionsContent] No valid chart state found in settings')
+      logger.debug('📊 [PredictionsContent] No valid chart state found in settings')
     }
   }
   
   const hasChartState = !!chartStateToRestore
-  console.log('📊 [PredictionsContent] hasChartState =', hasChartState)
+  logger.debug('📊 [PredictionsContent] hasChartState =', hasChartState)
   
   // Store chartState in ref so it can be passed as prop to PredictionChart
   if (hasChartState) {
     loadedChartState.value = chartStateToRestore
-    console.log('📊 [PredictionsContent] Loaded chartState for initial render:', chartStateToRestore)
+    logger.debug('📊 [PredictionsContent] Loaded chartState for initial render:', chartStateToRestore)
   }
   
   // If we have a saved state, mark the chart component to skip fitContent
@@ -123,7 +124,7 @@ onMounted(async () => {
   // Set restoring flag BEFORE initialize to prevent save overrides
   if (hasChartState) {
     isRestoring = true
-    console.log('📊 [PredictionsContent] Setting isRestoring=true to prevent save during restore')
+    logger.debug('📊 [PredictionsContent] Setting isRestoring=true to prevent save during restore')
   }
   
   // Now initialize store (loads data which triggers chart update)
@@ -134,13 +135,13 @@ onMounted(async () => {
     await nextTick()
     setTimeout(() => {
       if (predictionChartRef.value) {
-        console.log('📊 [PredictionsContent] Restoring chart state:', chartStateToRestore)
+        logger.debug('📊 [PredictionsContent] Restoring chart state:', chartStateToRestore)
         predictionChartRef.value.restoreChartState(chartStateToRestore)
         
         // Clear restoring flag after a delay to allow chart to stabilize
         setTimeout(() => {
           isRestoring = false
-          console.log('📊 [PredictionsContent] Cleared isRestoring flag, saves now allowed')
+          logger.debug('📊 [PredictionsContent] Cleared isRestoring flag, saves now allowed')
         }, 1000)
       }
     }, 500) // Give chart time to render data first
@@ -181,22 +182,22 @@ function dismissError() {
 function handleVisibleRangeChange(chartState) {
   // Skip saves during restoration to prevent overwriting saved state
   if (isRestoring) {
-    console.log('📊 [PredictionsContent] Skipping save during restore')
+    logger.debug('📊 [PredictionsContent] Skipping save during restore')
     return
   }
   
-  console.log('📊 [PredictionsContent] Received chart state:', chartState)
+  logger.debug('📊 [PredictionsContent] Received chart state:', chartState)
   
   // Check if chartState has valid visibleRange (or legacy logicalRange)
   if (!chartState || (!chartState.visibleRange && !chartState.logicalRange)) {
-    console.log('📊 [PredictionsContent] Invalid chart state, skipping save')
+    logger.debug('📊 [PredictionsContent] Invalid chart state, skipping save')
     return
   }
   
   // Debounce save to avoid too many API calls during drag
   clearTimeout(zoomDebounceTimer)
   zoomDebounceTimer = setTimeout(() => {
-    console.log('📊 [PredictionsContent] Saving chart state:', chartState)
+    logger.debug('📊 [PredictionsContent] Saving chart state:', chartState)
     store.saveChartSettings(chartState)
   }, ZOOM_DEBOUNCE_MS)
 }

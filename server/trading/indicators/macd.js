@@ -48,7 +48,7 @@ const calculateMACD = (prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 
     if (macdLine[i] === null) {
       signalLine.push(null)
     } else {
-      signalLine.push(signalRaw[signalIdx] || null)
+      signalLine.push(signalRaw[signalIdx] ?? null)
       signalIdx++
     }
   }

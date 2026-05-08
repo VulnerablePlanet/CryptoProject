@@ -12,6 +12,7 @@
 
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { createChart } from 'lightweight-charts'
+import { logger } from '@/utils/logger'
 
 const props = defineProps({
   candlestickData: {
@@ -237,7 +238,7 @@ function createChartInstance() {
   chart.timeScale().subscribeVisibleTimeRangeChange((visibleRange) => {
     // Skip emissions during restoration to prevent overwriting saved state
     if (isRestoringState) {
-      console.log('📊 [PredictionChart] Skipping state emit during restoration')
+      logger.debug('📊 [PredictionChart] Skipping state emit during restoration')
       return
     }
     
@@ -257,7 +258,7 @@ function createChartInstance() {
         scrollPosition: timeScale.scrollPosition()
       }
       
-      console.log('📊 [PredictionChart] Chart state changed:', chartState)
+      logger.debug('📊 [PredictionChart] Chart state changed:', chartState)
       emit('visible-range-change', chartState)
     }
   })
@@ -318,7 +319,7 @@ function updateChartData() {
       // Apply saved state instead of fitContent
       hasRestoredState = true
       isRestoringState = true  // Block emissions during initial state application
-      console.log('📊 [PredictionChart] Applying initial state, blocking emissions')
+      logger.debug('📊 [PredictionChart] Applying initial state, blocking emissions')
       
       const state = props.initialChartState
       const timeScale = chart.timeScale()
@@ -330,7 +331,7 @@ function updateChartData() {
             barSpacing: state.barSpacing,
             rightOffset: state.rightOffset || 0
           })
-          console.log('📊 [PredictionChart] Applied initial barSpacing:', state.barSpacing)
+          logger.debug('📊 [PredictionChart] Applied initial barSpacing:', state.barSpacing)
         }
         
         // Use time-based visible range for restoration (more reliable)
@@ -339,7 +340,7 @@ function updateChartData() {
             from: state.visibleRange.from,
             to: state.visibleRange.to
           })
-          console.log('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
+          logger.debug('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
         }
         // Fallback to logicalRange for legacy saved states
         else if (state.logicalRange?.from !== undefined && state.logicalRange?.to !== undefined) {
@@ -347,18 +348,18 @@ function updateChartData() {
             from: state.logicalRange.from,
             to: state.logicalRange.to
           })
-          console.log('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
+          logger.debug('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
         }
         
-        console.log('📊 [PredictionChart] Applied initialChartState:', state)
+        logger.debug('📊 [PredictionChart] Applied initialChartState:', state)
         
         // Clear restoration flag after delay
         setTimeout(() => {
           isRestoringState = false
-          console.log('📊 [PredictionChart] Initial state applied, emissions re-enabled')
+          logger.debug('📊 [PredictionChart] Initial state applied, emissions re-enabled')
         }, 1500)
       } catch (e) {
-        console.warn('📊 [PredictionChart] Could not apply initial state:', e.message)
+        logger.warn('📊 [PredictionChart] Could not apply initial state:', e.message)
         isRestoringState = false  // Re-enable on error
         // Fallback: scroll to real time to show latest candles
         chart.timeScale().scrollToRealTime()
@@ -388,7 +389,7 @@ defineExpose({
    */
   setSkipFitContent(skip) {
     hasRestoredState = skip
-    console.log('📊 [PredictionChart] Skip fitContent set to:', skip)
+    logger.debug('📊 [PredictionChart] Skip fitContent set to:', skip)
   },
   
   /**
@@ -399,7 +400,7 @@ defineExpose({
       try {
         chart.timeScale().setVisibleRange({ from, to })
       } catch (e) {
-        console.warn('Could not restore visible range:', e.message)
+        logger.warn('Could not restore visible range:', e.message)
       }
     }
   },
@@ -413,7 +414,7 @@ defineExpose({
     // Set flags to prevent emissions and fitContent from overriding the restored state
     hasRestoredState = true
     isRestoringState = true
-    console.log('📊 [PredictionChart] Starting state restoration, blocking emissions')
+    logger.debug('📊 [PredictionChart] Starting state restoration, blocking emissions')
     
     const timeScale = chart.timeScale()
     
@@ -424,7 +425,7 @@ defineExpose({
           barSpacing: state.barSpacing,
           rightOffset: state.rightOffset || 0
         })
-        console.log('📊 [PredictionChart] Applied barSpacing:', state.barSpacing)
+        logger.debug('📊 [PredictionChart] Applied barSpacing:', state.barSpacing)
       }
       
       // Use time-based visible range for restoration (more reliable)
@@ -433,7 +434,7 @@ defineExpose({
           from: state.visibleRange.from,
           to: state.visibleRange.to
         })
-        console.log('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
+        logger.debug('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
       }
       // Fallback to logicalRange for legacy saved states
       else if (state.logicalRange?.from !== undefined && state.logicalRange?.to !== undefined) {
@@ -441,12 +442,12 @@ defineExpose({
           from: state.logicalRange.from,
           to: state.logicalRange.to
         })
-        console.log('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
+        logger.debug('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
       }
       
-      console.log('📊 [PredictionChart] Chart state restored:', state)
+      logger.debug('📊 [PredictionChart] Chart state restored:', state)
     } catch (e) {
-      console.warn('Could not restore chart state:', e.message)
+      logger.warn('Could not restore chart state:', e.message)
     }
     
     // Restore price range (vertical axis) if available
@@ -466,18 +467,18 @@ defineExpose({
               }
             })
           })
-          console.log('📊 [PredictionChart] Restored price range:', state.priceRange)
+          logger.debug('📊 [PredictionChart] Restored price range:', state.priceRange)
         }
       }
     } catch (e) {
-      console.warn('Could not restore price range:', e.message)
+      logger.warn('Could not restore price range:', e.message)
     }
     
     // Clear restoration flag after a delay to allow chart to stabilize
     // This enables normal state emissions to resume after restoration
     setTimeout(() => {
       isRestoringState = false
-      console.log('📊 [PredictionChart] Restoration complete, emissions re-enabled')
+      logger.debug('📊 [PredictionChart] Restoration complete, emissions re-enabled')
     }, 1500)
   },
   

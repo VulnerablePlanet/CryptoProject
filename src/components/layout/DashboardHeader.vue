@@ -25,7 +25,6 @@ const pageTitles = {
   '/tradingview': 'TradingView Charts',
   '/fibonacci': 'Análisis Fibonacci',
   '/fibonacci-ccxt': 'Fibonacci Multi-Exchange',
-  '/pokemon': 'Pokemon',
   '/learn': 'Learn',
   '/security': 'Security',
   '/settings/api-keys': 'API Keys',

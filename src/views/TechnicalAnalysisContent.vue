@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import CandlestickChart from '@/components/crypto/CandlestickChart.vue'
 import { calculateAllIndicators, getRSIInterpretation, generateSparklinePath } from '@/utils/technicalIndicators'
+import { logger } from '@/utils/logger'
 
 // API endpoints for OHLC data
 const API_BASE = import.meta.env.PROD 
@@ -123,7 +124,7 @@ const fetchMetrics = async () => {
       rateLimitMetrics.value = data.service
     }
   } catch (err) {
-    console.error('Failed to fetch metrics:', err)
+    logger.error('Failed to fetch metrics:', err)
   }
 }
 

@@ -265,11 +265,21 @@ class TradingAgentOrchestrator {
       // Set running flag
       this.isRunning = true;
 
-      // Start cycle interval
-      this.cycleInterval = setInterval(() => {
-        this.runCycle().catch(err => {
-          console.error('[Orchestrator] Cycle error:', err.message);
-        });
+      // Start cycle interval with overlap guard
+      let cycleInProgress = false
+      this.cycleInterval = setInterval(async () => {
+        if (cycleInProgress) {
+          console.warn('[Orchestrator] Previous cycle still running, skipping this tick')
+          return
+        }
+        cycleInProgress = true
+        try {
+          await this.runCycle()
+        } catch (err) {
+          console.error('[Orchestrator] Cycle error:', err.message)
+        } finally {
+          cycleInProgress = false
+        }
       }, this.config.CYCLE_INTERVAL);
 
       // Emit started event
@@ -339,9 +349,12 @@ class TradingAgentOrchestrator {
     }
 
     // Check kill switch at start of cycle
-    if (this.killSwitch && this.killSwitch.check()) {
-      console.log('[Orchestrator] Kill switch active at cycle start, skipping');
-      return;
+    if (this.killSwitch) {
+      const ksResult = this.killSwitch.check()
+      if (ksResult.triggered) {
+        console.log('[Orchestrator] Kill switch active at cycle start, skipping:', ksResult.reason)
+        return
+      }
     }
 
     console.log('[Orchestrator] Starting cycle', this.stateManager.cycleCount + 1);
@@ -351,8 +364,12 @@ class TradingAgentOrchestrator {
 
     // Process each symbol
     for (const symbol of this.symbols) {
-      if (!this.isRunning || (this.killSwitch && this.killSwitch.check())) {
+      if (!this.isRunning) {
         console.log('[Orchestrator] Stopping mid-cycle');
+        break;
+      }
+      if (this.killSwitch && this.killSwitch.check().triggered) {
+        console.log('[Orchestrator] Kill switch triggered mid-cycle');
         break;
       }
 
@@ -438,8 +455,8 @@ class TradingAgentOrchestrator {
     }
 
     // 4. EXECUTION phase (only if decision !== NO_TRADE)
-    // Check kill switch before execution
-    if (this.killSwitch && this.killSwitch.check()) {
+      // Check kill switch before execution
+    if (this.killSwitch && this.killSwitch.check().triggered) {
       console.log('[Orchestrator] Kill switch triggered before execution, skipping');
     } else if (scoringData.decision !== 'NO_TRADE') {
       this.stateManager.setState(PHASES.EXECUTION);

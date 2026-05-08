@@ -22,9 +22,8 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     return totalInvested.value
   })
 
-  const holdingByCoinId = computed(() => (coinId) =>
+  const holdingByCoinId = (coinId) =>
     holdings.value.find(h => h.coinId === coinId)
-  )
 
   // Actions
 

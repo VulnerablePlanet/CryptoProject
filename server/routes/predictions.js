@@ -14,7 +14,17 @@
 
 const express = require('express')
 const router = express.Router()
+const { body, validationResult } = require('express-validator')
 const { auth } = require('../middleware/auth')
+
+// Validation check middleware
+const validate = (req, res, next) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() })
+  }
+  next()
+}
 
 // All predictions routes require authentication
 router.use(auth)
@@ -46,7 +56,7 @@ router.get('/config', (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -85,7 +95,7 @@ router.get('/analyze/:exchange/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -120,7 +130,7 @@ router.get('/kalman/:exchange/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -155,7 +165,7 @@ router.get('/forecast/:exchange/:base/:quote', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -172,7 +182,13 @@ router.get('/forecast/:exchange/:base/:quote', async (req, res) => {
  *   steps: 5
  * }
  */
-router.post('/batch', async (req, res) => {
+router.post('/batch',
+  body('exchange').trim().notEmpty().withMessage('Exchange is required'),
+  body('symbols').isArray({ min: 1 }).withMessage('Symbols must be a non-empty array'),
+  body('timeframe').optional().isIn(['1m','5m','15m','30m','1h','4h','1d','1w','1M']).withMessage('Invalid timeframe'),
+  body('steps').optional().isInt({ min: 1, max: 100 }).withMessage('Steps must be between 1 and 100'),
+  validate,
+  async (req, res) => {
   try {
     const { exchange, symbols, timeframe = '1h', steps = 5 } = req.body
     
@@ -208,7 +224,7 @@ router.post('/batch', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })
@@ -259,7 +275,7 @@ router.get('/markets/:exchange', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     })
   }
 })

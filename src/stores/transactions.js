@@ -22,9 +22,8 @@ export const useTransactionStore = defineStore('transactions', () => {
   // Getters
   const recentTransactions = computed(() => transactions.value.slice(0, 5))
   
-  const transactionsByType = computed(() => (type) => 
+  const transactionsByType = (type) => 
     transactions.value.filter(t => t.type === type)
-  )
 
   const totalBuys = computed(() => 
     transactions.value

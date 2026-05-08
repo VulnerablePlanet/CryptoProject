@@ -20,7 +20,7 @@ exports.detectRegime = async (req, res) => {
     if (!candles || !Array.isArray(candles) || candles.length < 50) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid or insufficient candle data (minimum 50 required)'
+        message: 'Invalid or insufficient candle data (minimum 50 required)'
       });
     }
 
@@ -39,7 +39,7 @@ exports.detectRegime = async (req, res) => {
     logger.error('Regime detection failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -56,7 +56,7 @@ exports.calculateScore = async (req, res) => {
     if (!candles || !Array.isArray(candles) || candles.length < 50) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid or insufficient candle data (minimum 50 required)'
+        message: 'Invalid or insufficient candle data (minimum 50 required)'
       });
     }
 
@@ -87,7 +87,7 @@ exports.calculateScore = async (req, res) => {
     logger.error('Score calculation failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -104,7 +104,7 @@ exports.analyzeMTF = async (req, res) => {
     if (!candlesByTimeframe || typeof candlesByTimeframe !== 'object') {
       return res.status(400).json({
         success: false,
-        error: 'candlesByTimeframe object required'
+        message: 'candlesByTimeframe object required'
       });
     }
 
@@ -119,7 +119,7 @@ exports.analyzeMTF = async (req, res) => {
     logger.error('MTF analysis failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -136,7 +136,7 @@ exports.analyzeVolume = async (req, res) => {
     if (!candles || !Array.isArray(candles)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid candle data'
+        message: 'Invalid candle data'
       });
     }
 
@@ -154,7 +154,7 @@ exports.analyzeVolume = async (req, res) => {
     logger.error('Volume analysis failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -171,7 +171,7 @@ exports.analyzeOrderBook = async (req, res) => {
     if (!orderbook) {
       return res.status(400).json({
         success: false,
-        error: 'Order book data required'
+        message: 'Order book data required'
       });
     }
 
@@ -189,7 +189,7 @@ exports.analyzeOrderBook = async (req, res) => {
     logger.error('OrderBook analysis failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -206,7 +206,7 @@ exports.analyzeComplete = async (req, res) => {
     if (!params.candles || !Array.isArray(params.candles)) {
       return res.status(400).json({
         success: false,
-        error: 'Candles required for complete analysis'
+        message: 'Candles required for complete analysis'
       });
     }
 
@@ -224,7 +224,7 @@ exports.analyzeComplete = async (req, res) => {
     logger.error('Complete analysis failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -246,7 +246,7 @@ exports.getCacheStats = async (req, res) => {
     logger.error('Failed to get cache stats', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -274,7 +274,7 @@ exports.clearCache = async (req, res) => {
     logger.error('Failed to clear cache', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };
@@ -291,7 +291,7 @@ exports.detectPatterns = async (req, res) => {
     if (!candles || !Array.isArray(candles) || candles.length < 3) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid or insufficient candle data (minimum 3 required)'
+        message: 'Invalid or insufficient candle data (minimum 3 required)'
       });
     }
 
@@ -310,7 +310,7 @@ exports.detectPatterns = async (req, res) => {
     logger.error('Pattern detection failed', { error: error.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 };

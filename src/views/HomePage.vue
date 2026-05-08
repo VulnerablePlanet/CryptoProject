@@ -9,14 +9,21 @@ const authStore = useAuthStore()
 const userCount = ref(0)
 
 onMounted(async () => {
-  try {
-    const response = await fetch('/api/auth/user-count')
-    const data = await response.json()
-    if (data.success) {
-      userCount.value = data.count
+  // Only fetch user count if authenticated (endpoint requires auth)
+  if (authStore.isAuthenticated) {
+    try {
+      const response = await fetch('/api/auth/user-count', {
+        headers: {
+          'Authorization': `Bearer ${authStore.accessToken}`
+        }
+      })
+      const data = await response.json()
+      if (data.success) {
+        userCount.value = data.count
+      }
+    } catch (error) {
+      // Silently fail — user count is cosmetic on landing page
     }
-  } catch (error) {
-    console.error('Error fetching user count:', error)
   }
 })
 </script>
@@ -70,7 +77,7 @@ onMounted(async () => {
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8">
           <span class="material-symbols-outlined text-[16px]">verified_user</span>
-          {{ userCount }} registered {{ userCount === 1 ? 'user' : 'users' }}
+          {{ userCount ? `${userCount} registered ${userCount === 1 ? 'user' : 'users'}` : 'Join our community' }}
         </div>
         
         <!-- Logo -->

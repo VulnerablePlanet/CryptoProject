@@ -1,12 +1,11 @@
 const mongoose = require('mongoose')
-const crypto = require('crypto')
+const bcrypt = require('bcryptjs')
 
 const apiKeySchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   name: {
     type: String,
@@ -45,7 +44,7 @@ const apiKeySchema = new mongoose.Schema({
 // Generate a new API key
 apiKeySchema.statics.generateKey = function() {
   const prefix = 'sk_live_'
-  const randomPart = crypto.randomBytes(24).toString('hex')
+  const randomPart = require('crypto').randomBytes(24).toString('hex')
   return prefix + randomPart
 }
 
@@ -55,16 +54,25 @@ apiKeySchema.statics.createPreview = function(fullKey) {
   return `${fullKey.substring(0, 8)}...${fullKey.substring(fullKey.length - 4)}`
 }
 
-// Hash the API key before storing
+// Hash the API key with bcrypt before storing (replaces insecure SHA-256)
 apiKeySchema.pre('save', async function(next) {
   if (this.isModified('key')) {
-    // Store hashed version for security
-    this.key = crypto.createHash('sha256').update(this.key).digest('hex')
+    try {
+      const salt = await bcrypt.genSalt(12)
+      this.key = await bcrypt.hash(this.key, salt)
+    } catch (error) {
+      return next(error)
+    }
   }
   next()
 })
 
-// Index for faster queries
+// Method to verify an API key against stored hash
+apiKeySchema.statics.verifyKey = async function(plainKey, hashedKey) {
+  return bcrypt.compare(plainKey, hashedKey)
+}
+
+// Index for faster queries (single compound index — removed duplicate on userId)
 apiKeySchema.index({ userId: 1, createdAt: -1 })
 
 const ApiKey = mongoose.model('ApiKey', apiKeySchema)

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { logger } from '@/utils/logger'
 
 const authStore = useAuthStore()
 
@@ -41,7 +42,7 @@ const loadUsers = async () => {
       error.value = 'Error al cargar los usuarios'
     }
   } catch (err) {
-    console.error('Error loading users:', err)
+    logger.error('Error loading users:', err)
     error.value = 'Error de conexión'
   } finally {
     isLoading.value = false
