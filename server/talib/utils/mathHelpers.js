@@ -1,9 +1,18 @@
 /**
  * Mathematical Helper Functions
  * Reusable math utilities for technical analysis
+ *
+ * @deprecated For SMA, EMA, Standard Deviation: use `calculators` from
+ *   `server/trading/indicators` (delegates to `technicalindicators` npm package).
+ *   Non-indicator math helpers (percentile, normalize, correlation, findPeaks,
+ *   findTroughs, lerp, zScore, hysteresis, realizedVolatility) are NOT duplicated
+ *   elsewhere and remain valid here.
  */
 
-const { mean, std, variance } = require('mathjs');
+// Native statistical helpers (replaces mathjs dependency)
+const mean = (arr) => arr.reduce((s, v) => s + v, 0) / arr.length
+const std = (arr) => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length) }
+const variance = (arr) => { const m = mean(arr); return arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length }
 
 /**
  * Calculate Simple Moving Average

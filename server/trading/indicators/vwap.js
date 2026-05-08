@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateVWAP, calculateVWAPBands, getVWAPPosition } = require('../indicators')`
+ *             instead. The barrel file is the preferred entry point.
+ *
  * ============================================================================
  * VWAP - Volume Weighted Average Price
  * ============================================================================

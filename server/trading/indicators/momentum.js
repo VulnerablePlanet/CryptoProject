@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateROC, calculateMomentum, calculateMomentumSlope, detectMomentumDivergence } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package for ROC.
+ *
  * ============================================================================
  * ROC - Rate of Change (Momentum)
  * ============================================================================

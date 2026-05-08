@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateRSI, detectRSIDivergence } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package.
+ *
  * ============================================================================
  * RELATIVE STRENGTH INDEX (RSI)
  * ============================================================================

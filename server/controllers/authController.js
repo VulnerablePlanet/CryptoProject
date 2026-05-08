@@ -281,18 +281,10 @@ const logoutAll = async (req, res) => {
  */
 const me = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id)
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      })
-    }
-    
+    // User is already attached by auth middleware — no need to re-fetch
     res.json({
       success: true,
-      user: user.toJSON()
+      user: req.user.toJSON()
     })
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
@@ -400,6 +392,7 @@ const getAllUsers = async (req, res) => {
     const users = await User.find()
       .select('name email avatar createdAt')
       .sort({ createdAt: -1 })
+      .lean()
     
     res.json({
       success: true,

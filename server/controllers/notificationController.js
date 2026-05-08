@@ -20,7 +20,8 @@ const getNotifications = async (req, res) => {
       Notification.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit))
+        .lean(),
       Notification.countDocuments(query),
       Notification.countDocuments({ user: req.user._id, read: false })
     ])

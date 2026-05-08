@@ -14,7 +14,10 @@ const ccxtService = require('../../../services/ccxtService')
 const { RingBuffer } = require('../structures/ringBuffer')
 const { RSI, MACD, CCI, ATR, BollingerBands } = require('technicalindicators')
 const { kmeans } = require('ml-kmeans')
-const math = require('mathjs')
+
+// Native statistical helpers (replaces mathjs dependency)
+const mean = (arr) => arr.reduce((s, v) => s + v, 0) / arr.length
+const std = (arr) => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length) }
 
 // Import existing modules
 const { findNearestLevels } = require('../../levels/detector')
@@ -65,8 +68,8 @@ TIMEFRAMES.forEach(tf => {
 function zScoreNormalize(values) {
   if (!values || values.length === 0) return []
 
-  const mean = math.mean(values)
-  const std = math.std(values)
+  const m = mean(values)
+  const s = std(values)
 
   if (std === 0 || isNaN(std)) {
     return values.map(() => 0)
@@ -385,8 +388,8 @@ function detectRegimeWithKMeans(candles) {
 
     for (let f = 0; f < numFeatures; f++) {
       const column = features.map(row => row[f])
-      const mean = math.mean(column)
-      const std = math.std(column)
+      const m = mean(column)
+      const s = std(column)
 
       if (std === 0 || isNaN(std)) {
         features.forEach(() => normalizedFeatures.push(0))

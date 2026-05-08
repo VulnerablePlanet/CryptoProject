@@ -43,7 +43,8 @@ const getTransactions = async (req, res) => {
       Transaction.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit))
+        .lean(),
       Transaction.countDocuments(query)
     ])
 

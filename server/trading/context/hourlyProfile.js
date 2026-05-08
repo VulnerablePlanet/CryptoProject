@@ -6,7 +6,8 @@
  * Identifies active vs dead hours for better signal filtering.
  */
 
-const { calculateATR } = require('../indicators/atr')
+// NOTE: calculateATR not used directly — this file computes its own TR for hourly profiling.
+// const { calculateATR } = require('../indicators')
 
 /**
  * Trading sessions with their UTC hours

@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateBollingerBands, detectBBSqueeze, detectBBBreakout } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package.
+ *
  * ============================================================================
  * BOLLINGER BANDS
  * ============================================================================

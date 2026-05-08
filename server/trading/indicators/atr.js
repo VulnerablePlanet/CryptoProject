@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateATR, calculateTrueRange, calculateATRStops, calculateATRPercent } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package.
+ *
  * ============================================================================
  * ATR - Average True Range
  * ============================================================================

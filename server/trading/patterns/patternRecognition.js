@@ -2,8 +2,16 @@
  * ============================================================================
  * Pattern Recognition - TA-Lib Style Candlestick Pattern Detection
  * ============================================================================
- * Detects common candlestick patterns similar to TA-Lib functions.
- * Returns pattern signals that can be displayed as markers on charts.
+ *
+ * @deprecated DEAD CODE — this file is not imported anywhere in the codebase.
+ *   All pattern detection logic has been consolidated into the canonical
+ *   module at `server/talib/patterns/candlestickPatterns.js`.
+ *
+ *   For TradingView-format markers, use the canonical detectors and wrap
+ *   results with your own formatting layer.
+ *
+ *   Originally detected candlestick patterns similar to TA-Lib functions
+ *   and returned pattern signals displayable as markers on charts.
  */
 
 // ============================================================================

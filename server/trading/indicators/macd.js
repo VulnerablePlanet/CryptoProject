@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateMACD, detectMACDCrossover } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package.
+ *
  * ============================================================================
  * MACD - Moving Average Convergence Divergence
  * ============================================================================

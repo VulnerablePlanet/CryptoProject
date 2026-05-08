@@ -5,8 +5,7 @@
  * Analyze higher timeframes for trend confirmation and context.
  */
 
-const { calculateEMA, calculateSMA } = require('../indicators/movingAverages')
-const { calculateATR } = require('../indicators/atr')
+const { calculateEMA, calculateSMA } = require('../indicators')
 
 /**
  * Timeframe hierarchy (lower to higher)

@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use `const { calculateSMA, calculateEMA, calculateWMA } = require('../indicators')`
+ *             instead. The barrel file now delegates to the `technicalindicators` npm package.
+ *
  * ============================================================================
  * MOVING AVERAGES - SMA & EMA
  * ============================================================================
