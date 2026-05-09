@@ -180,6 +180,7 @@ onMounted(async () => {
             <div
               v-for="holding in enhancedHoldings"
               :key="holding._id"
+              v-memo="[holding._id, holding.currentPrice, holding.currentValue, holding.profitLoss]"
               class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <!-- Coin Info -->

@@ -274,6 +274,7 @@ onMounted(async () => {
             <tr 
               v-for="tx in filteredTransactions"
               :key="tx._id"
+              v-memo="[tx._id]"
               class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <!-- Type -->

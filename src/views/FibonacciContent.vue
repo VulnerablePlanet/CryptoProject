@@ -10,9 +10,9 @@
  * - TradingView chart with level overlays
  */
 
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, defineAsyncComponent } from 'vue'
 import { useFibonacciStore } from '@/stores/fibonacci'
-import FibonacciChart from '@/components/fibonacci/FibonacciChart.vue'
+const FibonacciChart = defineAsyncComponent(() => import('@/components/fibonacci/FibonacciChart.vue'))
 import FibonacciLevels from '@/components/fibonacci/FibonacciLevels.vue'
 import { logger } from '@/utils/logger'
 
@@ -239,14 +239,23 @@ onMounted(async () => {
             </div>
 
             <!-- Chart -->
-            <FibonacciChart
-              v-else
-              :candle-data="candleData"
-              :fib-levels="store.allLevels"
-              :pivots="store.pivots"
-              :trend="store.trend"
-              :height="500"
-            />
+            <Suspense v-else>
+              <FibonacciChart
+                :candle-data="candleData"
+                :fib-levels="store.allLevels"
+                :pivots="store.pivots"
+                :trend="store.trend"
+                :height="500"
+              />
+              <template #fallback>
+                <div class="flex items-center justify-center" style="height: 500px">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-warning"></div>
+                    <p class="text-text-secondary text-sm">Loading chart library...</p>
+                  </div>
+                </div>
+              </template>
+            </Suspense>
           </div>
         </div>
 

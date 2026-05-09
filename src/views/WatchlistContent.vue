@@ -246,6 +246,7 @@ onMounted(async () => {
         <div
           v-for="coin in enhancedWatchlist"
           :key="coin._id"
+          v-memo="[coin._id, coin.current_price, coin.price_change_24h]"
           class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-background-dark rounded-xl border border-gray-100 dark:border-border-dark hover:border-primary/30 transition-all group"
         >
           <!-- Coin Info -->
@@ -311,6 +312,7 @@ onMounted(async () => {
         <div
           v-for="alert in watchlistStore.alerts"
           :key="alert._id"
+          v-memo="[alert._id, alert.active, alert.triggered]"
           class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           <!-- Alert Info -->

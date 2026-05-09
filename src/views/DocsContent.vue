@@ -262,7 +262,7 @@ const methodColors = {
     <div class="flex-1 min-w-0">
       <!-- Overview Section -->
       <div v-if="activeSection === 'overview'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Crypto market anomaly detector Documentation</h1>
           <p class="text-text-secondary mb-6">
             A full-stack cryptocurrency portfolio management application built with Vue.js, Node.js, Express, MongoDB, and Socket.io.
@@ -358,7 +358,7 @@ const methodColors = {
 
       <!-- Project Structure Section -->
       <div v-if="activeSection === 'structure'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Project Structure</h2>
           
           <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto font-mono text-sm">
@@ -435,7 +435,7 @@ const methodColors = {
 
       <!-- Database Section -->
       <div v-if="activeSection === 'database'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Database Schema</h2>
           <p class="text-text-secondary mb-6">MongoDB collections and their document structure</p>
           
@@ -469,7 +469,7 @@ const methodColors = {
 
       <!-- API Endpoints Section -->
       <div v-if="activeSection === 'api'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">API Endpoints</h2>
           <p class="text-text-secondary mb-6">RESTful API endpoints available on the backend</p>
           
@@ -506,7 +506,7 @@ const methodColors = {
 
       <!-- Security Section -->
       <div v-if="activeSection === 'security'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Security</h2>
           <p class="text-text-secondary mb-6">Authentication and session management security features</p>
           
@@ -622,7 +622,7 @@ POST /api/auth/logout → Revokes refresh token</pre>
 
       <!-- Frontend Modules Section -->
       <div v-if="activeSection === 'frontend'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Frontend Modules</h2>
           <p class="text-text-secondary mb-6">Pinia stores for state management</p>
           
@@ -646,7 +646,7 @@ POST /api/auth/logout → Revokes refresh token</pre>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h3 class="font-bold text-slate-900 dark:text-white mb-4">Vue Pages</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
@@ -746,7 +746,7 @@ POST /api/auth/logout → Revokes refresh token</pre>
 
       <!-- Real-time Features Section -->
       <div v-if="activeSection === 'realtime'" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Real-time Features</h2>
           <p class="text-text-secondary mb-6">Socket.io events and real-time functionality</p>
           
@@ -805,7 +805,7 @@ POST /api/auth/logout → Revokes refresh token</pre>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+        <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
           <h3 class="font-bold text-slate-900 dark:text-white mb-4">Socket.io Architecture</h3>
           <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto font-mono text-sm">
             <pre class="text-gray-300"><span class="text-green-400">// Server-side emission</span>

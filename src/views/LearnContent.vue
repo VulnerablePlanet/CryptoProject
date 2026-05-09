@@ -73,7 +73,7 @@ const getLevelColor = (level) => {
     </div>
 
     <!-- Featured Banner -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-purple-600 p-6 md:p-8">
+    <div v-once class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-purple-600 p-6 md:p-8">
       <div class="relative z-10">
         <span class="inline-block px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full mb-3">Featured Course</span>
         <h2 class="text-xl md:text-2xl font-bold text-white mb-2">Getting Started with Cryptocurrency</h2>
@@ -126,6 +126,7 @@ const getLevelColor = (level) => {
             <div 
               v-for="article in category.articles"
               :key="article.id"
+              v-memo="[article.id]"
               class="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-gray-50 dark:hover:bg-border-dark/50 transition-colors"
             >
               <div class="flex items-center gap-3">
@@ -148,7 +149,7 @@ const getLevelColor = (level) => {
     </div>
 
     <!-- Quick Tips Section -->
-    <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
+    <div v-once class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-6">
       <h3 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined text-warning">lightbulb</span>
         Quick Tips

@@ -11,13 +11,13 @@
  * - Responsive design
  */
 
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, defineAsyncComponent } from 'vue'
 import { useTradingViewStore } from '@/stores/tradingview'
 import { formatUSD, formatCOPWithFlag, getCopRate } from '@/utils/currency'
 import { logger } from '@/utils/logger'
 
 // Components
-import TradingViewChart from '@/components/tradingview/TradingViewChart.vue'
+const TradingViewChart = defineAsyncComponent(() => import('@/components/tradingview/TradingViewChart.vue'))
 import CoinSelector from '@/components/tradingview/CoinSelector.vue'
 import TimeframeSelector from '@/components/tradingview/TimeframeSelector.vue'
 import ChartTypeSelector from '@/components/tradingview/ChartTypeSelector.vue'
@@ -219,17 +219,26 @@ const handleCrosshairMove = (data) => {
         </div>
         
         <!-- Chart -->
-        <TradingViewChart
-          v-else
-          :candle-data="store.tvCandleData"
-          :volume-data="store.tvVolumeData"
-          :line-data="store.tvLineData"
-          :chart-type="store.chartType"
-          :height="400"
-          :show-volume="true"
-          :color="store.currentCoin.color"
-          @crosshair-move="handleCrosshairMove"
-        />
+        <Suspense v-else>
+          <TradingViewChart
+            :candle-data="store.tvCandleData"
+            :volume-data="store.tvVolumeData"
+            :line-data="store.tvLineData"
+            :chart-type="store.chartType"
+            :height="400"
+            :show-volume="true"
+            :color="store.currentCoin.color"
+            @crosshair-move="handleCrosshairMove"
+          />
+          <template #fallback>
+            <div class="flex items-center justify-center" :style="{ height: '400px' }">
+              <div class="flex flex-col items-center gap-3">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                <p class="text-text-secondary text-sm">Loading chart library...</p>
+              </div>
+            </div>
+          </template>
+        </Suspense>
       </div>
     </div>
 

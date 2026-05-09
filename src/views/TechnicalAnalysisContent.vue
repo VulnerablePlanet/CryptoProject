@@ -551,6 +551,7 @@ const handleTimeframeChange = () => {
             <tr 
               v-for="candle in [...candleData].reverse().slice(0, 20)" 
               :key="candle.timestamp"
+              v-memo="[candle.timestamp]"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
               <td class="px-4 py-2 text-slate-500 dark:text-text-secondary font-mono text-xs">

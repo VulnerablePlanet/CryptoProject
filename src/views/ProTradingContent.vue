@@ -12,12 +12,12 @@
  * - Pattern detection markers
  */
 
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, defineAsyncComponent } from 'vue'
 import { useProTradingStore } from '@/stores/proTrading'
 import { formatUSD, formatCOPWithFlag, getCopRate, formatCOP, formatCompact } from '@/utils/currency'
 
 // Components
-import ProTradingChart from '@/components/protrading/ProTradingChart.vue'
+const ProTradingChart = defineAsyncComponent(() => import('@/components/protrading/ProTradingChart.vue'))
 import OscillatorPanel from '@/components/protrading/OscillatorPanel.vue'
 import DepthChart from '@/components/protrading/DepthChart.vue'
 import ExchangeSelector from '@/components/protrading/ExchangeSelector.vue'
@@ -310,18 +310,27 @@ const formatVolume = (value) => {
             </div>
             
             <!-- Chart -->
-            <ProTradingChart
-              v-else
-              :candle-data="store.tvCandleData"
-              :volume-data="store.tvVolumeData"
-              :line-data="store.tvLineData"
-              :chart-type="store.chartType"
-              :height="400"
-              :show-volume="true"
-              :bollinger-bands="store.bollingerBandsData"
-              :sma-lines="store.smaData"
-              :ema-lines="store.emaData"
-            />
+            <Suspense v-else>
+              <ProTradingChart
+                :candle-data="store.tvCandleData"
+                :volume-data="store.tvVolumeData"
+                :line-data="store.tvLineData"
+                :chart-type="store.chartType"
+                :height="400"
+                :show-volume="true"
+                :bollinger-bands="store.bollingerBandsData"
+                :sma-lines="store.smaData"
+                :ema-lines="store.emaData"
+              />
+              <template #fallback>
+                <div class="flex items-center justify-center" style="height: 400px">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                    <p class="text-text-secondary text-sm">Loading chart library...</p>
+                  </div>
+                </div>
+              </template>
+            </Suspense>
           </div>
         </div>
         
