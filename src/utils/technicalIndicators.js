@@ -1,6 +1,13 @@
 /**
  * Technical Indicators Utility Functions
  * Calculate common crypto trading indicators from OHLC data
+ *
+ * @deprecated FRONTEND DUPLICATE. The server now delegates all indicator
+ *   calculations to the well-tested `technicalindicators` npm package
+ *   (see server/trading/indicators/index.js). This frontend copy exists
+ *   because the frontend uses different data shapes (scalar values for
+ *   dashboard displays rather than full time series). Keep for now, but
+ *   prefer server-side calculations for accuracy.
  */
 
 /**
