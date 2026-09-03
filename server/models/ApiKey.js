@@ -55,16 +55,11 @@ apiKeySchema.statics.createPreview = function(fullKey) {
 }
 
 // Hash the API key with bcrypt before storing (replaces insecure SHA-256)
-apiKeySchema.pre('save', async function(next) {
+apiKeySchema.pre('save', async function() {
   if (this.isModified('key')) {
-    try {
-      const salt = await bcrypt.genSalt(12)
-      this.key = await bcrypt.hash(this.key, salt)
-    } catch (error) {
-      return next(error)
-    }
+    const salt = await bcrypt.genSalt(12)
+    this.key = await bcrypt.hash(this.key, salt)
   }
-  next()
 })
 
 // Method to verify an API key against stored hash

@@ -19,7 +19,7 @@ onMounted(() => {
   
   // Initialize socket connection for authenticated users
   if (authStore.isAuthenticated) {
-    initSocket()
+    initSocket(authStore.token)
     // Enable realtime price updates
     cryptoStore.enableRealtimePrices()
   }

@@ -2,6 +2,9 @@ const { validationResult } = require('express-validator')
 const Transaction = require('../models/Transaction')
 const Portfolio = require('../models/Portfolio')
 const Notification = require('../models/Notification')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('transactionController')
 
 /**
  * @desc    Get user's transactions
@@ -59,7 +62,7 @@ const getTransactions = async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Get transactions error:', error)
+    logger.error('Failed to fetch transactions', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error fetching transactions'
@@ -91,7 +94,11 @@ const getTransaction = async (req, res) => {
       transaction
     })
   } catch (error) {
-    console.error('Get transaction error:', error)
+    logger.error('Failed to fetch transaction', {
+      error,
+      userId: req.user?._id?.toString(),
+      transactionId: req.params?.id
+    })
     res.status(500).json({
       success: false,
       message: 'Error fetching transaction'
@@ -223,6 +230,7 @@ const createTransaction = async (req, res) => {
       },
       socketHelpers
     )
+    void notification
     
     if (socketHelpers) {
       socketHelpers.emitPortfolioUpdate(req.user._id.toString(), portfolio)
@@ -236,7 +244,12 @@ const createTransaction = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Create transaction error:', error)
+    logger.error('Failed to create transaction', {
+      error,
+      userId: req.user?._id?.toString(),
+      coinId: req.body?.coinId,
+      type: req.body?.type
+    })
     res.status(500).json({
       success: false,
       message: 'Error creating transaction'
@@ -264,31 +277,29 @@ const deleteTransaction = async (req, res) => {
       })
     }
 
-    console.log('Deleting transaction:', transaction._id, 'Type:', transaction.type, 'Amount:', transaction.amount)
-
     // Revert the portfolio changes
     let portfolio = await Portfolio.findOne({ user: req.user._id })
-    
+
     if (portfolio) {
       const { type, coinId, symbol, coinName, amount, priceAtTransaction, totalValue } = transaction
       const holdingIndex = portfolio.holdings.findIndex(h => h.coinId === coinId)
 
-      console.log('Before update - Holdings:', portfolio.holdings.length, 'TotalInvested:', portfolio.totalInvested)
-      console.log('Transaction details - CoinId:', coinId, 'Amount:', amount, 'TotalValue:', totalValue)
-
       // Reverse the original transaction effect
       if (type === 'buy' || type === 'transfer_in' || type === 'deposit') {
-        // Original was adding, so now we subtract
+        // Original was adding: reverse it by removing the bought lot AND
+        // recomputing the weighted-average buy price from the remaining cost.
+        // (Previously avgBuyPrice was left stale, corrupting the average.)
         if (holdingIndex >= 0) {
           const existing = portfolio.holdings[holdingIndex]
-          console.log('Found holding at index', holdingIndex, '- Current amount:', existing.amount)
-          existing.amount = Math.max(0, existing.amount - amount)
-          console.log('New amount:', existing.amount)
-          
-          // Remove holding if amount becomes 0
-          if (existing.amount === 0) {
+          const remainingCost = (existing.amount * existing.avgBuyPrice) - (amount * priceAtTransaction)
+          const newAmount = existing.amount - amount
+
+          if (newAmount > 0) {
+            existing.avgBuyPrice = Math.max(0, remainingCost / newAmount)
+            existing.amount = newAmount
+          } else {
+            // Nothing left of this holding — remove it entirely.
             portfolio.holdings.splice(holdingIndex, 1)
-            console.log('Removed holding (amount was 0)')
           }
         }
         portfolio.totalInvested = Math.max(0, portfolio.totalInvested - totalValue)
@@ -311,13 +322,9 @@ const deleteTransaction = async (req, res) => {
         portfolio.totalInvested += amount * priceAtTransaction
       }
 
-      console.log('After update - Holdings:', portfolio.holdings.length, 'TotalInvested:', portfolio.totalInvested)
-
       // Mark holdings array as modified for Mongoose to detect changes
       portfolio.markModified('holdings')
       await portfolio.save()
-      
-      console.log('Portfolio saved successfully')
 
       // Emit realtime portfolio update
       const socketHelpers = req.app.get('socketHelpers')
@@ -335,7 +342,11 @@ const deleteTransaction = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Delete transaction error:', error)
+    logger.error('Failed to delete transaction', {
+      error,
+      userId: req.user?._id?.toString(),
+      transactionId: req.params?.id
+    })
     res.status(500).json({
       success: false,
       message: 'Error deleting transaction'
@@ -378,7 +389,7 @@ const getTransactionStats = async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Get transaction stats error:', error)
+    logger.error('Failed to fetch transaction stats', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error fetching transaction stats'

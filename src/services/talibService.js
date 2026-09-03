@@ -1,11 +1,12 @@
 /**
  * TA-Lib API Service
- * Service layer for communicating with TA-Lib backend API
+ * Service layer for communicating with TA-Lib backend API.
+ * Uses shared createApiClient for automatic JWT auth + token refresh.
  */
 
-const API_BASE = import.meta.env.PROD 
-  ? '/api/talib' 
-  : 'http://localhost:5000/api/talib'
+import { createApiClient } from '@/services/api'
+
+const api = createApiClient('/api/talib')
 
 /**
  * Detect market regime for a symbol
@@ -14,12 +15,8 @@ const API_BASE = import.meta.env.PROD
  * @returns {Promise<Object>} Regime detection result
  */
 export async function detectRegime(symbol, candles) {
-  const response = await fetch(`${API_BASE}/regime/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candles })
-  })
-  return response.json()
+  const response = await api.post(`/regime/${symbol}`, { candles })
+  return response.data
 }
 
 /**
@@ -30,12 +27,8 @@ export async function detectRegime(symbol, candles) {
  * @returns {Promise<Object>} Indicator scoring result
  */
 export async function calculateScore(symbol, candles, regime = null) {
-  const response = await fetch(`${API_BASE}/score/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candles, regime })
-  })
-  return response.json()
+  const response = await api.post(`/score/${symbol}`, { candles, regime })
+  return response.data
 }
 
 /**
@@ -45,12 +38,8 @@ export async function calculateScore(symbol, candles, regime = null) {
  * @returns {Promise<Object>} MTF analysis result
  */
 export async function analyzeMTF(symbol, candlesByTimeframe) {
-  const response = await fetch(`${API_BASE}/mtf/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candlesByTimeframe })
-  })
-  return response.json()
+  const response = await api.post(`/mtf/${symbol}`, { candlesByTimeframe })
+  return response.data
 }
 
 /**
@@ -61,12 +50,8 @@ export async function analyzeMTF(symbol, candlesByTimeframe) {
  * @returns {Promise<Object>} Volume analysis result
  */
 export async function analyzeVolume(symbol, candles, trades = null) {
-  const response = await fetch(`${API_BASE}/volume/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candles, trades })
-  })
-  return response.json()
+  const response = await api.post(`/volume/${symbol}`, { candles, trades })
+  return response.data
 }
 
 /**
@@ -77,12 +62,8 @@ export async function analyzeVolume(symbol, candles, trades = null) {
  * @returns {Promise<Object>} Order book analysis result
  */
 export async function analyzeOrderBook(symbol, orderbook, previousOrderbook = null) {
-  const response = await fetch(`${API_BASE}/orderbook/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderbook, previousOrderbook })
-  })
-  return response.json()
+  const response = await api.post(`/orderbook/${symbol}`, { orderbook, previousOrderbook })
+  return response.data
 }
 
 /**
@@ -97,12 +78,8 @@ export async function analyzeOrderBook(symbol, orderbook, previousOrderbook = nu
  * @returns {Promise<Object>} Complete analysis result
  */
 export async function analyzeComplete(symbol, params) {
-  const response = await fetch(`${API_BASE}/analyze/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
-  })
-  return response.json()
+  const response = await api.post(`/analyze/${symbol}`, params)
+  return response.data
 }
 
 /**
@@ -110,8 +87,8 @@ export async function analyzeComplete(symbol, params) {
  * @returns {Promise<Object>} Cache stats
  */
 export async function getCacheStats() {
-  const response = await fetch(`${API_BASE}/cache/stats`)
-  return response.json()
+  const response = await api.get('/cache/stats')
+  return response.data
 }
 
 /**
@@ -119,10 +96,8 @@ export async function getCacheStats() {
  * @returns {Promise<Object>} Clear result
  */
 export async function clearCache() {
-  const response = await fetch(`${API_BASE}/cache`, {
-    method: 'DELETE'
-  })
-  return response.json()
+  const response = await api.delete('/cache')
+  return response.data
 }
 
 /**
@@ -130,8 +105,8 @@ export async function clearCache() {
  * @returns {Promise<Object>} Health status
  */
 export async function healthCheck() {
-  const response = await fetch(`${API_BASE}/health`)
-  return response.json()
+  const response = await api.get('/health')
+  return response.data
 }
 
 /**
@@ -142,12 +117,8 @@ export async function healthCheck() {
  * @returns {Promise<Object>} Pattern detection result
  */
 export async function detectPatterns(symbol, candles, lookback = 50) {
-  const response = await fetch(`${API_BASE}/patterns/${symbol}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candles, lookback })
-  })
-  return response.json()
+  const response = await api.post(`/patterns/${symbol}`, { candles, lookback })
+  return response.data
 }
 
 // Export as default object
@@ -161,5 +132,5 @@ export default {
   getCacheStats,
   clearCache,
   healthCheck,
-  detectPatterns  // NEW
+  detectPatterns
 }

@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('socket')
 
 /**
  * Initialize Socket.io with authentication
@@ -17,7 +20,7 @@ const initializeSocket = (io) => {
         return next()
       }
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] })
       const user = await User.findById(decoded.userId)
       
       if (user) {
@@ -25,7 +28,7 @@ const initializeSocket = (io) => {
       }
       
       next()
-    } catch (error) {
+    } catch {
       // Allow connection but without user
       socket.user = null
       next()
@@ -34,7 +37,11 @@ const initializeSocket = (io) => {
 
   // Connection handler
   io.on('connection', (socket) => {
-    console.log(`🔌 Client connected: ${socket.id}${socket.user ? ` (User: ${socket.user.email})` : ' (Guest)'}`)
+    logger.info('Client connected', {
+      socketId: socket.id,
+      authenticated: !!socket.user,
+      userEmail: socket.user?.email
+    })
     
     // Join user's personal room if authenticated
     if (socket.user) {
@@ -47,7 +54,10 @@ const initializeSocket = (io) => {
         coinIds.forEach(coinId => {
           socket.join(`coin:${coinId}`)
         })
-        console.log(`📊 ${socket.id} subscribed to prices:`, coinIds)
+        logger.debug('Client subscribed to prices', {
+          socketId: socket.id,
+          coinIds
+        })
       }
     })
     
@@ -62,7 +72,10 @@ const initializeSocket = (io) => {
     
     // Handle disconnection
     socket.on('disconnect', (reason) => {
-      console.log(`🔌 Client disconnected: ${socket.id} (${reason})`)
+      logger.info('Client disconnected', {
+        socketId: socket.id,
+        reason
+      })
     })
     
     // Send initial connection success

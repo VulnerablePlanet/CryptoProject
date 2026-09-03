@@ -38,14 +38,10 @@ const props = defineProps({
   showVolume: {
     type: Boolean,
     default: true
-  },
-  initialChartState: {
-    type: Object,
-    default: null
   }
 })
 
-const emit = defineEmits(['crosshairMove', 'visible-range-change'])
+const emit = defineEmits(['crosshairMove'])
 
 // Refs
 const chartContainer = ref(null)
@@ -54,12 +50,6 @@ let candlestickSeries = null
 let kalmanSeries = null
 let predictionSeries = null
 
-// Flag to skip fitContent when restoring saved state
-let hasRestoredState = false
-// Flag to track if this is the first time data is loaded
-let isFirstDataLoad = true
-// Flag to block state change emissions during restoration
-let isRestoringState = false
 // User's locked barSpacing - set after user zooms manually, prevents auto-resize
 let userLockedBarSpacing = null
 let confidenceUpperSeries = null
@@ -233,37 +223,7 @@ function createChartInstance() {
     }
   })
   
-  // Subscribe to visible TIME range changes (zoom/pan)
-  // Use time-based range for reliable state restoration across sessions
-  chart.timeScale().subscribeVisibleTimeRangeChange((visibleRange) => {
-    // Skip emissions during restoration to prevent overwriting saved state
-    if (isRestoringState) {
-      logger.debug('📊 [PredictionChart] Skipping state emit during restoration')
-      return
-    }
-    
-    // visibleRange can be null when chart has no data
-    if (visibleRange !== null && chart) {
-      const timeScale = chart.timeScale()
-      const options = timeScale.options()
-      
-      // Gather complete chart state using TIME-based range
-      const chartState = {
-        visibleRange: {
-          from: visibleRange.from,  // Timestamp
-          to: visibleRange.to       // Timestamp
-        },
-        barSpacing: options.barSpacing,
-        rightOffset: options.rightOffset,
-        scrollPosition: timeScale.scrollPosition()
-      }
-      
-      logger.debug('📊 [PredictionChart] Chart state changed:', chartState)
-      emit('visible-range-change', chartState)
-    }
-  })
-  
-  // Initial data update
+  // Initial data update — always fit content on first load
   updateChartData()
 }
 
@@ -310,67 +270,11 @@ function updateChartData() {
     confidenceLowerSeries.setData(lowerData)
   }
   
-  // Apply initial chart state ONLY on first data load
-  // Subsequent data updates should NOT change the user's current view
-  if (isFirstDataLoad) {
-    isFirstDataLoad = false
-    
-    if (props.initialChartState && !hasRestoredState) {
-      // Apply saved state instead of fitContent
-      hasRestoredState = true
-      isRestoringState = true  // Block emissions during initial state application
-      logger.debug('📊 [PredictionChart] Applying initial state, blocking emissions')
-      
-      const state = props.initialChartState
-      const timeScale = chart.timeScale()
-      
-      try {
-        // Apply timeScale options first (barSpacing affects zoom level)
-        if (state.barSpacing) {
-          timeScale.applyOptions({
-            barSpacing: state.barSpacing,
-            rightOffset: state.rightOffset || 0
-          })
-          logger.debug('📊 [PredictionChart] Applied initial barSpacing:', state.barSpacing)
-        }
-        
-        // Use time-based visible range for restoration (more reliable)
-        if (state.visibleRange?.from !== undefined && state.visibleRange?.to !== undefined) {
-          timeScale.setVisibleRange({
-            from: state.visibleRange.from,
-            to: state.visibleRange.to
-          })
-          logger.debug('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
-        }
-        // Fallback to logicalRange for legacy saved states
-        else if (state.logicalRange?.from !== undefined && state.logicalRange?.to !== undefined) {
-          timeScale.setVisibleLogicalRange({
-            from: state.logicalRange.from,
-            to: state.logicalRange.to
-          })
-          logger.debug('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
-        }
-        
-        logger.debug('📊 [PredictionChart] Applied initialChartState:', state)
-        
-        // Clear restoration flag after delay
-        setTimeout(() => {
-          isRestoringState = false
-          logger.debug('📊 [PredictionChart] Initial state applied, emissions re-enabled')
-        }, 1500)
-      } catch (e) {
-        logger.warn('📊 [PredictionChart] Could not apply initial state:', e.message)
-        isRestoringState = false  // Re-enable on error
-        // Fallback: scroll to real time to show latest candles
-        chart.timeScale().scrollToRealTime()
-      }
-    } else if (!hasRestoredState) {
-      // No saved state: show latest candles (not all content from the beginning)
-      // Use scrollToRealTime to position at the most recent data
-      chart.timeScale().scrollToRealTime()
-    }
+  // On first data load, scroll to the most recent candles
+  if (!chart._hasScrolledToRealTime) {
+    chart._hasScrolledToRealTime = true
+    chart.timeScale().scrollToRealTime()
   }
-  // After first load, data updates just update the data without changing the view
 }
 
 // Handle resize
@@ -382,148 +286,8 @@ function handleResize() {
   }
 }
 
-// Expose methods to parent for saving/restoring complete chart state
-defineExpose({
-  /**
-   * Set flag to skip fitContent when data updates (used for state restoration)
-   */
-  setSkipFitContent(skip) {
-    hasRestoredState = skip
-    logger.debug('📊 [PredictionChart] Skip fitContent set to:', skip)
-  },
-  
-  /**
-   * Set visible range using time values (legacy)
-   */
-  setVisibleRange(from, to) {
-    if (chart && from && to) {
-      try {
-        chart.timeScale().setVisibleRange({ from, to })
-      } catch (e) {
-        logger.warn('Could not restore visible range:', e.message)
-      }
-    }
-  },
-  
-  /**
-   * Restore complete chart state (visible range, bar spacing)
-   */
-  restoreChartState(state) {
-    if (!chart || !state) return
-    
-    // Set flags to prevent emissions and fitContent from overriding the restored state
-    hasRestoredState = true
-    isRestoringState = true
-    logger.debug('📊 [PredictionChart] Starting state restoration, blocking emissions')
-    
-    const timeScale = chart.timeScale()
-    
-    try {
-      // Apply timeScale options first (barSpacing affects zoom level)
-      if (state.barSpacing) {
-        timeScale.applyOptions({
-          barSpacing: state.barSpacing,
-          rightOffset: state.rightOffset || 0
-        })
-        logger.debug('📊 [PredictionChart] Applied barSpacing:', state.barSpacing)
-      }
-      
-      // Use time-based visible range for restoration (more reliable)
-      if (state.visibleRange?.from !== undefined && state.visibleRange?.to !== undefined) {
-        timeScale.setVisibleRange({
-          from: state.visibleRange.from,
-          to: state.visibleRange.to
-        })
-        logger.debug('📊 [PredictionChart] Applied visibleRange:', state.visibleRange)
-      }
-      // Fallback to logicalRange for legacy saved states
-      else if (state.logicalRange?.from !== undefined && state.logicalRange?.to !== undefined) {
-        timeScale.setVisibleLogicalRange({
-          from: state.logicalRange.from,
-          to: state.logicalRange.to
-        })
-        logger.debug('📊 [PredictionChart] Applied legacy logicalRange:', state.logicalRange)
-      }
-      
-      logger.debug('📊 [PredictionChart] Chart state restored:', state)
-    } catch (e) {
-      logger.warn('Could not restore chart state:', e.message)
-    }
-    
-    // Restore price range (vertical axis) if available
-    try {
-      if (state.priceRange && candlestickSeries) {
-        const priceScale = chart.priceScale('right')
-        if (priceScale && state.priceRange.minValue !== undefined && state.priceRange.maxValue !== undefined) {
-          // Set the visible price range
-          priceScale.applyOptions({
-            autoScale: false
-          })
-          candlestickSeries.applyOptions({
-            autoscaleInfoProvider: () => ({
-              priceRange: {
-                minValue: state.priceRange.minValue,
-                maxValue: state.priceRange.maxValue
-              }
-            })
-          })
-          logger.debug('📊 [PredictionChart] Restored price range:', state.priceRange)
-        }
-      }
-    } catch (e) {
-      logger.warn('Could not restore price range:', e.message)
-    }
-    
-    // Clear restoration flag after a delay to allow chart to stabilize
-    // This enables normal state emissions to resume after restoration
-    setTimeout(() => {
-      isRestoringState = false
-      logger.debug('📊 [PredictionChart] Restoration complete, emissions re-enabled')
-    }, 1500)
-  },
-  
-  /**
-   * Get current chart state for saving
-   */
-  getChartState() {
-    if (!chart) return null
-    
-    const timeScale = chart.timeScale()
-    const logicalRange = timeScale.getVisibleLogicalRange()
-    const options = timeScale.options()
-    
-    // Get visible price range using coordinate conversion
-    let priceRange = null
-    try {
-      if (candlestickSeries && chartContainer.value) {
-        const chartHeight = chartContainer.value.clientHeight
-        // Get price at top and bottom of visible chart area
-        const topPrice = candlestickSeries.coordinateToPrice(0)
-        const bottomPrice = candlestickSeries.coordinateToPrice(chartHeight)
-        
-        if (topPrice !== null && bottomPrice !== null) {
-          priceRange = {
-            minValue: Math.min(topPrice, bottomPrice),
-            maxValue: Math.max(topPrice, bottomPrice)
-          }
-        }
-      }
-    } catch (e) {
-      // Price range not available, continue without it
-    }
-    
-    return {
-      logicalRange: logicalRange ? {
-        from: logicalRange.from,
-        to: logicalRange.to
-      } : null,
-      barSpacing: options.barSpacing,
-      rightOffset: options.rightOffset,
-      scrollPosition: timeScale.scrollPosition(),
-      priceRange: priceRange
-    }
-  }
-})
+// Expose no state methods — chart persistence removed
+defineExpose({})
 
 // Watch for data changes
 watch(

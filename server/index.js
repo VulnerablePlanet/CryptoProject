@@ -25,6 +25,7 @@ const cors = require('cors')
 const http = require('http')
 const path = require('path')
 const { Server } = require('socket.io')
+const { createLogger } = require('./utils/logger')
 
 const connectDB = require('./config/db')
 const authRoutes = require('./routes/auth')
@@ -46,6 +47,7 @@ const agentRoutes = require('./routes/agent')
 
 const app = express()
 const server = http.createServer(app)
+const logger = createLogger('server')
 
 // ============================================================================
 // SECURITY MIDDLEWARE
@@ -54,7 +56,12 @@ const server = http.createServer(app)
 // Helmet: sets 7+ security headers (X-Frame-Options, CSP, HSTS, etc.)
 app.use(helmet())
 
-// CORS configuration - allow any localhost port in development
+// CORS configuration — require an explicit origin in production.
+// In development, fall back to allowing any localhost port.
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  logger.error('CORS_ORIGIN must be set explicitly in production. Refusing to start.')
+  process.exit(1)
+}
 const corsOrigin = process.env.CORS_ORIGIN || /^http:\/\/localhost:\d+$/
 
 // Global rate limiter — 200 requests per 15 minutes per IP
@@ -138,9 +145,9 @@ app.use((req, res) => {
 })
 
 // Error handler (sanitized — no stack traces in production)
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (process.env.NODE_ENV !== 'production') {
-    console.error('Server error:', err.message)
+    logger.error('Server error', err)
   }
   res.status(500).json({
     success: false,
@@ -153,42 +160,42 @@ const PORT = process.env.PORT || 5000
 
 const startServer = async () => {
   try {
-    // Connect to MongoDB
+    // Start listening immediately so Vite proxy doesn't get ECONNREFUSED
+    server.listen(PORT, () => {
+      logger.info('Server started', {
+        port: PORT,
+        socket: 'ready',
+        corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+      })
+    })
+    
+    // Connect to MongoDB (non-blocking for server startup)
     await connectDB()
     
-    // Start listening
-    server.listen(PORT, () => {
-      console.log(`
-Server running on port ${PORT}
-Socket.io ready
-CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}
-      `)
-      
-      // Start price update service
-      startPriceService(socketHelpers)
-    })
+    // Start price update service (requires DB)
+    startPriceService(socketHelpers)
   } catch (error) {
-    console.error('Failed to start server:', error.message)
+    logger.error('Failed to start server', error)
     process.exit(1)
   }
 }
 
 // Graceful shutdown handler
 const gracefulShutdown = (signal) => {
-  console.log(`\n${signal} received. Shutting down gracefully...`)
+  logger.info('Shutdown signal received', { signal })
   
   server.close(() => {
-    console.log('HTTP server closed')
+    logger.info('HTTP server closed')
     
     // Close Socket.io connections
     io.close(() => {
-      console.log('Socket.io connections closed')
+      logger.info('Socket.io connections closed')
       
       // Close MongoDB connection
       const mongoose = require('mongoose')
       mongoose.connection.close(false, () => {
-        console.log('MongoDB connection closed')
-        console.log('Goodbye!')
+        logger.info('MongoDB connection closed')
+        logger.info('Server shutdown complete')
         process.exit(0)
       })
     })
@@ -196,7 +203,7 @@ const gracefulShutdown = (signal) => {
   
   // Force close after 10 seconds if graceful shutdown fails
   setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down')
+    logger.error('Could not close connections in time, forcefully shutting down')
     process.exit(1)
   }, 10000)
 }

@@ -507,7 +507,7 @@ function analyzeMTFTrend(candlesByTF) {
 
   // Determine dominant trend
   const bullishCount = Object.values(results).filter(r => r.bullish).length
-  let dominantTrend = 'NEUTRAL'
+  let dominantTrend
 
   if (bullishCount >= 3) {
     dominantTrend = 'STRONG_BULLISH'

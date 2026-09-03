@@ -126,12 +126,9 @@ const runBacktest = (candles, options = {}) => {
     const stopDistance = Math.abs(entry - stopLoss)
     const positionSize = stopDistance > 0 ? riskAmount / stopDistance : 0
     
-    let pnl = 0
-    if (signal.type === SIGNAL_TYPES.LONG) {
-      pnl = (exitPrice - entry) * positionSize
-    } else {
-      pnl = (entry - exitPrice) * positionSize
-    }
+    const pnl = signal.type === SIGNAL_TYPES.LONG
+      ? (exitPrice - entry) * positionSize
+      : (entry - exitPrice) * positionSize
     
     // Update capital
     currentCapital += pnl

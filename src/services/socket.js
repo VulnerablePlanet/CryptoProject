@@ -1,6 +1,5 @@
 import { io } from 'socket.io-client'
 import { ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { logger } from '@/utils/logger'
 
 // Socket instance
@@ -14,16 +13,14 @@ const connectionError = ref(null)
  * Initialize Socket.io connection
  * Only connects if user is authenticated
  */
-export const initSocket = () => {
+export const initSocket = (token) => {
   if (socket?.connected) {
     return socket
   }
 
-  const authStore = useAuthStore()
-  
-  // Only connect if user is authenticated
-  if (!authStore.isAuthenticated || !authStore.token) {
-    logger.debug('🔌 Socket: Skipping connection (not authenticated)')
+  // Only connect if a token is provided
+  if (!token) {
+    logger.debug('🔌 Socket: Skipping connection (no token provided)')
     return null
   }
   
@@ -34,7 +31,7 @@ export const initSocket = () => {
 
   socket = io(socketUrl, {
     auth: {
-      token: authStore.token
+      token: token
     },
     transports: ['websocket'], // Force websocket only to avoid sticky session issues
     path: '/socket.io/',

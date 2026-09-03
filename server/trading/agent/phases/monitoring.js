@@ -38,7 +38,7 @@ async function checkPositions(options = {}) {
   const { exchange = EXCHANGE_ID, mongoose = null } = options
 
   let positions = []
-  let summary = { openCount: 0, totalPnl: 0, unrealizedPnl: 0 }
+  let summary
 
   try {
     // Fetch open positions from MongoDB
@@ -357,8 +357,8 @@ async function runMonitoringCycle(agentState, options = {}) {
   } = options
 
   const events = []
-  let positions = []
-  let riskStatus = { triggered: false }
+  let positions
+  let riskStatus
   let updatedAgentState = { ...agentState }
 
   try {

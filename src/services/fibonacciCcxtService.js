@@ -1,13 +1,13 @@
 /**
  * Fibonacci CCXT Service
- * API client for CCXT-based Fibonacci analysis endpoints
+ * API client for CCXT-based Fibonacci analysis endpoints.
+ * Uses shared createApiClient for automatic JWT auth + token refresh.
  */
 
-const API_BASE = import.meta.env.PROD
-  ? '/api/fibonacci-ccxt'
-  : 'http://localhost:5000/api/fibonacci-ccxt'
-
+import { createApiClient } from '@/services/api'
 import { logger } from '@/utils/logger'
+
+const api = createApiClient('/api/fibonacci-ccxt')
 
 /**
  * Get full Fibonacci analysis with confluence for a trading pair
@@ -20,24 +20,15 @@ import { logger } from '@/utils/logger'
 export const getAnalysis = async (exchange, symbol, timeframe = '4h', options = {}) => {
   try {
     const [base, quote] = symbol.split('/')
-    const params = new URLSearchParams({
-      timeframe,
-      lookback: options.lookback || 5,
-      threshold: options.threshold || 0.5,
-      limit: options.limit || 100
+    const response = await api.get(`/${exchange}/${base}/${quote}`, {
+      params: {
+        timeframe,
+        lookback: options.lookback || 5,
+        threshold: options.threshold || 0.5,
+        limit: options.limit || 100
+      }
     })
-
-    const response = await fetch(
-      `${API_BASE}/${exchange}/${base}/${quote}?${params}`
-    )
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch Fibonacci analysis')
-    }
-
-    return data
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - getAnalysis error:', error)
     throw error
@@ -50,17 +41,10 @@ export const getAnalysis = async (exchange, symbol, timeframe = '4h', options = 
 export const getLevels = async (exchange, symbol, timeframe = '4h') => {
   try {
     const [base, quote] = symbol.split('/')
-    const response = await fetch(
-      `${API_BASE}/${exchange}/${base}/${quote}/levels?timeframe=${timeframe}`
-    )
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch Fibonacci levels')
-    }
-
-    return data
+    const response = await api.get(`/${exchange}/${base}/${quote}/levels`, {
+      params: { timeframe }
+    })
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - getLevels error:', error)
     throw error
@@ -73,17 +57,10 @@ export const getLevels = async (exchange, symbol, timeframe = '4h') => {
 export const getConfluence = async (exchange, symbol, timeframe = '4h') => {
   try {
     const [base, quote] = symbol.split('/')
-    const response = await fetch(
-      `${API_BASE}/${exchange}/${base}/${quote}/confluence?timeframe=${timeframe}`
-    )
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch confluence data')
-    }
-
-    return data
+    const response = await api.get(`/${exchange}/${base}/${quote}/confluence`, {
+      params: { timeframe }
+    })
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - getConfluence error:', error)
     throw error
@@ -96,22 +73,12 @@ export const getConfluence = async (exchange, symbol, timeframe = '4h') => {
 export const compareExchanges = async (symbol, timeframe = '4h', exchanges = null) => {
   try {
     const [base, quote] = symbol.split('/')
-    const params = new URLSearchParams({ timeframe })
-    if (exchanges) {
-      params.append('exchanges', exchanges.join(','))
+    const params = { timeframe }
+    if (exchanges && exchanges.length > 0) {
+      params.exchanges = exchanges.join(',')
     }
-
-    const response = await fetch(
-      `${API_BASE}/compare/${base}/${quote}?${params}`
-    )
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to compare exchanges')
-    }
-
-    return data
+    const response = await api.get(`/compare/${base}/${quote}`, { params })
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - compareExchanges error:', error)
     throw error
@@ -123,14 +90,8 @@ export const compareExchanges = async (symbol, timeframe = '4h', exchanges = nul
  */
 export const getRatios = async () => {
   try {
-    const response = await fetch(`${API_BASE}/ratios`)
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch ratios')
-    }
-
-    return data
+    const response = await api.get('/ratios')
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - getRatios error:', error)
     throw error
@@ -142,14 +103,8 @@ export const getRatios = async () => {
  */
 export const getSupported = async () => {
   try {
-    const response = await fetch(`${API_BASE}/supported`)
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch supported data')
-    }
-
-    return data
+    const response = await api.get('/supported')
+    return response.data
   } catch (error) {
     logger.error('FibonacciCCXT Service - getSupported error:', error)
     throw error

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getCoinsMarkets, getCoinDetails, getCoinMarketChart, getTrendingCoins, getGlobalStats } from '@/services/coingecko'
-import { initSocket, onPriceUpdate } from '@/services/socket'
+import { onPriceUpdate } from '@/services/socket'
 import { logger } from '@/utils/logger'
 
 export const useCryptoStore = defineStore('crypto', () => {
@@ -146,7 +146,6 @@ export const useCryptoStore = defineStore('crypto', () => {
     if (realtimeEnabled.value) return
     
     try {
-      initSocket()
       unsubscribePrices = onPriceUpdate(updatePrices)
       realtimeEnabled.value = true
       logger.info('🔴 Realtime prices enabled')

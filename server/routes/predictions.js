@@ -16,6 +16,9 @@ const express = require('express')
 const router = express.Router()
 const { body, validationResult } = require('express-validator')
 const { auth } = require('../middleware/auth')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('routes:predictions')
 
 // Validation check middleware
 const validate = (req, res, next) => {
@@ -54,9 +57,10 @@ router.get('/config', (req, res) => {
       predictionHorizons: [1, 3, 5, 10, 20]
     })
   } catch (error) {
+    logger.error('Failed to fetch prediction configuration', error)
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch prediction configuration'
     })
   }
 })
@@ -82,8 +86,8 @@ router.get('/analyze/:exchange/:base/:quote', async (req, res) => {
       symbol,
       timeframe,
       {
-        limit: parseInt(limit),
-        predictionSteps: parseInt(steps)
+        limit: Math.min(parseInt(limit) || 100, 1000),
+        predictionSteps: Math.min(parseInt(steps) || 5, 100)
       }
     )
     
@@ -93,9 +97,13 @@ router.get('/analyze/:exchange/:base/:quote', async (req, res) => {
       res.status(400).json(result)
     }
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch prediction analysis', error, {
+      exchange: req.params.exchange
+    })
+    res.status(502).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch prediction analysis',
+      exchange: req.params.exchange
     })
   }
 })
@@ -119,7 +127,7 @@ router.get('/kalman/:exchange/:base/:quote', async (req, res) => {
       exchange.toLowerCase(),
       symbol,
       timeframe,
-      parseInt(limit)
+      Math.min(parseInt(limit) || 100, 1000)
     )
     
     if (result.success) {
@@ -128,9 +136,13 @@ router.get('/kalman/:exchange/:base/:quote', async (req, res) => {
       res.status(400).json(result)
     }
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch Kalman filtered data', error, {
+      exchange: req.params.exchange
+    })
+    res.status(502).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch Kalman filtered data',
+      exchange: req.params.exchange
     })
   }
 })
@@ -154,7 +166,7 @@ router.get('/forecast/:exchange/:base/:quote', async (req, res) => {
       exchange.toLowerCase(),
       symbol,
       timeframe,
-      parseInt(steps)
+      Math.min(parseInt(steps) || 3, 100)
     )
     
     if (result.success) {
@@ -163,9 +175,13 @@ router.get('/forecast/:exchange/:base/:quote', async (req, res) => {
       res.status(400).json(result)
     }
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch quick forecast', error, {
+      exchange: req.params.exchange
+    })
+    res.status(502).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch quick forecast',
+      exchange: req.params.exchange
     })
   }
 })
@@ -222,9 +238,10 @@ router.post('/batch',
       processed: limitedSymbols.length
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch batch predictions', error)
+    res.status(502).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch batch predictions'
     })
   }
 })
@@ -273,9 +290,14 @@ router.get('/markets/:exchange', async (req, res) => {
       }))
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch prediction markets', error, {
+      exchange: req.params.exchange
+    })
+    const status = error.message?.includes('not supported') ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Failed to fetch prediction markets',
+      exchange: req.params.exchange
     })
   }
 })

@@ -14,7 +14,13 @@ dist-ssr
 .env
 .coverage
 coverage
+agents/
+.agents/
+opencode.json
+skills-lock.json
 
 # Graphify
 .graphify/
+graphify-out/
 .opencode/plugins/graphify.js
+openspec/

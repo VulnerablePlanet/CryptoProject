@@ -1,5 +1,8 @@
 const coingeckoRateLimiter = require('./coingeckoRateLimiter')
 const alertMonitoringService = require('./alertMonitoringService')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('services:price')
 
 // Price service configuration
 const UPDATE_INTERVAL = 30000 // 30 seconds (respecting rate limits)
@@ -41,7 +44,7 @@ const fetchPrices = async () => {
       last_updated: coin.last_updated
     }))
   } catch (error) {
-    console.error('❌ Error fetching prices from CoinGecko:', error.message)
+    logger.error('Failed to fetch prices from CoinGecko', error)
     return null
   }
 }
@@ -51,14 +54,14 @@ const fetchPrices = async () => {
  */
 const broadcastPrices = async () => {
   if (!socketHelpers) {
-    console.warn('Socket helpers not initialized')
+    logger.warn('Socket helpers not initialized')
     return
   }
 
   const prices = await fetchPrices()
   
   if (prices) {
-    // console.log(`📊 Broadcasting prices for ${prices.length} coins`)
+    // Intentionally not logging every broadcast to avoid noisy high-frequency logs.
     socketHelpers.emitPriceUpdate({
       prices,
       timestamp: new Date().toISOString()
@@ -91,13 +94,15 @@ const startPriceService = (helpers) => {
   alertMonitoringService.initialize(helpers)
   
   // Fetch immediately on start
-  console.log('🚀 Starting price service...')
+  logger.info('Starting price service')
   broadcastPrices()
   
   // Then fetch at regular intervals
   priceInterval = setInterval(broadcastPrices, UPDATE_INTERVAL)
   
-  console.log(`⏰ Price updates scheduled every ${UPDATE_INTERVAL / 1000} seconds`)
+  logger.info('Price updates scheduled', {
+    intervalSeconds: UPDATE_INTERVAL / 1000
+  })
 }
 
 /**
@@ -108,7 +113,7 @@ const stopPriceService = () => {
     clearInterval(priceInterval)
     priceInterval = null
     alertMonitoringService.stop()
-    console.log('🛑 Price service stopped')
+    logger.info('Price service stopped')
   }
 }
 

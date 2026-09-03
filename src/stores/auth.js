@@ -222,9 +222,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Logout user
+   * Logout user and redirect to login
    */
-  const logout = async () => {
+  const logout = async (redirect = true) => {
     try {
       // Revoke refresh token on server
       if (refreshToken.value) {
@@ -236,6 +236,19 @@ export const useAuthStore = defineStore('auth', () => {
       accessToken.value = null
       refreshToken.value = null
       error.value = null
+      
+      // Lazy import router to avoid circular dependency at module init
+      if (redirect) {
+        try {
+          const router = (await import('@/router')).default
+          const currentRoute = router.currentRoute?.value
+          if (currentRoute && currentRoute.name !== 'login') {
+            router.push({ name: 'login', query: { redirect: currentRoute.fullPath } })
+          }
+        } catch {
+          // Router not available (e.g., during SSR) — silently ignore
+        }
+      }
     }
   }
 
@@ -250,6 +263,17 @@ export const useAuthStore = defineStore('auth', () => {
       accessToken.value = null
       refreshToken.value = null
       error.value = null
+      
+      // Lazy import router to avoid circular dependency
+      try {
+        const router = (await import('@/router')).default
+        const currentRoute = router.currentRoute?.value
+        if (currentRoute && currentRoute.name !== 'login') {
+          router.push({ name: 'login' })
+        }
+      } catch {
+        // Router not available — silently ignore
+      }
     }
   }
 

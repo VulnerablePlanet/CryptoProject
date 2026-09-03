@@ -126,7 +126,6 @@ const getLevelColor = (level) => {
             <div 
               v-for="article in category.articles"
               :key="article.id"
-              v-memo="[article.id]"
               class="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-gray-50 dark:hover:bg-border-dark/50 transition-colors"
             >
               <div class="flex items-center gap-3">

@@ -7,6 +7,9 @@
  */
 
 const ccxt = require('ccxt')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('services:ccxt')
 
 // ============================================================================
 // Configuration
@@ -57,13 +60,17 @@ const getExchange = (exchangeId) => {
   const id = exchangeId.toLowerCase()
   
   if (!SUPPORTED_EXCHANGES[id]) {
-    throw new Error(`Exchange ${id} is not supported`)
+    throw new Error(`Exchange "${exchangeId}" is not supported. Supported: ${Object.keys(SUPPORTED_EXCHANGES).join(', ')}`)
   }
   
   if (!exchangeInstances.has(id)) {
     const ExchangeClass = ccxt[id]
     
-    // Exchange-specific configurations
+    // Read API keys from environment: BINANCE_API_KEY, BINANCE_API_SECRET, etc.
+    const apiKey = process.env[`${id.toUpperCase()}_API_KEY`]
+    const apiSecret = process.env[`${id.toUpperCase()}_API_SECRET`]
+    
+    // Base configuration
     let exchangeConfig = {
       enableRateLimit: true,
       timeout: 30000,
@@ -73,21 +80,45 @@ const getExchange = (exchangeId) => {
       }
     }
     
-    // Bitget requires specific productType for spot markets
+    // Add API keys if configured (optional for public data, required for trading)
+    if (apiKey && apiSecret) {
+      exchangeConfig.apiKey = apiKey
+      exchangeConfig.secret = apiSecret
+    }
+    
+    // Exchange-specific configurations for CCXT v4 compatibility
     if (id === 'bitget') {
       exchangeConfig.options = {
-        defaultType: 'spot',
+        ...exchangeConfig.options,
         defaultSubType: 'spot',
-        // For some Bitget API calls, the 'spot' type needs to be explicit
         fetchMarkets: { type: 'spot' }
       }
     }
     
-    // Bybit also benefits from explicit type configuration
     if (id === 'bybit') {
       exchangeConfig.options = {
+        ...exchangeConfig.options,
         defaultType: 'spot'
       }
+    }
+    
+    if (id === 'okx') {
+      exchangeConfig.options = {
+        ...exchangeConfig.options,
+        defaultType: 'spot'
+      }
+    }
+    
+    if (id === 'kucoin') {
+      exchangeConfig.options = {
+        ...exchangeConfig.options,
+        defaultType: 'spot'
+      }
+    }
+    
+    if (id === 'kraken') {
+      // Kraken sometimes needs a bit more timeout
+      exchangeConfig.timeout = 60000
     }
     
     const exchange = new ExchangeClass(exchangeConfig)
@@ -176,12 +207,15 @@ const fetchMarkets = async (exchangeId) => {
       }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol))
     
-    console.log(`[ccxtService] Fetched ${markets.length} spot markets from ${exchangeId}`)
+    logger.info('Fetched spot markets', {
+      exchange: exchangeId,
+      count: markets.length
+    })
     
     setCache(cacheKey, markets)
     return markets
   } catch (error) {
-    console.error(`Failed to fetch markets from ${exchangeId}:`, error.message)
+    logger.error('Failed to fetch markets', error, { exchange: exchangeId })
     throw error
   }
 }
@@ -232,7 +266,11 @@ const fetchOHLCV = async (exchangeId, symbol, timeframe = '1h', limit = 100) => 
     setCache(cacheKey, candles)
     return { candles, fromCache: false }
   } catch (error) {
-    console.error(`Failed to fetch OHLCV from ${exchangeId}:`, error.message)
+    logger.error('Failed to fetch OHLCV', error, {
+      exchange: exchangeId,
+      symbol,
+      timeframe
+    })
     throw error
   }
 }
@@ -279,7 +317,11 @@ const fetchOrderBook = async (exchangeId, symbol, limit = 50) => {
     setCache(cacheKey, processedOrderBook)
     return { orderBook: processedOrderBook, fromCache: false }
   } catch (error) {
-    console.error(`Failed to fetch order book from ${exchangeId}:`, error.message)
+    logger.error('Failed to fetch order book', error, {
+      exchange: exchangeId,
+      symbol,
+      limit
+    })
     throw error
   }
 }
@@ -322,7 +364,10 @@ const fetchTicker = async (exchangeId, symbol) => {
     setCache(cacheKey, ticker)
     return { ticker, fromCache: false }
   } catch (error) {
-    console.error(`Failed to fetch ticker from ${exchangeId}:`, error.message)
+    logger.error('Failed to fetch ticker', error, {
+      exchange: exchangeId,
+      symbol
+    })
     throw error
   }
 }
@@ -336,7 +381,7 @@ const getTimeframes = (exchangeId) => {
   try {
     const exchange = getExchange(exchangeId)
     return Object.keys(exchange.timeframes || TIMEFRAME_MAP)
-  } catch (error) {
+  } catch {
     return Object.keys(TIMEFRAME_MAP)
   }
 }

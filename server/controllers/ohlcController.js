@@ -1,4 +1,7 @@
 const ohlcService = require('../services/ohlcService')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('ohlcController')
 
 /**
  * Get candles for a coin
@@ -60,10 +63,14 @@ const getCandles = async (req, res) => {
       }))
     })
   } catch (error) {
-    console.error('Error getting candles:', error.message)
+    logger.error('Failed to get candles', {
+      error,
+      coinId: req.params.coinId,
+      timeframe: req.query.timeframe
+    })
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get candles'
+      message: 'Failed to get candles'
     })
   }
 }
@@ -97,10 +104,14 @@ const syncCoin = async (req, res) => {
       ...result
     })
   } catch (error) {
-    console.error('Error syncing coin:', error.message)
+    logger.error('Failed to sync candles for coin', {
+      error,
+      coinId: req.params.coinId,
+      timeframe: req.body?.timeframe
+    })
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to sync candles'
+      message: 'Failed to sync candles'
     })
   }
 }
@@ -119,10 +130,10 @@ const getSupportedCoins = async (req, res) => {
       coins
     })
   } catch (error) {
-    console.error('Error getting coins:', error.message)
+    logger.error('Failed to get supported coins', { error })
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get coins list'
+      message: 'Failed to get coins list'
     })
   }
 }
@@ -140,6 +151,7 @@ const getStatus = async (req, res) => {
       ...status
     })
   } catch (error) {
+    logger.error('Failed to get service status', { error })
     res.status(500).json({
       success: false,
       message: 'Failed to get service status'
@@ -168,7 +180,12 @@ const syncAllTimeframes = async (req, res) => {
         )
         results.push({ timeframe, ...result })
       } catch (error) {
-        results.push({ timeframe, success: false, error: error.message })
+        logger.error('Failed to sync timeframe during sync-all', {
+          error,
+          coinId: req.params.coinId,
+          timeframe
+        })
+        results.push({ timeframe, success: false, error: 'Sync failed' })
       }
     }
 
@@ -179,10 +196,13 @@ const syncAllTimeframes = async (req, res) => {
       results
     })
   } catch (error) {
-    console.error('Error syncing all timeframes:', error.message)
+    logger.error('Failed to sync all timeframes', {
+      error,
+      coinId: req.params.coinId
+    })
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to sync all timeframes'
+      message: 'Failed to sync all timeframes'
     })
   }
 }

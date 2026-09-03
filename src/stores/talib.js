@@ -83,7 +83,7 @@ export const useTALibStore = defineStore('talib', () => {
     if (!regimeAnalysis.value?.regime) return { color: 'gray', label: 'Unknown', description: 'No data' }
     
     // Handle both direct regime object and nested regime property
-    let regimeStr = ''
+    let regimeStr
     if (typeof regimeAnalysis.value.regime === 'string') {
       regimeStr = regimeAnalysis.value.regime.toLowerCase()
     } else if (regimeAnalysis.value.regime?.regime) {

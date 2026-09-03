@@ -11,15 +11,11 @@
 
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
-import { useAuthStore } from './auth'
+import { createApiClient } from '@/services/api'
 import { logger } from '@/utils/logger'
 
-// API base URL
-// API base URL
-const API_URL = import.meta.env.PROD 
-  ? '/api' 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+// Shared API client with automatic JWT auth + token refresh
+const predictionsApi = createApiClient('/api/predictions')
 
 // Cache configuration
 const CACHE_TTL_MS = 60 * 1000 // 1 minute
@@ -52,14 +48,6 @@ export const usePredictionsStore = defineStore('predictions', () => {
   const error = ref(null)
   const lastUpdated = ref(null)
   const cacheHit = ref(false)
-  
-  // Chart settings state (persisted to DB)
-  const chartSettings = ref({
-    visibleRange: { from: null, to: null },
-    lastSymbol: null,
-    lastTimeframe: null
-  })
-  const chartSettingsLoaded = ref(false)
   
   // Available options
   const exchanges = ref([
@@ -189,8 +177,8 @@ export const usePredictionsStore = defineStore('predictions', () => {
     isLoadingSymbols.value = true
     
     try {
-      const response = await axios.get(
-        `${API_URL}/predictions/markets/${selectedExchange.value}`,
+      const response = await predictionsApi.get(
+        `/markets/${selectedExchange.value}`,
         { params: { quote: selectedQuote.value } }
       )
       
@@ -248,8 +236,8 @@ export const usePredictionsStore = defineStore('predictions', () => {
     try {
       const { base, quote } = currentSymbolParts.value
       
-      const response = await axios.get(
-        `${API_URL}/predictions/analyze/${selectedExchange.value}/${base}/${quote}`,
+      const response = await predictionsApi.get(
+        `/analyze/${selectedExchange.value}/${base}/${quote}`,
         {
           params: {
             timeframe: selectedTimeframe.value,
@@ -348,99 +336,6 @@ export const usePredictionsStore = defineStore('predictions', () => {
   }
   
   /**
-   * Save chart settings to database (debounce in component)
-   * @param {Object} chartState - Complete chart state
-   * @param {Object} chartState.logicalRange - Visible logical range {from, to}
-   * @param {number} chartState.barSpacing - Bar spacing (zoom level)
-   * @param {number} chartState.rightOffset - Right offset
-   * @param {number} chartState.scrollPosition - Scroll position
-   */
-  async function saveChartSettings(chartState) {
-    logger.debug('📊 [Store] saveChartSettings called with:', JSON.stringify(chartState))
-    logger.debug('📊 [Store] barSpacing being saved:', chartState?.barSpacing)
-    
-    try {
-      const authStore = useAuthStore()
-      const token = authStore.accessToken
-      if (!token) {
-        logger.debug('📊 [Store] No token, skipping save')
-        return
-      }
-      
-      const payload = {
-        module: 'predictions',
-        chartState: chartState,
-        symbol: selectedSymbol.value,
-        timeframe: selectedTimeframe.value
-      }
-      logger.debug('📊 [Store] Saving payload:', JSON.stringify(payload))
-      
-      await axios.put(
-        `${API_URL}/auth/settings/chart`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      
-      // Update local state
-      chartSettings.value.chartState = chartState
-      chartSettings.value.lastSymbol = selectedSymbol.value
-      chartSettings.value.lastTimeframe = selectedTimeframe.value
-      
-      logger.debug('📊 [Store] Chart settings saved successfully. barSpacing:', chartState?.barSpacing)
-    } catch (err) {
-      logger.warn('Could not save chart settings:', err.message)
-    }
-  }
-  
-  /**
-   * Load chart settings from database
-   */
-  async function loadChartSettings() {
-    logger.debug('📊 [Store] loadChartSettings called')
-    
-    if (chartSettingsLoaded.value) {
-      logger.debug('📊 [Store] Returning cached settings. barSpacing:', chartSettings.value?.chartState?.barSpacing)
-      return chartSettings.value
-    }
-    
-    try {
-      const authStore = useAuthStore()
-      
-      if (authStore.accessToken && authStore.refreshToken) {
-        await authStore.refreshAccessToken()
-      }
-      
-      const token = authStore.accessToken
-      if (!token) {
-        logger.debug('📊 [Store] No token available')
-        return null
-      }
-      
-      logger.debug('📊 [Store] Fetching chart settings from API...')
-      const response = await axios.get(
-        `${API_URL}/auth/settings/chart/predictions`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      
-      logger.debug('📊 [Store] API raw response:', JSON.stringify(response.data))
-      
-      if (response.data.success && response.data.settings) {
-        chartSettings.value = response.data.settings
-        chartSettingsLoaded.value = true
-        const cs = response.data.settings?.chartState
-        logger.debug('📊 [Store] Loaded barSpacing:', cs?.barSpacing)
-        logger.debug('📊 [Store] Loaded visibleRange:', JSON.stringify(cs?.visibleRange))
-        logger.debug('📊 [Store] Loaded logicalRange (legacy):', JSON.stringify(cs?.logicalRange))
-        return response.data.settings
-      }
-    } catch (err) {
-      logger.warn('Could not load chart settings:', err.message)
-    }
-    
-    return null
-  }
-  
-  /**
    * Reset store to initial state
    */
   function reset() {
@@ -511,11 +406,7 @@ export const usePredictionsStore = defineStore('predictions', () => {
     initialize,
     clearError,
     reset,
-    saveChartSettings,
-    loadChartSettings,
     
-    // Chart settings
-    chartSettings,
-    chartSettingsLoaded
+    // Chart state persistence removed — no longer needed
   }
 })

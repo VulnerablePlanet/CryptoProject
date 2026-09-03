@@ -65,8 +65,8 @@ function scoreTechnical(analysis, direction) {
   // RSI scoring
   if (indicators.rsi !== undefined && indicators.rsi !== null) {
     const rsi = indicators.rsi
-    let rsiScore = 0.5
-    let rsiReason = ''
+    let rsiScore
+    let rsiReason
 
     if (rsi < 30) {
       // Oversold - bullish signal
@@ -97,8 +97,8 @@ function scoreTechnical(analysis, direction) {
   // MACD scoring
   if (indicators.macd?.histogram !== undefined && indicators.macd?.histogram !== null) {
     const hist = indicators.macd.histogram
-    let macdScore = 0.5
-    let macdReason = ''
+    let macdScore
+    let macdReason
 
     if (hist > 0) {
       // Positive histogram - bullish
@@ -165,7 +165,7 @@ function scoreTechnical(analysis, direction) {
  */
 function scoreRegime(direction, analysis) {
   const { regime } = analysis
-  let score = 0.5
+  let score
   const breakdown = []
   const reasons = []
 
@@ -179,8 +179,8 @@ function scoreRegime(direction, analysis) {
   // Regime alignment scoring matrix
   // BULL market favors LONG, BEAR market favors SHORT
   // SIDEWAYS is neutral, VOLATILE reduces conviction
-  let regimeScore = 0.5
-  let regimeReason = ''
+  let regimeScore
+  let regimeReason
 
   if (currentRegime === 'BULL' && direction === 'LONG') {
     regimeScore = 1.0
@@ -239,7 +239,6 @@ function scoreRegime(direction, analysis) {
  */
 function scoreSentiment(research, direction) {
   const { fearGreed } = research
-  let score = 0.5
   const breakdown = []
   const reasons = []
 
@@ -249,8 +248,8 @@ function scoreSentiment(research, direction) {
   }
 
   const fgValue = fearGreed.value
-  let sentimentScore = 0.5
-  let fgReason = ''
+  let sentimentScore
+  let fgReason
 
   if (fgValue < 25) {
     // Extreme Fear - contrarian bullish
@@ -279,7 +278,6 @@ function scoreSentiment(research, direction) {
     reasons.push('Neutral sentiment')
   }
 
-  score = sentimentScore
   breakdown.push({
     factor: 'FearGreed',
     score: sentimentScore,
@@ -288,7 +286,7 @@ function scoreSentiment(research, direction) {
     reason: fgReason
   })
 
-  return { score, breakdown, reasons }
+  return { score: sentimentScore, breakdown, reasons }
 }
 
 /**

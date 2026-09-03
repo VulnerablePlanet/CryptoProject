@@ -3,25 +3,20 @@
  * CCXT Frontend Service
  * ============================================================================
  * Service for calling backend exchange API endpoints.
+ * Uses shared createApiClient for automatic JWT auth + token refresh.
  */
 
-const API_BASE = import.meta.env.PROD 
-  ? '/api/exchange' 
-  : 'http://localhost:5000/api/exchange'
+import { createApiClient } from '@/services/api'
+
+const api = createApiClient('/api/exchange')
 
 /**
  * Fetch list of supported exchanges
  * @returns {Promise<object>} Supported exchanges and timeframes
  */
 export const fetchSupportedExchanges = async () => {
-  const response = await fetch(`${API_BASE}/supported`)
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch supported exchanges')
-  }
-  
-  return data
+  const response = await api.get('/supported')
+  return response.data
 }
 
 /**
@@ -29,14 +24,8 @@ export const fetchSupportedExchanges = async () => {
  * @returns {Promise<object>} Service status
  */
 export const fetchStatus = async () => {
-  const response = await fetch(`${API_BASE}/status`)
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch status')
-  }
-  
-  return data
+  const response = await api.get('/status')
+  return response.data
 }
 
 /**
@@ -46,19 +35,9 @@ export const fetchStatus = async () => {
  * @returns {Promise<object[]>} Array of markets
  */
 export const fetchMarkets = async (exchange, quote = null) => {
-  let url = `${API_BASE}/${exchange}/markets`
-  if (quote) {
-    url += `?quote=${quote}`
-  }
-  
-  const response = await fetch(url)
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch markets')
-  }
-  
-  return data.markets
+  const params = quote ? { quote } : {}
+  const response = await api.get(`/${exchange}/markets`, { params })
+  return response.data.markets
 }
 
 /**
@@ -71,16 +50,11 @@ export const fetchMarkets = async (exchange, quote = null) => {
  * @returns {Promise<object>} Candle data response
  */
 export const fetchOHLCV = async (exchange, base, quote, timeframe = '1h', limit = 100) => {
-  const response = await fetch(
-    `${API_BASE}/${exchange}/ohlcv/${base}/${quote}?timeframe=${timeframe}&limit=${limit}`
+  const response = await api.get(
+    `/${exchange}/ohlcv/${base}/${quote}`,
+    { params: { timeframe, limit } }
   )
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch OHLCV data')
-  }
-  
-  return data
+  return response.data
 }
 
 /**
@@ -92,16 +66,11 @@ export const fetchOHLCV = async (exchange, base, quote, timeframe = '1h', limit 
  * @returns {Promise<object>} Order book data
  */
 export const fetchOrderBook = async (exchange, base, quote, limit = 50) => {
-  const response = await fetch(
-    `${API_BASE}/${exchange}/orderbook/${base}/${quote}?limit=${limit}`
+  const response = await api.get(
+    `/${exchange}/orderbook/${base}/${quote}`,
+    { params: { limit } }
   )
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch order book')
-  }
-  
-  return data
+  return response.data
 }
 
 /**
@@ -112,16 +81,8 @@ export const fetchOrderBook = async (exchange, base, quote, limit = 50) => {
  * @returns {Promise<object>} Ticker data
  */
 export const fetchTicker = async (exchange, base, quote) => {
-  const response = await fetch(
-    `${API_BASE}/${exchange}/ticker/${base}/${quote}`
-  )
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch ticker')
-  }
-  
-  return data
+  const response = await api.get(`/${exchange}/ticker/${base}/${quote}`)
+  return response.data
 }
 
 /**
@@ -130,14 +91,8 @@ export const fetchTicker = async (exchange, base, quote) => {
  * @returns {Promise<string[]>} Array of timeframes
  */
 export const fetchTimeframes = async (exchange) => {
-  const response = await fetch(`${API_BASE}/${exchange}/timeframes`)
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to fetch timeframes')
-  }
-  
-  return data.timeframes
+  const response = await api.get(`/${exchange}/timeframes`)
+  return response.data.timeframes
 }
 
 /**
@@ -146,18 +101,9 @@ export const fetchTimeframes = async (exchange) => {
  * @returns {Promise<object>} Result
  */
 export const clearCache = async (exchange = null) => {
-  const url = exchange 
-    ? `${API_BASE}/cache?exchange=${exchange}` 
-    : `${API_BASE}/cache`
-    
-  const response = await fetch(url, { method: 'DELETE' })
-  const data = await response.json()
-  
-  if (!data.success) {
-    throw new Error(data.message || 'Failed to clear cache')
-  }
-  
-  return data
+  const params = exchange ? { exchange } : {}
+  const response = await api.delete('/cache', { params })
+  return response.data
 }
 
 export default {

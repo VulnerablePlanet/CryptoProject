@@ -16,10 +16,15 @@
 
 const express = require('express')
 const router = express.Router()
-const { auth } = require('../middleware/auth')
+const { auth, requireAdmin } = require('../middleware/auth')
+const { createLogger } = require('../utils/logger')
 
-// All agent routes require authentication (controls real money)
+const logger = createLogger('routes:agent')
+
+// The agent controls REAL money: authentication alone is not enough.
+// Every route requires an authenticated AND administrator user.
 router.use(auth)
+router.use(requireAdmin)
 
 // Lazy-load the orchestrator to avoid circular deps
 let tradingAgentOrchestrator = null
@@ -42,12 +47,12 @@ function getOrchestrator() {
         const killSwitch = new KillSwitch(agentConfig.RISK?.KILL_SWITCH || {})
         tradingAgentOrchestrator.setKillSwitch(killSwitch)
 
-        console.log('[Agent API] Orchestrator initialized with MongoDB + Kill Switch')
+        logger.info('Orchestrator initialized with MongoDB + kill switch')
       } else {
-        console.warn('[Agent API] MongoDB not connected yet')
+        logger.warn('MongoDB not connected yet')
       }
     } catch (error) {
-      console.error('[Agent API] Failed to initialize orchestrator:', error.message)
+      logger.error('Failed to initialize orchestrator', error)
     }
   }
   return tradingAgentOrchestrator
@@ -106,8 +111,8 @@ router.post('/start', async (req, res) => {
       state: orchestrator.getState()
     })
   } catch (error) {
-    console.error('[Agent API] Start error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to start agent', error)
+    res.status(500).json({ error: 'Failed to start agent' })
   }
 })
 
@@ -126,8 +131,8 @@ router.post('/stop', async (req, res) => {
       state: orchestrator.getState()
     })
   } catch (error) {
-    console.error('[Agent API] Stop error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to stop agent', error)
+    res.status(500).json({ error: 'Failed to stop agent' })
   }
 })
 
@@ -142,7 +147,6 @@ router.post('/cycle', async (req, res) => {
     const { symbol = 'BTC/USDT' } = req.body
 
     // Run one cycle for the symbol
-    const state = orchestrator.getState()
     if (!orchestrator.isRunning) {
       orchestrator.isRunning = true // Allow manual cycle
     }
@@ -155,8 +159,8 @@ router.post('/cycle', async (req, res) => {
       state: orchestrator.getState()
     })
   } catch (error) {
-    console.error('[Agent API] Cycle error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to run manual cycle', error)
+    res.status(500).json({ error: 'Failed to run cycle' })
   }
 })
 
@@ -190,8 +194,8 @@ router.get('/signal', async (req, res) => {
       signal: scoringData
     })
   } catch (error) {
-    console.error('[Agent API] Signal error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to generate agent signal', error)
+    res.status(500).json({ error: 'Failed to generate signal' })
   }
 })
 
@@ -209,8 +213,8 @@ router.get('/positions', async (req, res) => {
 
     res.json({ positions, count: positions.length })
   } catch (error) {
-    console.error('[Agent API] Positions error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to fetch open positions', error)
+    res.status(500).json({ error: 'Failed to fetch positions' })
   }
 })
 
@@ -232,8 +236,8 @@ router.get('/state', async (req, res) => {
 
     res.json({ state })
   } catch (error) {
-    console.error('[Agent API] State error:', error)
-    res.status(500).json({ error: error.message })
+    logger.error('Failed to fetch agent state', error)
+    res.status(500).json({ error: 'Failed to fetch agent state' })
   }
 })
 
@@ -260,27 +264,25 @@ router.get('/verify-keys', async (req, res) => {
       enableRateLimit: true
     })
 
-    // Test by fetching account info
-    const account = await exchange.fetchBalance()
+    // Validate the keys by performing an authenticated call.
+    // NEVER expose account balances (total/used/free) in the response —
+    // doing so would leak the master account funds to the caller.
+    await exchange.fetchBalance()
 
     res.json({
       configured: true,
+      valid: true,
       mode: process.env.BINANCE_MODE || 'sandbox',
-      account: {
-        total: account.total,
-        used: account.used,
-        free: account.free,
-        // Don't expose full keys
-        apiKeyPreview: apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4)
-      },
-      message: 'API keys are valid!'
+      apiKeyPreview: apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4),
+      message: 'API keys are valid'
     })
   } catch (error) {
+    // Log the real reason server-side; return a generic message to the client.
+    logger.error('Binance key verification failed', error)
     res.status(400).json({
       configured: true,
       valid: false,
-      error: error.message,
-      hint: 'Check if your API key has trading permissions and is not expired'
+      message: 'API keys are invalid or lack the required permissions'
     })
   }
 })

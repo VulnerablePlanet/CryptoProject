@@ -15,9 +15,9 @@ const searchQuery = ref('')
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
   const query = searchQuery.value.toLowerCase()
-  return users.value.filter(user => 
-    user.name.toLowerCase().includes(query) || 
-    user.email.toLowerCase().includes(query)
+  return users.value.filter(user =>
+    user.name?.toLowerCase().includes(query) ||
+    user.email?.toLowerCase().includes(query)
   )
 })
 

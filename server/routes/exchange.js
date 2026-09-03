@@ -11,6 +11,9 @@ const { body, validationResult } = require('express-validator')
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
 const { auth } = require('../middleware/auth')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('routes:exchange')
 
 // Validation check middleware
 const validate = (req, res, next) => {
@@ -41,9 +44,10 @@ router.get('/supported', (req, res) => {
       timeframes: Object.keys(ccxtService.TIMEFRAME_MAP)
     })
   } catch (error) {
+    logger.error('Failed to fetch supported exchanges', error)
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to fetch supported exchanges'
     })
   }
 })
@@ -61,9 +65,10 @@ router.get('/status', (req, res) => {
       cache: stats
     })
   } catch (error) {
+    logger.error('Failed to fetch exchange status', error)
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to fetch status'
     })
   }
 })
@@ -91,9 +96,18 @@ router.get('/:exchange/markets', async (req, res) => {
       markets
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch exchange markets', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    const status = isUnsupported ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch markets',
+      exchange: req.params.exchange
     })
   }
 })
@@ -108,7 +122,8 @@ router.get('/:exchange/ohlcv/:base/:quote', async (req, res) => {
     const { timeframe = '1h', limit = 100 } = req.query
     
     const symbol = `${base.toUpperCase()}/${quote.toUpperCase()}`
-    const result = await ccxtService.fetchOHLCV(exchange, symbol, timeframe, parseInt(limit))
+    const safeLimit = Math.min(parseInt(limit) || 100, 1000)
+    const result = await ccxtService.fetchOHLCV(exchange, symbol, timeframe, safeLimit)
     
     res.json({
       success: true,
@@ -120,9 +135,18 @@ router.get('/:exchange/ohlcv/:base/:quote', async (req, res) => {
       candles: result.candles
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch OHLCV data', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    const status = isUnsupported ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch OHLCV data',
+      exchange: req.params.exchange
     })
   }
 })
@@ -137,7 +161,8 @@ router.get('/:exchange/orderbook/:base/:quote', async (req, res) => {
     const { limit = 50 } = req.query
     
     const symbol = `${base.toUpperCase()}/${quote.toUpperCase()}`
-    const result = await ccxtService.fetchOrderBook(exchange, symbol, parseInt(limit))
+    const safeLimit = Math.min(parseInt(limit) || 50, 500)
+    const result = await ccxtService.fetchOrderBook(exchange, symbol, safeLimit)
     
     res.json({
       success: true,
@@ -147,9 +172,18 @@ router.get('/:exchange/orderbook/:base/:quote', async (req, res) => {
       orderBook: result.orderBook
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch order book', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    const status = isUnsupported ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch order book',
+      exchange: req.params.exchange
     })
   }
 })
@@ -173,9 +207,18 @@ router.get('/:exchange/ticker/:base/:quote', async (req, res) => {
       ticker: result.ticker
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch ticker', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    const status = isUnsupported ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch ticker',
+      exchange: req.params.exchange
     })
   }
 })
@@ -195,9 +238,17 @@ router.get('/:exchange/timeframes', (req, res) => {
       timeframes
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch timeframes', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    res.status(isUnsupported ? 400 : 500).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch timeframes',
+      exchange: req.params.exchange
     })
   }
 })
@@ -216,9 +267,10 @@ router.delete('/cache', (req, res) => {
       message: exchange ? `Cache cleared for ${exchange}` : 'All cache cleared'
     })
   } catch (error) {
+    logger.error('Failed to clear exchange cache', error)
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to clear cache'
     })
   }
 })
@@ -243,9 +295,18 @@ router.get('/:exchange/price/:base/:quote', async (req, res) => {
       ...priceData
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch exchange price', {
+      error,
+      exchange: req.params.exchange
+    })
+    // "not supported" is a controlled validation message from ccxtService
+    // (the supported list is public via GET /supported) — safe to return.
+    const isUnsupported = error.message?.includes('not supported')
+    const status = isUnsupported ? 400 : 502
+    res.status(status).json({
       success: false,
-      message: 'Internal server error'
+      message: isUnsupported ? error.message : 'Failed to fetch price',
+      exchange: req.params.exchange
     })
   }
 })
@@ -280,9 +341,10 @@ router.post('/prices',
       errors: errors.length > 0 ? errors : undefined
     })
   } catch (error) {
-    res.status(500).json({
+    logger.error('Failed to fetch multiple exchange prices', error)
+    res.status(502).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to fetch prices'
     })
   }
 })

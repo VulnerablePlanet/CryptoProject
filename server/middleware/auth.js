@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('auth-middleware')
 
 /**
  * Authentication middleware
@@ -50,7 +53,7 @@ const auth = async (req, res, next) => {
       })
     }
     
-    console.error('Auth middleware error:', error)
+    logger.error('Auth middleware error', error)
     res.status(500).json({
       success: false,
       message: 'Authentication error.'
@@ -77,10 +80,33 @@ const optionalAuth = async (req, res, next) => {
     }
     
     next()
-  } catch (error) {
+  } catch {
     // Silently continue without user
     next()
   }
 }
 
-module.exports = { auth, optionalAuth }
+/**
+ * Authorization middleware — requires administrator privileges.
+ * MUST run AFTER `auth` (depends on req.user being attached).
+ *
+ * Grants access if the user has role 'admin', OR if their id matches
+ * AGENT_OWNER_USER_ID (env-based bootstrap so an operator can be granted
+ * control without manual DB edits before any admin exists).
+ */
+const requireAdmin = (req, res, next) => {
+  const ownerId = process.env.AGENT_OWNER_USER_ID
+  const isOwner = !!ownerId && req.user?._id?.toString() === ownerId
+  const isAdmin = req.user?.role === 'admin'
+
+  if (!isAdmin && !isOwner) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Administrator privileges required.'
+    })
+  }
+
+  next()
+}
+
+module.exports = { auth, optionalAuth, requireAdmin }

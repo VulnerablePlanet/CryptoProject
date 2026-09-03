@@ -9,10 +9,9 @@
  * - Real-time price predictions with Kalman + Transformer
  * - Interactive TradingView chart with prediction overlay
  * - Prediction statistics display
- * - Chart zoom state persistence
  */
 
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { usePredictionsStore } from '@/stores/predictions'
 import {
   ExchangeSelector,
@@ -23,7 +22,6 @@ import {
   MethodologyInfo
 } from '@/components/predictions'
 import { formatCOPWithFlag } from '@/utils/currency'
-import { logger } from '@/utils/logger'
 
 // Store
 const store = usePredictionsStore()
@@ -32,14 +30,6 @@ const store = usePredictionsStore()
 const crosshairData = ref(null)
 const isSyncing = ref(false)
 const predictionChartRef = ref(null)
-const loadedChartState = ref(null)
-
-// Debounce helper
-let zoomDebounceTimer = null
-const ZOOM_DEBOUNCE_MS = 500
-
-// Flag to suppress saves during state restoration
-let isRestoring = false
 
 // Computed
 const isLoading = computed(() => store.isLoading)
@@ -77,75 +67,7 @@ const predictedPrice = computed(() => {
 
 // Lifecycle
 onMounted(async () => {
-  // Load chart settings FIRST to know if we should skip fitContent
-  const settings = await store.loadChartSettings()
-  logger.debug('📊 [PredictionsContent] loadChartSettings returned:', settings)
-  
-  // Check for chartState (new nested format) or construct from flat settings
-  let chartStateToRestore = null
-  if (settings?.chartState) {
-    // New format: chartState is nested inside settings
-    chartStateToRestore = settings.chartState
-    logger.debug('📊 [PredictionsContent] Found nested chartState:', chartStateToRestore)
-  } else if (settings) {
-    // Flat format: extract visibleRange/barSpacing directly from settings
-    // Check if we have any valid data to restore
-    const hasVisibleRange = settings.visibleRange?.from !== undefined && settings.visibleRange?.from !== null
-    const hasBarSpacing = settings.barSpacing !== undefined
-    
-    if (hasVisibleRange || hasBarSpacing) {
-      chartStateToRestore = {
-        visibleRange: settings.visibleRange,  // Keep as visibleRange (time-based)
-        barSpacing: settings.barSpacing || 12,
-        rightOffset: settings.rightOffset || 0,
-        scrollPosition: settings.scrollPosition || 0
-      }
-      logger.debug('📊 [PredictionsContent] Converted flat settings to chartState:', chartStateToRestore)
-    } else {
-      logger.debug('📊 [PredictionsContent] No valid chart state found in settings')
-    }
-  }
-  
-  const hasChartState = !!chartStateToRestore
-  logger.debug('📊 [PredictionsContent] hasChartState =', hasChartState)
-  
-  // Store chartState in ref so it can be passed as prop to PredictionChart
-  if (hasChartState) {
-    loadedChartState.value = chartStateToRestore
-    logger.debug('📊 [PredictionsContent] Loaded chartState for initial render:', chartStateToRestore)
-  }
-  
-  // If we have a saved state, mark the chart component to skip fitContent
-  // before any data loads trigger updateChartData()
-  if (hasChartState && predictionChartRef.value) {
-    predictionChartRef.value.setSkipFitContent(true)
-  }
-  
-  // Set restoring flag BEFORE initialize to prevent save overrides
-  if (hasChartState) {
-    isRestoring = true
-    logger.debug('📊 [PredictionsContent] Setting isRestoring=true to prevent save during restore')
-  }
-  
-  // Now initialize store (loads data which triggers chart update)
   await store.initialize()
-  
-  // Restore the complete chart state after data is loaded
-  if (hasChartState) {
-    await nextTick()
-    setTimeout(() => {
-      if (predictionChartRef.value) {
-        logger.debug('📊 [PredictionsContent] Restoring chart state:', chartStateToRestore)
-        predictionChartRef.value.restoreChartState(chartStateToRestore)
-        
-        // Clear restoring flag after a delay to allow chart to stabilize
-        setTimeout(() => {
-          isRestoring = false
-          logger.debug('📊 [PredictionsContent] Cleared isRestoring flag, saves now allowed')
-        }, 1000)
-      }
-    }, 500) // Give chart time to render data first
-  }
 })
 
 // Event Handlers
@@ -173,33 +95,6 @@ function handleCrosshairMove(data) {
 
 function dismissError() {
   store.clearError()
-}
-
-/**
- * Handle visible range change (zoom/pan) with debounce
- * Now receives complete chart state from PredictionChart
- */
-function handleVisibleRangeChange(chartState) {
-  // Skip saves during restoration to prevent overwriting saved state
-  if (isRestoring) {
-    logger.debug('📊 [PredictionsContent] Skipping save during restore')
-    return
-  }
-  
-  logger.debug('📊 [PredictionsContent] Received chart state:', chartState)
-  
-  // Check if chartState has valid visibleRange (or legacy logicalRange)
-  if (!chartState || (!chartState.visibleRange && !chartState.logicalRange)) {
-    logger.debug('📊 [PredictionsContent] Invalid chart state, skipping save')
-    return
-  }
-  
-  // Debounce save to avoid too many API calls during drag
-  clearTimeout(zoomDebounceTimer)
-  zoomDebounceTimer = setTimeout(() => {
-    logger.debug('📊 [PredictionsContent] Saving chart state:', chartState)
-    store.saveChartSettings(chartState)
-  }, ZOOM_DEBOUNCE_MS)
 }
 </script>
 
@@ -370,11 +265,9 @@ function handleVisibleRangeChange(chartState) {
           :kalman-data="store.kalmanLineData"
           :prediction-data="store.predictionLineData"
           :confidence-data="store.confidenceAreaData"
-          :initial-chart-state="loadedChartState"
           :height="400"
           :show-volume="true"
           @crosshair-move="handleCrosshairMove"
-          @visible-range-change="handleVisibleRangeChange"
         />
         
         <!-- No Data State -->

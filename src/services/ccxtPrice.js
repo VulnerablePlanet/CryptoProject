@@ -1,14 +1,12 @@
 /**
  * CCXT Price Service - Frontend API client
- * Fetches real-time prices from exchanges via the backend CCXT service
+ * Fetches real-time prices from exchanges via the backend CCXT service.
+ * Uses shared createApiClient for automatic JWT auth + token refresh.
  */
 
-import axios from 'axios'
+import { createApiClient } from '@/services/api'
 
-const api = axios.create({
-  baseURL: '/api/exchange',
-  headers: { 'Content-Type': 'application/json' }
-})
+const api = createApiClient('/api/exchange')
 
 /**
  * Get supported exchanges

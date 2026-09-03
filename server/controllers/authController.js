@@ -3,6 +3,9 @@ const { validationResult } = require('express-validator')
 const User = require('../models/User')
 const Portfolio = require('../models/Portfolio')
 const RefreshToken = require('../models/RefreshToken')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('authController')
 
 /**
  * Generate Access Token (short-lived)
@@ -87,9 +90,7 @@ const register = async (req, res) => {
       user: user.toJSON()
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Register error:', error.message)
-    }
+    logger.error('Register failed', { error, email: req.body?.email })
     res.status(500).json({
       success: false,
       message: 'Error registering user'
@@ -151,9 +152,7 @@ const login = async (req, res) => {
       user: user.toJSON()
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Login error:', error.message)
-    }
+    logger.error('Login failed', { error })
     res.status(500).json({
       success: false,
       message: 'Error logging in'
@@ -212,9 +211,7 @@ const refreshAccessToken = async (req, res) => {
       user: tokenDoc.user.toJSON()
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Refresh token error:', error.message)
-    }
+    logger.error('Refresh token failed', { error })
     res.status(500).json({
       success: false,
       message: 'Error refreshing token'
@@ -240,9 +237,7 @@ const logout = async (req, res) => {
       message: 'Logged out successfully'
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Logout error:', error.message)
-    }
+    logger.error('Logout failed', { error })
     res.status(500).json({
       success: false,
       message: 'Error logging out'
@@ -264,9 +259,7 @@ const logoutAll = async (req, res) => {
       message: 'Logged out from all devices'
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Logout all error:', error.message)
-    }
+    logger.error('Logout all failed', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error logging out from all devices'
@@ -287,9 +280,7 @@ const me = async (req, res) => {
       user: req.user.toJSON()
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Get me error:', error.message)
-    }
+    logger.error('Get me failed', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error fetching user'
@@ -318,7 +309,21 @@ const updateProfile = async (req, res) => {
     
     if (socialLinks) {
       const existingSocialLinks = req.user.socialLinks || {}
-      const parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks
+      let parsedSocialLinks
+      try {
+        parsedSocialLinks = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: 'socialLinks must be a valid JSON object'
+        })
+      }
+      if (typeof parsedSocialLinks !== 'object' || parsedSocialLinks === null || Array.isArray(parsedSocialLinks)) {
+        return res.status(400).json({
+          success: false,
+          message: 'socialLinks must be a valid JSON object'
+        })
+      }
       updateData.socialLinks = { ...existingSocialLinks, ...parsedSocialLinks }
     }
     
@@ -348,12 +353,10 @@ const updateProfile = async (req, res) => {
       user: user.toJSON()
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Update profile error:', error.message)
-    }
+    logger.error('Update profile failed', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
-      message: error.message || 'Error updating profile'
+      message: 'Error updating profile'
     })
   }
 }
@@ -372,9 +375,7 @@ const getUserCount = async (req, res) => {
       count
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Get user count error:', error.message)
-    }
+    logger.error('Get user count failed', { error })
     res.status(500).json({
       success: false,
       message: 'Error fetching user count'
@@ -389,8 +390,9 @@ const getUserCount = async (req, res) => {
  */
 const getAllUsers = async (req, res) => {
   try {
+    // Do NOT expose email addresses — prevents account/email harvesting.
     const users = await User.find()
-      .select('name email avatar createdAt')
+      .select('name avatar createdAt')
       .sort({ createdAt: -1 })
       .lean()
     
@@ -399,9 +401,7 @@ const getAllUsers = async (req, res) => {
       users
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Get all users error:', error.message)
-    }
+    logger.error('Get all users failed', { error })
     res.status(500).json({
       success: false,
       message: 'Error fetching users'
@@ -443,9 +443,7 @@ const getChartSettings = async (req, res) => {
       settings: chartSettings
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Get chart settings error:', error.message)
-    }
+    logger.error('Get chart settings failed', { error, userId: req.user?._id?.toString(), module: req.params?.module })
     res.status(500).json({
       success: false,
       message: 'Error fetching chart settings'
@@ -532,9 +530,7 @@ const updateChartSettings = async (req, res) => {
       settings: savedSettings
     })
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Update chart settings error:', error.message)
-    }
+    logger.error('Update chart settings failed', { error, userId: req.user?._id?.toString(), module: req.body?.module })
     res.status(500).json({
       success: false,
       message: 'Error saving chart settings'

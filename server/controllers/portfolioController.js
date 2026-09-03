@@ -1,5 +1,8 @@
-const { validationResult, body } = require('express-validator')
+const { validationResult } = require('express-validator')
 const Portfolio = require('../models/Portfolio')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('portfolioController')
 
 /**
  * @desc    Get user's portfolio
@@ -24,7 +27,7 @@ const getPortfolio = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Get portfolio error:', error)
+    logger.error('Failed to fetch portfolio', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error fetching portfolio'
@@ -93,7 +96,11 @@ const addHolding = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Add holding error:', error)
+    logger.error('Failed to add holding', {
+      error,
+      userId: req.user?._id?.toString(),
+      coinId: req.body?.coinId
+    })
     res.status(500).json({
       success: false,
       message: 'Error adding holding'
@@ -149,7 +156,11 @@ const updateHolding = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Update holding error:', error)
+    logger.error('Failed to update holding', {
+      error,
+      userId: req.user?._id?.toString(),
+      holdingId: req.params?.holdingId
+    })
     res.status(500).json({
       success: false,
       message: 'Error updating holding'
@@ -199,7 +210,11 @@ const deleteHolding = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Delete holding error:', error)
+    logger.error('Failed to delete holding', {
+      error,
+      userId: req.user?._id?.toString(),
+      holdingId: req.params?.holdingId
+    })
     res.status(500).json({
       success: false,
       message: 'Error deleting holding'
@@ -234,7 +249,7 @@ const clearPortfolio = async (req, res) => {
       portfolio
     })
   } catch (error) {
-    console.error('Clear portfolio error:', error)
+    logger.error('Failed to clear portfolio', { error, userId: req.user?._id?.toString() })
     res.status(500).json({
       success: false,
       message: 'Error clearing portfolio'
