@@ -10,9 +10,7 @@ const {
   me, 
   updateProfile, 
   getUserCount,
-  getAllUsers,
-  getChartSettings,
-  updateChartSettings
+  getAllUsers
 } = require('../controllers/authController')
 const { auth } = require('../middleware/auth')
 const { upload } = require('../middleware/upload')
@@ -120,11 +118,5 @@ router.get('/user-count', auth, getUserCount)
 
 // @route   GET /api/auth/users
 router.get('/users', auth, getAllUsers)
-
-// @route   GET /api/auth/settings/chart/:module
-router.get('/settings/chart/:module', auth, getChartSettings)
-
-// @route   PUT /api/auth/settings/chart
-router.put('/settings/chart', auth, updateChartSettings)
 
 module.exports = router
