@@ -7,6 +7,7 @@
 
 const express = require('express')
 const router = express.Router()
+const rateLimit = require('express-rate-limit')
 const { body, validationResult } = require('express-validator')
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
@@ -24,8 +25,32 @@ const validate = (req, res, next) => {
   next()
 }
 
+// ============================================================================
+// RATE LIMITING — CCXT routes proxy to external exchanges
+// ============================================================================
+// External exchanges (Binance, Kraken, etc.) enforce rate limits per server IP.
+// A single user issuing unlimited requests can exhaust those shared limits and
+// get the server temporarily banned. Keyed per-user when authenticated, falling
+// back to per-IP for unauthenticated callers.
+const exchangeLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.user?._id?.toString() || req.ip
+  },
+  message: {
+    success: false,
+    message: 'Too many exchange requests. Please slow down and try again shortly.'
+  }
+})
+
 // All exchange routes require authentication
 router.use(auth)
+
+// Apply the exchange-specific rate limiter AFTER auth (so req.user is populated)
+router.use(exchangeLimiter)
 
 // ============================================================================
 // Routes

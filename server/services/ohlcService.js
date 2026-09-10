@@ -1,8 +1,9 @@
 const Candle = require('../models/Candle')
 const coingeckoRateLimiter = require('./coingeckoRateLimiter')
+const LRUCache = require('../utils/lruCache')
 
 // In-memory cache for reducing API calls
-const cache = new Map()
+const cache = new LRUCache(500)
 const CACHE_TTL = 15 * 60 * 1000 // 15 minutes (CoinGecko cache time)
 
 // Timeframe configurations (in milliseconds)

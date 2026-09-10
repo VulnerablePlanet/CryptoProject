@@ -7,9 +7,10 @@
  */
 
 const ccxtService = require('./ccxtService')
+const LRUCache = require('../utils/lruCache')
 
 // Price cache with TTL
-const priceCache = new Map()
+const priceCache = new LRUCache(500)
 const PRICE_CACHE_TTL = 30000 // 30 seconds
 
 /**

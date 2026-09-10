@@ -8,8 +8,17 @@
 
 const ccxt = require('ccxt')
 const { createLogger } = require('../utils/logger')
+const LRUCache = require('../utils/lruCache')
 
 const logger = createLogger('services:ccxt')
+
+// Allow injection of a ccxt mock for testing (same pattern as research.js _setAxios).
+let _ccxt = ccxt
+function _setCcxt(mockCcxt) {
+  _ccxt = mockCcxt || ccxt
+  // Invalidate cached instances so the new provider takes effect.
+  exchangeInstances.clear()
+}
 
 // ============================================================================
 // Configuration
@@ -44,8 +53,9 @@ const EXCHANGE_TIMEFRAMES = {
 
 // Cache for exchange instances and data
 const exchangeInstances = new Map()
-const dataCache = new Map()
+const dataCache = new LRUCache(500)
 const CACHE_TTL = 60000 // 1 minute cache
+const INSTANCE_RECYCLE_MS = 23 * 60 * 60 * 1000 // 23 hours (aligns with agent config)
 
 // ============================================================================
 // Exchange Instance Management
@@ -62,9 +72,14 @@ const getExchange = (exchangeId) => {
   if (!SUPPORTED_EXCHANGES[id]) {
     throw new Error(`Exchange "${exchangeId}" is not supported. Supported: ${Object.keys(SUPPORTED_EXCHANGES).join(', ')}`)
   }
+
+  // Recycle stale instances to avoid zombie connections / leaked sockets.
+  const cached = exchangeInstances.get(id)
+  if (cached && Date.now() - cached.createdAt < INSTANCE_RECYCLE_MS) {
+    return cached.instance
+  }
   
-  if (!exchangeInstances.has(id)) {
-    const ExchangeClass = ccxt[id]
+  const ExchangeClass = _ccxt[id]
     
     // Read API keys from environment: BINANCE_API_KEY, BINANCE_API_SECRET, etc.
     const apiKey = process.env[`${id.toUpperCase()}_API_KEY`]
@@ -122,10 +137,8 @@ const getExchange = (exchangeId) => {
     }
     
     const exchange = new ExchangeClass(exchangeConfig)
-    exchangeInstances.set(id, exchange)
-  }
-  
-  return exchangeInstances.get(id)
+    exchangeInstances.set(id, { instance: exchange, createdAt: Date.now() })
+    return exchange
 }
 
 /**
@@ -423,5 +436,6 @@ module.exports = {
   clearCache,
   getCacheStats,
   SUPPORTED_EXCHANGES,
-  TIMEFRAME_MAP
+  TIMEFRAME_MAP,
+  _setCcxt
 }
