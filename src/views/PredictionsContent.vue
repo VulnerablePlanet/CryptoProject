@@ -363,7 +363,7 @@ function dismissError() {
     <!-- Methodology Info -->
     <MethodologyInfo
       :noise-reduction="store.metadata.noiseReduction || store.features.noiseReduction || 0"
-      :model="store.metadata.model || 'kalman+transformer'"
+      :model="store.metadata.model || 'kalman+holt-winters'"
       :data-points="store.ohlcvData.length"
     />
 

@@ -11,7 +11,7 @@ const props = defineProps({
   },
   model: {
     type: String,
-    default: 'kalman+transformer'
+    default: 'kalman+holt-winters'
   },
   dataPoints: {
     type: Number,
@@ -44,15 +44,15 @@ const props = defineProps({
           <div class="flex items-start gap-2">
             <span class="material-symbols-outlined text-secondary text-base mt-0.5">hub</span>
             <div>
-              <strong class="text-slate-700 dark:text-slate-300">Transformer Model:</strong>
-              Uses self-attention mechanism to capture long-range dependencies and pattern recognition in price movements.
+              <strong class="text-slate-700 dark:text-slate-300">Holt-Winters Model:</strong>
+              Exponential smoothing that captures level and trend to project forward price direction.
             </div>
           </div>
           <div class="flex items-start gap-2">
             <span class="material-symbols-outlined text-secondary text-base mt-0.5">timeline</span>
             <div>
               <strong class="text-slate-700 dark:text-slate-300">Combined Forecast:</strong>
-              Weighted ensemble of Kalman (short-term accuracy) and Transformer (pattern detection) predictions.
+              Weighted ensemble of Kalman (short-term accuracy) and Holt-Winters (trend continuation) predictions.
             </div>
           </div>
         </div>

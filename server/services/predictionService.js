@@ -6,16 +6,20 @@
  * 1. Data Ingestion: Fetch OHLCV from exchanges via CCXT
  * 2. Preprocessing: Apply Kalman filter for noise reduction
  * 3. Feature Engineering: Calculate technical indicators
- * 4. Prediction: Use Transformer-based model for forecasting
+ * 4. Prediction: Combine Kalman filter with Holt-Winters exponential smoothing
  * 5. Output: Return predictions with confidence intervals
- * 
- * The Transformer model is implemented in pure JavaScript for easy integration.
- * For production, consider a Python PyTorch microservice.
+ *
+ * Forecasting uses Holt's linear trend method (double exponential smoothing),
+ * a deterministic statistical model — as opposed to the previous pseudo-random
+ * "Transformer" that produced different outputs on every server restart.
  * ============================================================================
  */
 
 const ccxtService = require('./ccxtService')
 const { KalmanFilter, filterOHLCV } = require('./kalmanService')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('services:prediction')
 
 // ============================================================================
 // Configuration
@@ -27,16 +31,14 @@ const PREDICTION_CONFIG = {
     processNoise: 0.0001,
     measurementNoise: 0.01
   },
-  
-  // Transformer model parameters
-  transformer: {
-    sequenceLength: 30,    // Input sequence length
-    predictionHorizon: 5,  // How many candles to predict
-    hiddenDim: 64,         // Hidden dimension
-    numHeads: 4,           // Number of attention heads
-    numLayers: 2           // Number of transformer layers
+
+  // Holt-Winters (Holt linear trend) forecasting parameters
+  holtWinters: {
+    alpha: 0.25,           // Level smoothing factor
+    beta: 0.10,            // Trend smoothing factor
+    predictionHorizon: 5   // How many candles to predict
   },
-  
+
   // Feature engineering
   features: {
     useReturns: true,      // Use log returns
@@ -47,177 +49,92 @@ const PREDICTION_CONFIG = {
 }
 
 // ============================================================================
-// Lightweight Transformer Implementation
+// Holt-Winters (Holt linear trend) forecasting
 // ============================================================================
 
 /**
- * Simple self-attention mechanism for time series
+ * Deterministic time-series forecaster using Holt's linear trend method
+ * (double exponential smoothing). Unlike the previous "Transformer" (which
+ * seeded its weights with Math.random and produced different forecasts on
+ * every run), this model is fully reproducible and statistically grounded.
  */
-class SimpleTransformer {
+class HoltWintersForecaster {
   constructor(config = {}) {
-    this.seqLength = config.sequenceLength || 30
+    this.alpha = config.alpha ?? 0.25 // Level smoothing factor
+    this.beta = config.beta ?? 0.10   // Trend smoothing factor
     this.predictionHorizon = config.predictionHorizon || 5
-    this.hiddenDim = config.hiddenDim || 64
-    
-    // Initialize weights with small random values
-    this.weights = this._initializeWeights()
   }
 
-  _initializeWeights() {
-    const createMatrix = (rows, cols, scale = 0.1) => {
-      return Array(rows).fill(null).map(() =>
-        Array(cols).fill(null).map(() => (Math.random() - 0.5) * scale)
-      )
+  /**
+   * Fit level + trend via double exponential smoothing.
+   * @param {Array<number>} series - Historical values (chronological order)
+   * @returns {{ level: number, trend: number }} Final smoothed state
+   */
+  _fit(series) {
+    if (series.length === 0) return { level: 0, trend: 0 }
+    if (series.length === 1) return { level: series[0], trend: 0 }
+
+    let level = series[0]
+    let trend = series[1] - series[0]
+
+    for (let i = 1; i < series.length; i++) {
+      const prevLevel = level
+      level = this.alpha * series[i] + (1 - this.alpha) * (prevLevel + trend)
+      trend = this.beta * (level - prevLevel) + (1 - this.beta) * trend
     }
-    
-    return {
-      query: createMatrix(this.hiddenDim, this.hiddenDim),
-      key: createMatrix(this.hiddenDim, this.hiddenDim),
-      value: createMatrix(this.hiddenDim, this.hiddenDim),
-      output: createMatrix(this.hiddenDim, 1)
-    }
+
+    return { level, trend }
   }
 
   /**
-   * Softmax function
-   */
-  _softmax(arr) {
-    const max = Math.max(...arr)
-    const exps = arr.map(x => Math.exp(x - max))
-    const sum = exps.reduce((a, b) => a + b, 0)
-    return exps.map(x => x / sum)
-  }
-
-  /**
-   * Matrix-vector multiplication
-   */
-  _matVecMul(mat, vec) {
-    return mat.map(row => 
-      row.reduce((sum, val, i) => sum + val * (vec[i] || 0), 0)
-    )
-  }
-
-  /**
-   * Dot product
-   */
-  _dot(a, b) {
-    return a.reduce((sum, val, i) => sum + val * (b[i] || 0), 0)
-  }
-
-  /**
-   * Self-attention mechanism
-   */
-  _selfAttention(sequence) {
-    const n = sequence.length
-    
-    // Project to Q, K, V
-    const queries = sequence.map(x => this._matVecMul(this.weights.query, x))
-    const keys = sequence.map(x => this._matVecMul(this.weights.key, x))
-    const values = sequence.map(x => this._matVecMul(this.weights.value, x))
-    
-    // Calculate attention scores
-    const scale = Math.sqrt(this.hiddenDim)
-    const attended = []
-    
-    for (let i = 0; i < n; i++) {
-      // Calculate attention weights
-      const scores = keys.map(k => this._dot(queries[i], k) / scale)
-      const weights = this._softmax(scores)
-      
-      // Weighted sum of values
-      const output = new Array(this.hiddenDim).fill(0)
-      for (let j = 0; j < n; j++) {
-        for (let k = 0; k < this.hiddenDim; k++) {
-          output[k] += weights[j] * values[j][k]
-        }
-      }
-      attended.push(output)
-    }
-    
-    return attended
-  }
-
-  /**
-   * Predict future values from input sequence
-   * @param {Array} inputSequence - Array of normalized price values
-   * @returns {Array} Predicted values
+   * Predict future values from an input sequence.
+   * @param {Array<number>} inputSequence - Historical values (chronological)
+   * @returns {Array<number>} Predicted values (length = predictionHorizon)
    */
   predict(inputSequence) {
-    // Ensure we have enough data
-    if (inputSequence.length < this.seqLength) {
-      // Pad with first value if not enough data
-      const padding = new Array(this.seqLength - inputSequence.length).fill(inputSequence[0] || 0)
-      inputSequence = [...padding, ...inputSequence]
-    }
-    
-    // Take last seqLength values
-    const sequence = inputSequence.slice(-this.seqLength)
-    
-    // Convert to embeddings (simple: expand each value to hiddenDim)
-    const embeddings = sequence.map(val => {
-      const emb = new Array(this.hiddenDim).fill(0)
-      // Simple positional encoding + value encoding
-      for (let i = 0; i < this.hiddenDim; i++) {
-        emb[i] = val * Math.cos(i * Math.PI / this.hiddenDim) + 
-                 Math.sin(i * Math.PI / this.seqLength) * 0.1
-      }
-      return emb
-    })
-    
-    // Apply self-attention
-    const attended = this._selfAttention(embeddings)
-    
-    // Generate predictions
+    const series = inputSequence.slice()
+    const { level, trend } = this._fit(series)
+
     const predictions = []
-    const lastAttended = attended[attended.length - 1]
-    const lastValue = sequence[sequence.length - 1]
-    
-    // Calculate trend from recent values
-    const recentValues = sequence.slice(-5)
-    const trend = recentValues.length > 1 
-      ? (recentValues[recentValues.length - 1] - recentValues[0]) / recentValues.length
-      : 0
-    
-    // Generate predictions with attention-weighted adjustments
-    let prevPred = lastValue
-    for (let i = 0; i < this.predictionHorizon; i++) {
-      // Combine attention output with trend
-      const attentionScore = this._dot(lastAttended, this.weights.output.flat())
-      const adjustment = attentionScore * 0.01 // Scale down the adjustment
-      
-      // Prediction = previous + trend + attention adjustment
-      const pred = prevPred + trend + adjustment * (i + 1) * 0.1
-      predictions.push(pred)
-      prevPred = pred
+    for (let h = 1; h <= this.predictionHorizon; h++) {
+      predictions.push(level + trend * h)
     }
-    
     return predictions
   }
 
   /**
-   * Calculate prediction confidence based on input volatility
+   * Confidence derived from one-step-ahead in-sample error (RMSE normalized by
+   * price level) combined with volatility. Lower error + lower volatility →
+   * higher confidence. Fully deterministic.
+   * @param {Array<number>} inputSequence - Historical values
+   * @returns {number} Confidence in [0.1, 0.95]
    */
   calculateConfidence(inputSequence) {
-    if (inputSequence.length < 2) return 0.5
-    
-    // Calculate volatility
-    const returns = []
-    for (let i = 1; i < inputSequence.length; i++) {
-      if (inputSequence[i - 1] !== 0) {
-        returns.push((inputSequence[i] - inputSequence[i - 1]) / inputSequence[i - 1])
-      }
+    const series = inputSequence.slice()
+    if (series.length < 3) return 0.5
+
+    // One-step-ahead in-sample forecasts via Holt's method.
+    let level = series[0]
+    let trend = series[1] - series[0]
+    const squaredErrors = []
+
+    for (let i = 1; i < series.length; i++) {
+      const prevLevel = level
+      level = this.alpha * series[i] + (1 - this.alpha) * (prevLevel + trend)
+      trend = this.beta * (level - prevLevel) + (1 - this.beta) * trend
+
+      const oneStepForecast = prevLevel + trend
+      squaredErrors.push(Math.pow(series[i] - oneStepForecast, 2))
     }
-    
-    if (returns.length === 0) return 0.5
-    
-    const mean = returns.reduce((a, b) => a + b, 0) / returns.length
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length
-    const volatility = Math.sqrt(variance)
-    
-    // Lower volatility = higher confidence
-    const confidence = Math.max(0.1, Math.min(0.95, 1 - volatility * 10))
-    
-    return confidence
+
+    const rmse = Math.sqrt(squaredErrors.reduce((a, b) => a + b, 0) / squaredErrors.length)
+    const meanPrice = series.reduce((a, b) => a + b, 0) / series.length
+
+    // Normalized error — lower is better. Clamp to avoid division by zero.
+    const normalizedError = meanPrice > 0 ? rmse / meanPrice : 1
+    const confidence = 1 / (1 + normalizedError)
+
+    return Math.max(0.1, Math.min(0.95, confidence))
   }
 }
 
@@ -278,14 +195,14 @@ function calculateFeatures(ohlcv) {
 // Main Prediction Functions
 // ============================================================================
 
-// Singleton transformer instance
-let transformerInstance = null
+// Singleton forecaster instance
+let forecasterInstance = null
 
-function getTransformer() {
-  if (!transformerInstance) {
-    transformerInstance = new SimpleTransformer(PREDICTION_CONFIG.transformer)
+function getForecaster() {
+  if (!forecasterInstance) {
+    forecasterInstance = new HoltWintersForecaster(PREDICTION_CONFIG.holtWinters)
   }
-  return transformerInstance
+  return forecasterInstance
 }
 
 /**
@@ -320,13 +237,13 @@ async function getPrediction(exchange, symbol, timeframe = '1h', options = {}) {
     // 3. Calculate technical features
     const features = calculateFeatures(ohlcv)
 
-    // 4. Generate Transformer predictions
-    const transformer = getTransformer()
+    // 4. Generate Holt-Winters forecasts
+    const forecaster = getForecaster()
     const prices = ohlcv.map(c => c.close)
-    const transformerPredictions = transformer.predict(prices)
-    const transformerConfidence = transformer.calculateConfidence(prices)
+    const holtWintersPredictions = forecaster.predict(prices)
+    const holtWintersConfidence = forecaster.calculateConfidence(prices)
 
-    // 5. Combine Kalman and Transformer predictions
+    // 5. Combine Kalman and Holt-Winters predictions
     const lastPrice = prices[prices.length - 1]
     const lastTime = ohlcv[ohlcv.length - 1].time
     const timeStep = ohlcv.length > 1 
@@ -336,20 +253,20 @@ async function getPrediction(exchange, symbol, timeframe = '1h', options = {}) {
     const combinedPredictions = []
     for (let i = 0; i < predictionSteps; i++) {
       const kalmanPred = kalmanResult.predictions[i]
-      const transformerPred = transformerPredictions[i]
+      const holtWintersPred = holtWintersPredictions[i]
       
-      // Weighted average of Kalman and Transformer predictions
-      // Kalman is better for short-term, Transformer for patterns
+      // Weighted average of Kalman and Holt-Winters predictions
+      // Kalman is better for short-term, Holt-Winters for trend continuation
       const kalmanWeight = Math.max(0.3, 0.7 - i * 0.1)
-      const transformerWeight = 1 - kalmanWeight
+      const holtWintersWeight = 1 - kalmanWeight
       
       const combinedPrice = kalmanPred 
-        ? kalmanPred.value * kalmanWeight + transformerPred * transformerWeight
-        : transformerPred
+        ? kalmanPred.value * kalmanWeight + holtWintersPred * holtWintersWeight
+        : holtWintersPred
 
       const confidence = kalmanPred
-        ? (kalmanPred.confidence + transformerConfidence) / 2 * (1 - i * 0.05)
-        : transformerConfidence * (1 - i * 0.1)
+        ? (kalmanPred.confidence + holtWintersConfidence) / 2 * (1 - i * 0.05)
+        : holtWintersConfidence * (1 - i * 0.1)
 
       // Calculate bounds
       const uncertainty = lastPrice * (1 - confidence) * 0.05 * (i + 1)
@@ -363,7 +280,7 @@ async function getPrediction(exchange, symbol, timeframe = '1h', options = {}) {
         upper: combinedPrice + uncertainty,
         confidence: Math.max(0.1, Math.min(0.99, confidence)),
         kalmanPrice: kalmanPred?.value || null,
-        transformerPrice: transformerPred
+        holtWintersPrice: holtWintersPred
       })
     }
 
@@ -419,11 +336,11 @@ async function getPrediction(exchange, symbol, timeframe = '1h', options = {}) {
         dataPoints: ohlcv.length,
         predictionHorizon: predictionSteps,
         fromCache: result.fromCache,
-        model: 'kalman+transformer'
+        model: 'kalman+holt-winters'
       }
     }
   } catch (error) {
-    console.error(`Prediction error for ${symbol} on ${exchange}:`, error.message)
+    logger.error('Prediction error', error, { exchange, symbol, timeframe })
     return {
       success: false,
       error: error.message,
@@ -521,6 +438,6 @@ module.exports = {
   getKalmanFiltered,
   getQuickForecast,
   calculateFeatures,
-  SimpleTransformer,
+  HoltWintersForecaster,
   PREDICTION_CONFIG
 }
