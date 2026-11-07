@@ -1,4 +1,8 @@
 <script setup>
+import { useId } from 'vue'
+
+// Unique prefix so label/field ids stay valid with several instances
+const uid = useId()
 /**
  * ExchangeSelector Component
  * Dropdown for selecting cryptocurrency exchange
@@ -38,9 +42,9 @@ const getExchangeIcon = (id) => {
 
 <template>
   <div class="exchange-selector">
-    <label class="block text-xs text-text-secondary mb-1.5 font-medium">Exchange</label>
+    <label :for="`${uid}-exchange-selector-exchange`" class="block text-xs text-text-secondary mb-1.5 font-medium">Exchange</label>
     <div class="relative">
-      <select
+      <select :id="`${uid}-exchange-selector-exchange`"
         :value="selectedExchange"
         @change="emit('select', $event.target.value)"
         :disabled="disabled"

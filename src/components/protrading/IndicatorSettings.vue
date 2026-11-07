@@ -41,11 +41,11 @@ const updateSetting = (indicator, setting, value) => {
         <span class="material-symbols-outlined text-primary">tune</span>
         Indicator Settings
       </h3>
-      <button 
+      <button type="button" aria-label="Close indicator settings" 
         @click="emit('close')" 
         class="p-1 rounded-lg text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
       >
-        <span class="material-symbols-outlined text-lg">close</span>
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
       </button>
     </div>
     
@@ -71,6 +71,7 @@ const updateSetting = (indicator, setting, value) => {
             <input 
               type="number" 
               :value="localSettings.bollingerBands.period"
+              aria-label="Bollinger Bands period"
               @change="updateSetting('bollingerBands', 'period', parseInt($event.target.value))"
               min="5" max="100"
               class="w-16 px-2 py-1 text-xs text-right font-mono bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -81,6 +82,7 @@ const updateSetting = (indicator, setting, value) => {
             <input 
               type="number" 
               :value="localSettings.bollingerBands.stdDev"
+              aria-label="Bollinger Bands standard deviation"
               @change="updateSetting('bollingerBands', 'stdDev', parseFloat($event.target.value))"
               min="0.5" max="5" step="0.5"
               class="w-16 px-2 py-1 text-xs text-right font-mono bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -101,7 +103,7 @@ const updateSetting = (indicator, setting, value) => {
             />
             <span class="font-medium text-sm text-slate-900 dark:text-white">Simple Moving Average</span>
           </label>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">SMA</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">SMA</span>
         </div>
         <div v-if="localSettings.sma.enabled" class="mt-3 pt-3 border-t border-gray-200 dark:border-border-dark/50">
           <div class="flex flex-wrap gap-2">

@@ -1,4 +1,5 @@
 <script setup>
+import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -60,7 +61,7 @@ const handleCoinClick = (coin) => {
     <!-- Header -->
     <div class="p-6 border-b border-gray-200 dark:border-border-dark flex justify-between items-center">
       <h3 class="text-slate-900 dark:text-white font-bold text-lg">My Assets</h3>
-      <button class="text-primary text-sm font-medium hover:text-blue-400 transition-colors">View All</button>
+      <RouterLink to="/wallet" class="text-primary text-sm font-medium hover:underline">View All</RouterLink>
     </div>
     
     <!-- Table -->
@@ -95,8 +96,12 @@ const handleCoinClick = (coin) => {
             <tr 
               v-for="coin in coins" 
               :key="coin.id"
+              tabindex="0"
+              :aria-current="coin.id === selectedCoinId || coin.coinId === selectedCoinId ? 'true' : undefined"
               @click="handleCoinClick(coin)"
-              class="transition-colors cursor-pointer group"
+              @keydown.enter.prevent="handleCoinClick(coin)"
+              @keydown.space.prevent="handleCoinClick(coin)"
+              class="transition-colors cursor-pointer group focus-visible:-outline-offset-2"
               :class="[
                 (coin.id === selectedCoinId || coin.coinId === selectedCoinId)
                   ? 'bg-primary/5 dark:bg-primary/10 border-l-2 border-primary'
@@ -107,8 +112,11 @@ const handleCoinClick = (coin) => {
                 <div class="flex items-center gap-3">
                   <img 
                     :src="coin.image" 
-                    :alt="coin.name" 
+                    alt="" 
                     class="size-8 rounded-full"
+                    width="32"
+                    height="32"
+                    loading="lazy"
                   />
                   <div class="flex flex-col">
                     <span class="text-slate-900 dark:text-white font-medium group-hover:text-primary transition-colors">
@@ -121,7 +129,7 @@ const handleCoinClick = (coin) => {
               <td class="py-4 px-6 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono text-slate-900 dark:text-white">{{ formatPrice(coin.current_price) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</span>
                 </div>
               </td>
               <td class="py-4 px-6 text-right">
@@ -132,7 +140,7 @@ const handleCoinClick = (coin) => {
                   <span class="text-text-secondary text-xs">
                     {{ formatPrice(coin.holdings * coin.current_price) }}
                   </span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+                  <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
                     🇨🇴 {{ formatCOP(coin.holdings * coin.current_price) }}
                   </span>
                 </div>

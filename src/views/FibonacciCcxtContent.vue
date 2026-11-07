@@ -143,9 +143,9 @@ onMounted(async () => {
       <div class="flex flex-wrap items-end gap-4 lg:gap-6">
         <!-- Exchange Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-2">Exchange</label>
-          <div class="flex gap-2 flex-wrap">
-            <button
+          <span class="block text-xs text-text-secondary mb-2">Exchange</span>
+          <div role="group" aria-label="Exchange" class="flex gap-2 flex-wrap">
+            <button type="button" :aria-pressed="store.selectedExchange === exchange.id"
               v-for="exchange in store.exchanges"
               :key="exchange.id"
               @click="handleExchangeSelect(exchange.id)"
@@ -177,7 +177,7 @@ onMounted(async () => {
                   'px-2 py-1.5 text-xs font-medium rounded transition-all',
                   store.selectedSymbol === symbol
                     ? 'bg-secondary text-white'
-                    : 'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-600'
+                    : 'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                 ]"
               >
                 {{ symbol.split('/')[0] }}
@@ -186,6 +186,7 @@ onMounted(async () => {
             <!-- Custom input -->
             <input
               v-model="symbolInput"
+                aria-label="Custom trading pair"
               @keyup.enter="handleSymbolInput"
               @focus="showSymbolDropdown = true"
               placeholder="BTC/USDT"
@@ -201,9 +202,9 @@ onMounted(async () => {
 
         <!-- Timeframe Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-2">Temporalidad</label>
-          <div class="flex gap-1">
-            <button
+          <span class="block text-xs text-text-secondary mb-2">Temporalidad</span>
+          <div role="group" aria-label="Temporalidad" class="flex gap-1">
+            <button type="button" :aria-pressed="store.selectedTimeframe === tf.value"
               v-for="tf in store.timeframes"
               :key="tf.value"
               @click="handleTimeframeSelect(tf.value)"
@@ -211,7 +212,7 @@ onMounted(async () => {
                 'px-2 py-1.5 text-xs font-medium rounded transition-all relative',
                 store.selectedTimeframe === tf.value
                   ? 'bg-primary text-white'
-                  : 'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-600'
+                  : 'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
               ]"
             >
               {{ tf.label }}
@@ -247,15 +248,16 @@ onMounted(async () => {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <span class="text-danger flex-1">{{ store.error }}</span>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="store.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">close</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -275,7 +277,7 @@ onMounted(async () => {
                 'px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1',
                 store.isBullish ? 'bg-success/10 text-success' :
                 store.isBearish ? 'bg-danger/10 text-danger' :
-                'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-400'
+                'bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-gray-300'
               ]"
             >
               <span class="material-symbols-outlined text-sm">
@@ -330,7 +332,7 @@ onMounted(async () => {
               <p class="text-2xl font-bold text-slate-900 dark:text-white">
                 ${{ store.currentPrice?.toLocaleString('en-US', { maximumFractionDigits: 2 }) }}
               </p>
-              <p class="text-sm text-yellow-600 dark:text-yellow-400">
+              <p class="text-sm text-yellow-700 dark:text-yellow-400">
                 {{ formatCOPWithFlag(store.currentPrice) }}
               </p>
             </div>
@@ -575,7 +577,7 @@ onMounted(async () => {
               <td class="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">
                 ${{ level.price?.toLocaleString('en-US', { maximumFractionDigits: 2 }) }}
               </td>
-              <td class="px-4 py-3 text-right font-mono text-yellow-600 dark:text-yellow-400 text-xs">
+              <td class="px-4 py-3 text-right font-mono text-yellow-700 dark:text-yellow-400 text-xs">
                 {{ formatCOPWithFlag(level.price) }}
               </td>
               <td class="px-4 py-3 text-center">
@@ -620,14 +622,5 @@ onMounted(async () => {
 <style scoped>
 .fibonacci-ccxt-content {
   max-width: 100%;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 </style>

@@ -191,7 +191,7 @@ const handleTimeframeChange = () => {
         <button
           @click="syncData"
           :disabled="syncing"
-          class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           <span class="material-symbols-outlined text-[20px]" :class="{ 'animate-spin': syncing }">
             {{ syncing ? 'refresh' : 'sync' }}
@@ -206,9 +206,9 @@ const handleTimeframeChange = () => {
       <div class="flex flex-wrap items-center gap-4">
         <!-- Coin Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-1">Coin</label>
-          <div class="flex gap-2 flex-wrap">
-            <button
+          <span class="block text-xs text-text-secondary mb-1">Coin</span>
+          <div role="group" aria-label="Coin" class="flex gap-2 flex-wrap">
+            <button type="button" :aria-pressed="selectedCoin === coin.id"
               v-for="coin in popularCoins"
               :key="coin.id"
               @click="selectedCoin = coin.id; handleCoinChange()"
@@ -226,16 +226,16 @@ const handleTimeframeChange = () => {
         
         <!-- Timeframe Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-1">Timeframe</label>
-          <div class="flex gap-1">
-            <button
+          <span class="block text-xs text-text-secondary mb-1">Timeframe</span>
+          <div role="group" aria-label="Timeframe" class="flex gap-1">
+            <button type="button" :aria-pressed="selectedTimeframe === tf.value"
               v-for="tf in timeframes"
               :key="tf.value"
               @click="selectedTimeframe = tf.value; handleTimeframeChange()"
               class="px-2.5 py-1.5 rounded text-xs font-medium transition-all"
               :class="selectedTimeframe === tf.value 
                 ? 'bg-primary/10 text-primary border border-primary/30' 
-                : 'bg-gray-50 dark:bg-background-dark text-slate-500 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-border-dark'"
+                : 'bg-gray-50 dark:bg-background-dark text-text-secondary hover:bg-gray-100 dark:hover:bg-border-dark'"
             >
               {{ tf.label }}
             </button>
@@ -245,11 +245,12 @@ const handleTimeframeChange = () => {
     </div>
 
     <!-- Error Alert -->
-    <div v-if="error" class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3">
+    <div v-if="error" role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3">
       <span class="material-symbols-outlined text-danger">error</span>
       <p class="text-danger text-sm">{{ error }}</p>
-      <button @click="error = null" class="ml-auto text-danger hover:text-danger/80">
-        <span class="material-symbols-outlined text-[18px]">close</span>
+      <button type="button" aria-label="Dismiss error" @click="error = null" class="ml-auto text-danger hover:text-danger/80">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -260,7 +261,7 @@ const handleTimeframeChange = () => {
         <p class="text-xl font-bold font-mono text-slate-900 dark:text-white">
           {{ formatPrice(latestCandle?.close) }}
         </p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
           🇨🇴 {{ formatCOP(latestCandle?.close) }}
         </p>
       </div>
@@ -275,7 +276,7 @@ const handleTimeframeChange = () => {
         <p class="text-xl font-bold font-mono text-success">
           {{ formatPrice(latestCandle?.high) }}
         </p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
           🇨🇴 {{ formatCOP(latestCandle?.high) }}
         </p>
       </div>
@@ -284,7 +285,7 @@ const handleTimeframeChange = () => {
         <p class="text-xl font-bold font-mono text-danger">
           {{ formatPrice(latestCandle?.low) }}
         </p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
           🇨🇴 {{ formatCOP(latestCandle?.low) }}
         </p>
       </div>
@@ -319,7 +320,7 @@ const handleTimeframeChange = () => {
                 :class="{
                   'text-danger bg-danger/10': rsiInterpretation.color === 'danger',
                   'text-success bg-success/10': rsiInterpretation.color === 'success',
-                  'text-gray-500 bg-gray-100': rsiInterpretation.color === 'gray'
+                  'text-gray-600 bg-gray-100 dark:text-text-secondary dark:bg-border-dark': rsiInterpretation.color === 'gray'
                 }"
               >
                 {{ rsiInterpretation.status }}
@@ -366,7 +367,7 @@ const handleTimeframeChange = () => {
           <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
             {{ formatPrice(indicators.sma7) }}
           </p>
-          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(indicators.sma7) }}
           </p>
         </div>
@@ -389,7 +390,7 @@ const handleTimeframeChange = () => {
           <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
             {{ formatPrice(indicators.sma14) }}
           </p>
-          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(indicators.sma14) }}
           </p>
         </div>
@@ -412,7 +413,7 @@ const handleTimeframeChange = () => {
           <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
             {{ formatPrice(indicators.sma30) }}
           </p>
-          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(indicators.sma30) }}
           </p>
         </div>
@@ -438,7 +439,7 @@ const handleTimeframeChange = () => {
           <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
             {{ formatPrice(indicators.ema12) }}
           </p>
-          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(indicators.ema12) }}
           </p>
         </div>
@@ -461,7 +462,7 @@ const handleTimeframeChange = () => {
           <p class="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1">
             {{ formatPrice(indicators.ema26) }}
           </p>
-          <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(indicators.ema26) }}
           </p>
         </div>
@@ -554,34 +555,34 @@ const handleTimeframeChange = () => {
               v-memo="[candle.timestamp]"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <td class="px-4 py-2 text-slate-500 dark:text-text-secondary font-mono text-xs">
+              <td class="px-4 py-2 text-text-secondary font-mono text-xs">
                 {{ formatTimestamp(candle.timestamp) }}
               </td>
               <td class="px-4 py-2 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono text-slate-900 dark:text-white">{{ formatPrice(candle.open) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.open) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.open) }}</span>
                 </div>
               </td>
               <td class="px-4 py-2 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono text-success">{{ formatPrice(candle.high) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.high) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.high) }}</span>
                 </div>
               </td>
               <td class="px-4 py-2 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono text-danger">{{ formatPrice(candle.low) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.low) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.low) }}</span>
                 </div>
               </td>
               <td class="px-4 py-2 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono font-medium text-slate-900 dark:text-white">{{ formatPrice(candle.close) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.close) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-[10px] font-mono">🇨🇴 {{ formatCOP(candle.close) }}</span>
                 </div>
               </td>
-              <td class="px-4 py-2 text-right font-mono text-slate-500 dark:text-text-secondary text-xs">
+              <td class="px-4 py-2 text-right font-mono text-text-secondary text-xs">
                 {{ candle.volume ? (candle.volume / 1e9).toFixed(2) + 'B' : '-' }}
               </td>
             </tr>

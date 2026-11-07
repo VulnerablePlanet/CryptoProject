@@ -170,7 +170,7 @@ const getPhaseColor = (phase) => {
     IDLE: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
     RESEARCH: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
     ANALYSIS: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    SCORING: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+    SCORING: 'bg-yellow-100 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-900/30 dark:text-yellow-400',
     EXECUTION: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
     MONITORING: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400'
   }
@@ -197,14 +197,14 @@ const getEventColor = (type) => {
           <span class="material-symbols-outlined text-primary">smart_toy</span>
           Autonomous Agent
         </h3>
-        <span class="text-xs text-slate-500">Last update: {{ lastUpdate }}</span>
+        <span class="text-xs text-text-secondary">Last update: {{ lastUpdate }}</span>
       </div>
 
       <!-- Status Grid -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <!-- Running Status -->
         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Status</p>
+          <p class="text-xs text-text-secondary mb-1">Status</p>
           <div class="flex items-center gap-2">
             <span
               class="w-2 h-2 rounded-full"
@@ -218,7 +218,7 @@ const getEventColor = (type) => {
 
         <!-- Current Phase -->
         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Phase</p>
+          <p class="text-xs text-text-secondary mb-1">Phase</p>
           <span
             class="inline-flex px-2 py-1 rounded text-xs font-medium"
             :class="getPhaseColor(currentPhase)"
@@ -229,16 +229,16 @@ const getEventColor = (type) => {
 
         <!-- Capital -->
         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Capital</p>
+          <p class="text-xs text-text-secondary mb-1">Capital</p>
           <p class="font-medium text-slate-900 dark:text-white">${{ capital }}</p>
         </div>
 
         <!-- Mode -->
         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Mode</p>
+          <p class="text-xs text-text-secondary mb-1">Mode</p>
           <span
             class="inline-flex px-2 py-1 rounded text-xs font-medium"
-            :class="tradingMode === 'production' ? 'bg-red-100 text-red-600 dark:bg-red-900/30' : 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30'"
+            :class="tradingMode === 'production' ? 'bg-red-100 text-red-600 dark:bg-red-900/30' : 'bg-yellow-100 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-900/30'"
           >
             {{ tradingMode.toUpperCase() }}
           </span>
@@ -279,7 +279,7 @@ const getEventColor = (type) => {
         <button
           @click="startBot"
           :disabled="loading || isRunning"
-          class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-success text-white dark:text-background-dark rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <span class="material-symbols-outlined text-lg">play_arrow</span>
           Start Agent
@@ -292,12 +292,12 @@ const getEventColor = (type) => {
           <span class="material-symbols-outlined text-lg">stop</span>
           Stop Agent
         </button>
-        <button
+        <button type="button" aria-label="Refresh"
           @click="refreshAll"
           :disabled="loading"
           class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-text-secondary rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
         >
-          <span class="material-symbols-outlined text-lg" :class="{ 'animate-spin': loading }">sync</span>
+          <span class="material-symbols-outlined text-lg" aria-hidden="true" :class="{ 'animate-spin': loading }">sync</span>
         </button>
       </div>
 
@@ -330,14 +330,14 @@ const getEventColor = (type) => {
 
         <!-- Scoring Breakdown -->
         <div v-if="currentSignal.signal?.breakdown" class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-2">Scoring Breakdown</p>
+          <p class="text-xs text-text-secondary mb-2">Scoring Breakdown</p>
           <div class="grid grid-cols-5 gap-2">
             <div
               v-for="(value, key) in currentSignal.signal.breakdown"
               :key="key"
               class="text-center"
             >
-              <p class="text-xs text-slate-500 capitalize">{{ key }}</p>
+              <p class="text-xs text-text-secondary capitalize">{{ key }}</p>
               <p class="font-medium text-slate-900 dark:text-white">
                 {{ typeof value === 'number' ? (value * 100).toFixed(0) + '%' : value }}
               </p>
@@ -347,7 +347,7 @@ const getEventColor = (type) => {
 
         <!-- Reasons -->
         <div v-if="currentSignal.signal?.reasons?.length" class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-2">Reasons</p>
+          <p class="text-xs text-text-secondary mb-2">Reasons</p>
           <ul class="space-y-1">
             <li
               v-for="(reason, idx) in currentSignal.signal.reasons.slice(0, 5)"
@@ -362,25 +362,25 @@ const getEventColor = (type) => {
 
         <!-- Research Data -->
         <div v-if="currentSignal.research" class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-2">Research Data</p>
+          <p class="text-xs text-text-secondary mb-2">Research Data</p>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <div>
-              <p class="text-slate-500">Fear & Greed</p>
+              <p class="text-text-secondary">Fear & Greed</p>
               <p class="font-medium">
                 {{ currentSignal.research.fearGreed?.value || 'N/A' }}
-                <span class="text-xs text-slate-400">
+                <span class="text-xs text-text-secondary">
                   ({{ currentSignal.research.fearGreed?.classification || 'N/A' }})
                 </span>
               </p>
             </div>
             <div>
-              <p class="text-slate-500">Sentiment</p>
+              <p class="text-text-secondary">Sentiment</p>
               <p class="font-medium">
                 {{ currentSignal.research.sentiment?.sentimentScore?.toFixed(2) || 'N/A' }}
               </p>
             </div>
             <div>
-              <p class="text-slate-500">Social Mentions</p>
+              <p class="text-text-secondary">Social Mentions</p>
               <p class="font-medium">
                 {{ currentSignal.research.socialMetrics?.totalMentions || 'N/A' }}
               </p>
@@ -390,29 +390,29 @@ const getEventColor = (type) => {
 
         <!-- Analysis Data -->
         <div v-if="currentSignal.analysis" class="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-2">Market Analysis</p>
+          <p class="text-xs text-text-secondary mb-2">Market Analysis</p>
           <div class="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <p class="text-slate-500">Regime</p>
+              <p class="text-text-secondary">Regime</p>
               <p class="font-medium">{{ currentSignal.analysis.regime || 'N/A' }}</p>
             </div>
             <div>
-              <p class="text-slate-500">MTF Trend</p>
+              <p class="text-text-secondary">MTF Trend</p>
               <p class="font-medium">{{ currentSignal.analysis.mtfTrend || 'N/A' }}</p>
             </div>
             <div v-if="currentSignal.analysis.indicators">
-              <p class="text-slate-500">RSI</p>
+              <p class="text-text-secondary">RSI</p>
               <p class="font-medium">{{ currentSignal.analysis.indicators.rsi?.toFixed(2) || 'N/A' }}</p>
             </div>
             <div v-if="currentSignal.analysis.indicators">
-              <p class="text-slate-500">MACD Histogram</p>
+              <p class="text-text-secondary">MACD Histogram</p>
               <p class="font-medium">{{ currentSignal.analysis.indicators.macdHistogram?.toFixed(4) || 'N/A' }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else class="text-center py-8 text-slate-500">
+      <div v-else class="text-center py-8 text-text-secondary">
         <span class="material-symbols-outlined text-4xl text-slate-300">smart_toy</span>
         <p class="mt-2">No signal generated yet</p>
         <p class="text-sm">Start the agent to generate signals</p>
@@ -430,12 +430,12 @@ const getEventColor = (type) => {
         <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-border-dark">
-              <th class="text-left py-2 px-3 text-xs font-medium text-slate-500">Symbol</th>
-              <th class="text-left py-2 px-3 text-xs font-medium text-slate-500">Side</th>
-              <th class="text-right py-2 px-3 text-xs font-medium text-slate-500">Size</th>
-              <th class="text-right py-2 px-3 text-xs font-medium text-slate-500">Entry</th>
-              <th class="text-right py-2 px-3 text-xs font-medium text-slate-500">Current P&L</th>
-              <th class="text-right py-2 px-3 text-xs font-medium text-slate-500">Status</th>
+              <th class="text-left py-2 px-3 text-xs font-medium text-text-secondary">Symbol</th>
+              <th class="text-left py-2 px-3 text-xs font-medium text-text-secondary">Side</th>
+              <th class="text-right py-2 px-3 text-xs font-medium text-text-secondary">Size</th>
+              <th class="text-right py-2 px-3 text-xs font-medium text-text-secondary">Entry</th>
+              <th class="text-right py-2 px-3 text-xs font-medium text-text-secondary">Current P&L</th>
+              <th class="text-right py-2 px-3 text-xs font-medium text-text-secondary">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -468,7 +468,7 @@ const getEventColor = (type) => {
         </table>
       </div>
 
-      <div v-else class="text-center py-8 text-slate-500">
+      <div v-else class="text-center py-8 text-text-secondary">
         <span class="material-symbols-outlined text-4xl text-slate-300">account_balance</span>
         <p class="mt-2">No open positions</p>
       </div>
@@ -487,11 +487,11 @@ const getEventColor = (type) => {
           :key="idx"
           class="flex items-start gap-2 text-sm py-1"
         >
-          <span class="text-slate-400 text-xs shrink-0">{{ event.time }}</span>
+          <span class="text-text-secondary text-xs shrink-0">{{ event.time }}</span>
           <span class="material-symbols-outlined text-xs" :class="getEventColor(event.type)">circle</span>
           <span class="text-slate-700 dark:text-text-secondary">{{ event.message }}</span>
         </div>
-        <div v-if="events.length === 0" class="text-center py-4 text-slate-500 text-sm">
+        <div v-if="events.length === 0" class="text-center py-4 text-text-secondary text-sm">
           No events yet
         </div>
       </div>

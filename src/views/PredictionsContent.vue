@@ -191,15 +191,16 @@ function dismissError() {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <span class="text-danger flex-1">{{ store.error }}</span>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="dismissError"
         class="text-danger hover:text-danger/70 transition-colors"
       >
-        <span class="material-symbols-outlined">close</span>
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -318,7 +319,7 @@ function dismissError() {
               </td>
               <td class="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">
                 ${{ pred.price?.toLocaleString('en-US', { maximumFractionDigits: 2 }) }}
-                <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono block">
+                <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono block">
                   {{ formatCOPWithFlag(pred.price) }}
                 </span>
               </td>
@@ -332,13 +333,13 @@ function dismissError() {
               </td>
               <td class="px-4 py-3 text-right font-mono text-text-secondary">
                 ${{ pred.lower?.toLocaleString('en-US', { maximumFractionDigits: 2 }) }}
-                <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono block">
+                <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono block">
                   {{ formatCOPWithFlag(pred.lower) }}
                 </span>
               </td>
               <td class="px-4 py-3 text-right font-mono text-text-secondary">
                 ${{ pred.upper?.toLocaleString('en-US', { maximumFractionDigits: 2 }) }}
-                <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono block">
+                <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono block">
                   {{ formatCOPWithFlag(pred.upper) }}
                 </span>
               </td>
@@ -373,14 +374,5 @@ function dismissError() {
 <style scoped>
 .predictions-content {
   @apply max-w-full;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 </style>

@@ -210,7 +210,7 @@ const handleMouseLeave = () => {
           class="px-3 py-1.5 text-xs font-bold rounded transition-colors"
           :class="activeTimeframe === tf.value 
             ? 'bg-primary text-white' 
-            : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'"
+            : 'text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'"
         >
           {{ tf.label }}
         </button>
@@ -222,7 +222,7 @@ const handleMouseLeave = () => {
           <span class="text-lg font-bold text-slate-900 dark:text-white font-mono">
             {{ formatPrice(hoveredPoint?.value || currentPrice) }}
           </span>
-          <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+          <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
             🇨🇴 {{ formatCOP(hoveredPoint?.value || currentPrice) }}
           </span>
         </div>
@@ -248,7 +248,7 @@ const handleMouseLeave = () => {
       <!-- Empty State -->
       <div 
         v-else-if="prices.length === 0"
-        class="absolute inset-0 flex items-center justify-center text-slate-400 dark:text-text-secondary"
+        class="absolute inset-0 flex items-center justify-center text-text-secondary"
       >
         <div class="text-center">
           <span class="material-symbols-outlined text-4xl mb-2">show_chart</span>

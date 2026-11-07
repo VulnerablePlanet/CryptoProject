@@ -62,13 +62,13 @@ const formatPercent = (value) => {
       <!-- Total Trades -->
       <div class="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
         <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ store.stats.totalTrades }}</p>
-        <p class="text-xs text-slate-500 dark:text-text-secondary">Total Trades</p>
+        <p class="text-xs text-text-secondary">Total Trades</p>
       </div>
 
       <!-- Win Rate -->
       <div class="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
         <p class="text-2xl font-bold" :class="winRateColor">{{ formatPercent(store.stats.winRate) }}</p>
-        <p class="text-xs text-slate-500 dark:text-text-secondary">Win Rate</p>
+        <p class="text-xs text-text-secondary">Win Rate</p>
       </div>
 
       <!-- Total PnL -->
@@ -76,7 +76,7 @@ const formatPercent = (value) => {
         <p class="text-2xl font-bold" :class="pnlColor">
           {{ store.stats.totalPnL >= 0 ? '+' : '' }}{{ formatCurrency(store.stats.totalPnL) }}
         </p>
-        <p class="text-xs text-slate-500 dark:text-text-secondary">Total P&L</p>
+        <p class="text-xs text-text-secondary">Total P&L</p>
       </div>
 
       <!-- Profit Factor -->
@@ -84,7 +84,7 @@ const formatPercent = (value) => {
         <p class="text-2xl font-bold text-slate-900 dark:text-white">
           {{ store.stats.profitFactor?.toFixed(2) || '0.00' }}
         </p>
-        <p class="text-xs text-slate-500 dark:text-text-secondary">Profit Factor</p>
+        <p class="text-xs text-text-secondary">Profit Factor</p>
       </div>
     </div>
 
@@ -93,40 +93,40 @@ const formatPercent = (value) => {
       <!-- Wins / Losses -->
       <div class="space-y-2">
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary flex items-center gap-1">
+          <span class="text-text-secondary flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-success"></span>
             Wins
           </span>
           <span class="font-medium text-success">{{ store.stats.wins }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary flex items-center gap-1">
+          <span class="text-text-secondary flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-danger"></span>
             Losses
           </span>
           <span class="font-medium text-danger">{{ store.stats.losses }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary flex items-center gap-1">
+          <span class="text-text-secondary flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-slate-400"></span>
             Breakeven
           </span>
-          <span class="font-medium text-slate-500">{{ store.stats.breakevens }}</span>
+          <span class="font-medium text-text-secondary">{{ store.stats.breakevens }}</span>
         </div>
       </div>
 
       <!-- Averages -->
       <div class="space-y-2">
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary">Avg Win</span>
+          <span class="text-text-secondary">Avg Win</span>
           <span class="font-medium text-success">+{{ formatCurrency(store.stats.avgWin) }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary">Avg Loss</span>
+          <span class="text-text-secondary">Avg Loss</span>
           <span class="font-medium text-danger">-{{ formatCurrency(store.stats.avgLoss) }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-500 dark:text-text-secondary">Max Drawdown</span>
+          <span class="text-text-secondary">Max Drawdown</span>
           <span class="font-medium text-danger">-{{ formatPercent(store.stats.maxDrawdown) }}</span>
         </div>
       </div>
@@ -141,22 +141,22 @@ const formatPercent = (value) => {
       
       <div class="grid grid-cols-3 gap-2 text-sm">
         <div class="p-2 bg-slate-50 dark:bg-slate-800 rounded">
-          <p class="text-xs text-slate-500 dark:text-text-secondary">Trades</p>
+          <p class="text-xs text-text-secondary">Trades</p>
           <p class="font-medium text-slate-900 dark:text-white">{{ store.backtestResults.totalTrades }}</p>
         </div>
         <div class="p-2 bg-slate-50 dark:bg-slate-800 rounded">
-          <p class="text-xs text-slate-500 dark:text-text-secondary">Win Rate</p>
+          <p class="text-xs text-text-secondary">Win Rate</p>
           <p class="font-medium text-slate-900 dark:text-white">{{ formatPercent(store.backtestResults.winRate) }}</p>
         </div>
         <div class="p-2 bg-slate-50 dark:bg-slate-800 rounded">
-          <p class="text-xs text-slate-500 dark:text-text-secondary">Final Capital</p>
+          <p class="text-xs text-text-secondary">Final Capital</p>
           <p class="font-medium text-slate-900 dark:text-white">{{ formatCurrency(store.backtestResults.finalCapital) }}</p>
         </div>
       </div>
     </div>
 
     <!-- No Data State -->
-    <div v-if="store.stats.totalTrades === 0 && !store.backtestLoading" class="text-center py-8 text-slate-400 dark:text-text-secondary">
+    <div v-if="store.stats.totalTrades === 0 && !store.backtestLoading" class="text-center py-8 text-text-secondary">
       <span class="material-symbols-outlined text-4xl mb-2">query_stats</span>
       <p class="text-sm">No trading data yet</p>
       <p class="text-xs mt-1">Run a backtest to see performance metrics</p>

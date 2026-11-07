@@ -142,7 +142,7 @@ const formatVolume = (value) => {
         <button
           @click="handleSync"
           :disabled="isSyncing"
-          class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
         >
           <span 
             class="material-symbols-outlined text-[20px]" 
@@ -206,15 +206,16 @@ const formatVolume = (value) => {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <p class="text-danger text-sm flex-1">{{ store.error }}</p>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="store.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">close</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -226,7 +227,7 @@ const formatVolume = (value) => {
         <p class="text-xl lg:text-2xl font-bold font-mono text-slate-900 dark:text-white">
           {{ formatUSD(store.currentPrice) }}
         </p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.currentPrice) }}
         </p>
       </div>
@@ -246,7 +247,7 @@ const formatVolume = (value) => {
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">High</p>
         <p class="text-lg font-bold font-mono text-success">{{ formatUSD(store.highPrice) }}</p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.highPrice) }}
         </p>
       </div>
@@ -255,7 +256,7 @@ const formatVolume = (value) => {
       <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
         <p class="text-xs text-text-secondary mb-1">Low</p>
         <p class="text-lg font-bold font-mono text-danger">{{ formatUSD(store.lowPrice) }}</p>
-        <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-1">
+        <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono mt-1">
           🇨🇴 {{ formatCOP(store.lowPrice) }}
         </p>
       </div>
@@ -396,7 +397,7 @@ const formatVolume = (value) => {
               :class="{
                 'text-danger bg-danger/10': store.rsiInterpretation.color === 'danger',
                 'text-success bg-success/10': store.rsiInterpretation.color === 'success',
-                'text-gray-500 bg-gray-100': store.rsiInterpretation.color === 'gray'
+                'text-gray-600 bg-gray-100 dark:text-text-secondary dark:bg-border-dark': store.rsiInterpretation.color === 'gray'
               }"
             >
               {{ store.rsiInterpretation.status }}

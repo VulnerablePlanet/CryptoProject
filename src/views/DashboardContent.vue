@@ -130,7 +130,7 @@ onMounted(async () => {
                 </span>
               </div>
               <!-- COP Value -->
-              <p v-if="!cryptoStore.loading" class="text-yellow-600 dark:text-yellow-400 text-sm font-mono">
+              <p v-if="!cryptoStore.loading" class="text-yellow-700 dark:text-yellow-400 text-sm font-mono">
                 🇨🇴 {{ formatCOP(portfolioValue) }}
               </p>
             </div>

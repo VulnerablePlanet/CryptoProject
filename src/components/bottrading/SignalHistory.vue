@@ -75,7 +75,7 @@ const formatPrice = (value) => {
         <span class="material-symbols-outlined text-primary">history</span>
         Signal History
       </h3>
-      <span class="text-xs text-slate-500 dark:text-text-secondary">
+      <span class="text-xs text-text-secondary">
         {{ store.signalHistory.length }} signals
       </span>
     </div>
@@ -107,11 +107,11 @@ const formatPrice = (value) => {
             <span class="text-sm font-medium text-slate-900 dark:text-white truncate">
               {{ signal.symbol || 'BTC' }}
             </span>
-            <span class="text-xs text-slate-400 dark:text-text-secondary">
+            <span class="text-xs text-text-secondary">
               {{ Math.round(signal.confidence * 100) }}% conf
             </span>
           </div>
-          <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-text-secondary">
+          <div class="flex items-center gap-4 text-xs text-text-secondary">
             <span>Entry: {{ formatPrice(signal.entry) }}</span>
             <span>SL: {{ formatPrice(signal.stopLoss) }}</span>
             <span>TP: {{ formatPrice(signal.takeProfit) }}</span>
@@ -120,7 +120,7 @@ const formatPrice = (value) => {
 
         <!-- Timestamp -->
         <div class="text-right shrink-0">
-          <p class="text-xs text-slate-400 dark:text-text-secondary">
+          <p class="text-xs text-text-secondary">
             {{ formatTime(signal.timestamp) }}
           </p>
         </div>
@@ -128,7 +128,7 @@ const formatPrice = (value) => {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-8 text-slate-400 dark:text-text-secondary">
+    <div v-else class="text-center py-8 text-text-secondary">
       <span class="material-symbols-outlined text-4xl mb-2">signal_cellular_null</span>
       <p class="text-sm">No signals generated yet</p>
       <p class="text-xs mt-1">Start the bot to generate signals</p>

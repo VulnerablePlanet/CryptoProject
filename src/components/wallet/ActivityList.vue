@@ -78,7 +78,7 @@ const formatAmount = (amount, type) => {
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-slate-900 dark:text-white">{{ activity.title }}</p>
-              <p class="text-xs text-slate-500 dark:text-text-secondary">{{ activity.time }}</p>
+              <p class="text-xs text-text-secondary">{{ activity.time }}</p>
             </div>
             <div class="text-right">
               <p 
@@ -87,7 +87,7 @@ const formatAmount = (amount, type) => {
               >
                 {{ formatAmount(activity.amount, activity.type) }}
               </p>
-              <p class="text-xs text-slate-500 dark:text-text-secondary">{{ activity.asset }}</p>
+              <p class="text-xs text-text-secondary">{{ activity.asset }}</p>
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@ const formatAmount = (amount, type) => {
       <!-- Empty State -->
       <div v-else class="p-8 text-center">
         <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-gray-600 mb-2">receipt_long</span>
-        <p class="text-sm text-slate-500 dark:text-text-secondary">No recent activity</p>
+        <p class="text-sm text-text-secondary">No recent activity</p>
       </div>
     </div>
   </div>

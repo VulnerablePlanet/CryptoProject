@@ -60,7 +60,7 @@ const getLevelColor = (level) => {
     Intermediate: 'text-warning bg-warning/10',
     Advanced: 'text-danger bg-danger/10'
   }
-  return colors[level] || 'text-gray-500 bg-gray-100'
+  return colors[level] || 'text-gray-600 bg-gray-100 dark:text-text-secondary dark:bg-border-dark'
 }
 </script>
 
@@ -69,7 +69,7 @@ const getLevelColor = (level) => {
     <!-- Header -->
     <div>
       <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Learn</h1>
-      <p class="text-slate-500 dark:text-text-secondary text-sm">Educational resources to improve your crypto knowledge</p>
+      <p class="text-text-secondary text-sm">Educational resources to improve your crypto knowledge</p>
     </div>
 
     <!-- Featured Banner -->
@@ -106,7 +106,7 @@ const getLevelColor = (level) => {
             <p class="text-xs text-primary mt-2">{{ category.articles.length }} articles</p>
           </div>
           <span 
-            class="material-symbols-outlined text-slate-400 transition-transform"
+            class="material-symbols-outlined text-text-secondary transition-transform"
             :class="{ 'rotate-180': selectedCategory === category.id }"
           >
             expand_more

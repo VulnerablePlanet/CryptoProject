@@ -1,4 +1,5 @@
 <script setup>
+import BaseModal from '@/components/common/BaseModal.vue'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { logger } from '@/utils/logger'
@@ -187,12 +188,12 @@ onMounted(() => {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">API Keys</h1>
-        <p class="text-slate-500 dark:text-text-secondary text-sm">Gestiona tus claves API para usar en la aplicación</p>
+        <p class="text-text-secondary text-sm">Gestiona tus claves API para usar en la aplicación</p>
       </div>
       <button
         @click="showCreateModal = true"
         :disabled="!authStore.isAuthenticated"
-        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
+        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
         Agregar API Key
@@ -200,7 +201,8 @@ onMounted(() => {
     </div>
 
     <!-- Error message -->
-    <div v-if="error" class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex gap-4">
+    <div v-if="error" role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex gap-4">
       <span class="material-symbols-outlined text-danger shrink-0">error</span>
       <p class="text-sm text-danger">{{ error }}</p>
     </div>
@@ -238,7 +240,7 @@ onMounted(() => {
         <p class="text-text-secondary mb-6">Agrega tus claves API de CoinGecko u otros proveedores</p>
         <button
           @click="showCreateModal = true"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
         >
           <span class="material-symbols-outlined text-[20px]">add</span>
           Agregar Tu Primera Key
@@ -275,12 +277,12 @@ onMounted(() => {
             <td class="px-6 py-4">
               <div class="flex items-center gap-2">
                 <code class="text-sm font-mono text-slate-600 dark:text-gray-400 bg-gray-100 dark:bg-border-dark px-2 py-1 rounded">{{ key.key }}</code>
-                <button 
+                <button type="button" aria-label="Copiar" 
                   @click="copyToClipboard(key.fullKey || key.key)"
                   class="p-1 hover:bg-gray-100 dark:hover:bg-border-dark rounded"
                   title="Copiar"
                 >
-                  <span class="material-symbols-outlined text-[16px] text-text-secondary">content_copy</span>
+                  <span class="material-symbols-outlined text-[16px] text-text-secondary" aria-hidden="true">content_copy</span>
                 </button>
               </div>
             </td>
@@ -304,21 +306,21 @@ onMounted(() => {
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-2">
-                <button 
+                <button type="button" :aria-label="key.active ? 'Desactivar' : 'Activar'" 
                   @click="toggleKey(key.id)"
                   class="p-1.5 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg transition-colors"
                   :title="key.active ? 'Desactivar' : 'Activar'"
                 >
-                  <span class="material-symbols-outlined text-[18px] text-text-secondary">
+                  <span class="material-symbols-outlined text-[18px] text-text-secondary" aria-hidden="true">
                     {{ key.active ? 'pause' : 'play_arrow' }}
                   </span>
                 </button>
-                <button 
+                <button type="button" aria-label="Eliminar" 
                   @click="deleteKey(key.id)"
                   class="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Eliminar"
                 >
-                  <span class="material-symbols-outlined text-[18px] text-slate-400 hover:text-danger">delete</span>
+                  <span class="material-symbols-outlined text-[18px] text-text-secondary hover:text-danger" aria-hidden="true">delete</span>
                 </button>
               </div>
             </td>
@@ -354,85 +356,70 @@ curl -X GET "https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd
     </div>
 
     <!-- Create Key Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div 
-          v-if="showCreateModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="showCreateModal = false"
-        >
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-border-dark">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Agregar API Key</h2>
-              <button @click="showCreateModal = false" class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg">
-                <span class="material-symbols-outlined text-slate-500">close</span>
-              </button>
-            </div>
-            <div class="p-6 space-y-5">
-              <!-- Nombre -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Nombre *</label>
-                <input 
-                  v-model="newKeyForm.name"
-                  type="text"
-                  placeholder="ej: CoinGecko Production"
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
-                />
-              </div>
-              <!-- API Key -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">API Key *</label>
-                <input 
-                  v-model="newKeyForm.apiKey"
-                  type="password"
-                  placeholder="Ingresa tu API Key"
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
-                />
-                <p class="text-xs text-text-secondary mt-1">Tu API Key será almacenada de forma segura</p>
-              </div>
-              <!-- Proveedor -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Proveedor</label>
-                <select 
-                  v-model="newKeyForm.provider"
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
-                >
-                  <option v-for="provider in providerOptions" :key="provider" :value="provider">{{ provider }}</option>
-                </select>
-              </div>
-              <!-- Rate Limit -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Rate Limit</label>
-                <select 
-                  v-model="newKeyForm.rateLimit"
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
-                >
-                  <option v-for="limit in rateLimitOptions" :key="limit" :value="limit">{{ limit }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
-              <button @click="showCreateModal = false" class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors">Cancelar</button>
-              <button 
-                @click="createApiKey" 
-                :disabled="!newKeyForm.name || !newKeyForm.apiKey || isCreating"
-                class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-bold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <span v-if="isCreating" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                {{ isCreating ? 'Guardando...' : 'Guardar Key' }}
-              </button>
-            </div>
-          </div>
+    <BaseModal :open="showCreateModal" title="Agregar API Key" @close="showCreateModal = false">
+      <div class="p-6 space-y-5">
+        <!-- Nombre -->
+        <div>
+          <label for="api-keys-nombre" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Nombre *</label>
+          <input id="api-keys-nombre" 
+            v-model="newKeyForm.name"
+            type="text"
+            placeholder="ej: CoinGecko Production"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
+          />
         </div>
-      </Transition>
-    </Teleport>
+        <!-- API Key -->
+        <div>
+          <label for="api-keys-api-key" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">API Key *</label>
+          <input id="api-keys-api-key" 
+            v-model="newKeyForm.apiKey"
+            type="password"
+            placeholder="Ingresa tu API Key"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
+          />
+          <p class="text-xs text-text-secondary mt-1">Tu API Key será almacenada de forma segura</p>
+        </div>
+        <!-- Proveedor -->
+        <div>
+          <label for="api-keys-proveedor" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Proveedor</label>
+          <select id="api-keys-proveedor" 
+            v-model="newKeyForm.provider"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+          >
+            <option v-for="provider in providerOptions" :key="provider" :value="provider">{{ provider }}</option>
+          </select>
+        </div>
+        <!-- Rate Limit -->
+        <div>
+          <label for="api-keys-rate-limit" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Rate Limit</label>
+          <select id="api-keys-rate-limit" 
+            v-model="newKeyForm.rateLimit"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+          >
+            <option v-for="limit in rateLimitOptions" :key="limit" :value="limit">{{ limit }}</option>
+          </select>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
+          <button @click="showCreateModal = false" class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors">Cancelar</button>
+          <button 
+            @click="createApiKey" 
+            :disabled="!newKeyForm.name || !newKeyForm.apiKey || isCreating"
+            class="flex-1 py-3 px-4 bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span v-if="isCreating" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+            {{ isCreating ? 'Guardando...' : 'Guardar Key' }}
+          </button>
+        </div>
+      </template>
+    </BaseModal>
 
     <!-- Success Toast -->
     <Transition name="modal">
       <div 
         v-if="showSuccessMessage" 
-        class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-success text-white rounded-lg shadow-lg"
+        class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-success text-white dark:text-background-dark rounded-lg shadow-lg"
       >
         <span class="material-symbols-outlined">check_circle</span>
         <span class="font-medium">¡API Key guardada exitosamente!</span>
@@ -440,14 +427,3 @@ curl -X GET "https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-</style>

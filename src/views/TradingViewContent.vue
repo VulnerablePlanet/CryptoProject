@@ -99,7 +99,7 @@ const handleCrosshairMove = (data) => {
         <button
           @click="handleSync"
           :disabled="isSyncing || !store.canSync"
-          class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed relative"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed relative"
           :title="!store.canSync ? `Espera ${store.syncCooldownRemaining}s` : 'Sincronizar datos desde CoinGecko'"
         >
           <span 
@@ -159,15 +159,16 @@ const handleCrosshairMove = (data) => {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <p class="text-danger text-sm flex-1">{{ store.error }}</p>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="store.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">close</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 

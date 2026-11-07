@@ -36,12 +36,12 @@ const formatCurrency = (value) => {
     <div class="relative z-10">
       <!-- Header -->
       <div class="flex items-center gap-2 mb-2">
-        <p class="text-slate-500 dark:text-text-secondary text-sm font-medium">Estimated Total Balance</p>
-        <button 
+        <p class="text-text-secondary text-sm font-medium">Estimated Total Balance</p>
+        <button type="button" :aria-label="balanceHidden ? 'Show balance' : 'Hide balance'" :aria-pressed="balanceHidden" 
           @click="balanceHidden = !balanceHidden"
-          class="text-slate-400 dark:text-text-secondary hover:text-slate-600 dark:hover:text-white transition-colors"
+          class="text-text-secondary hover:text-slate-600 dark:hover:text-white transition-colors"
         >
-          <span class="material-symbols-outlined text-[18px]">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">
             {{ balanceHidden ? 'visibility' : 'visibility_off' }}
           </span>
         </button>
@@ -71,7 +71,7 @@ const formatCurrency = (value) => {
       
       <!-- Quick Actions -->
       <div class="flex flex-wrap gap-3">
-        <button class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors">
+        <button class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-lg transition-colors">
           <span class="material-symbols-outlined text-[18px]">download</span>
           Deposit
         </button>

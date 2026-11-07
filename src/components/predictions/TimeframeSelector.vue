@@ -32,11 +32,9 @@ function selectTimeframe(value) {
 
 <template>
   <div class="timeframe-selector">
-    <label class="block text-sm font-medium text-text-secondary mb-1.5">
-      Timeframe
-    </label>
-    <div class="flex flex-wrap gap-1.5">
-      <button
+    <span class="block text-sm font-medium text-text-secondary mb-1.5">Timeframe</span>
+    <div role="group" aria-label="Timeframe" class="flex flex-wrap gap-1.5">
+      <button type="button" :aria-pressed="modelValue === tf.value"
         v-for="tf in timeframes"
         :key="tf.value"
         @click="selectTimeframe(tf.value)"
@@ -65,8 +63,8 @@ function selectTimeframe(value) {
   opacity: 0.5;
 }
 
-.timeframe-selector button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+.timeframe-selector button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>

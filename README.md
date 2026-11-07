@@ -108,7 +108,6 @@ CryptoProject/
 ├── 📄 index.html                   # Punto de entrada HTML
 ├── 📄 package.json                 # Dependencias frontend
 ├── 📄 vite.config.js               # Configuración Vite + proxy
-├── 📄 tailwind.config.js           # Design system (colores, fuentes)
 ├── 📄 postcss.config.js            # PostCSS pipelines
 │
 ├── 📂 src/                         # ── FRONTEND ──
@@ -116,7 +115,7 @@ CryptoProject/
 │   ├── 📄 App.vue                  # Componente raíz
 │   │
 │   ├── 📂 assets/                  # Recursos estáticos
-│   │   └── 📄 main.css             # Estilos globales + Tailwind
+│   │   └── 📄 main.css             # Design tokens (@theme) + estilos globales + Tailwind
 │   │
 │   ├── 📂 router/                  # Enrutamiento
 │   │   └── 📄 index.js             # 19 rutas + navigation guards
@@ -149,10 +148,8 @@ CryptoProject/
 │   │   ├── 📂 common/              # Genéricos
 │   │   │   ├── LoadingSpinner.vue
 │   │   │   ├── RealtimeIndicator.vue
-│   │   │   ├── SearchInput.vue
 │   │   │   └── ThemeToggle.vue
 │   │   ├── 📂 layout/              # Estructura visual
-│   │   │   ├── AppHeader.vue
 │   │   │   ├── AppSidebar.vue
 │   │   │   ├── AuthLayout.vue
 │   │   │   └── DashboardHeader.vue

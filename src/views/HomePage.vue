@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import AppHeader from '@/components/layout/AppHeader.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 
 const authStore = useAuthStore()
@@ -35,7 +34,7 @@ onMounted(async () => {
       <div class="h-full px-4 md:px-6 lg:px-10 flex items-center justify-between max-w-7xl mx-auto">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-3">
-          <img src="/logo.png" alt="Crypto market anomaly detector" class="size-8" />
+          <img src="/logo.png" alt="" class="size-8" width="32" height="32" />
           <h1 class="text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-white">Crypto market anomaly detector</h1>
         </RouterLink>
 
@@ -47,7 +46,7 @@ onMounted(async () => {
           <template v-if="authStore.isAuthenticated">
             <RouterLink 
               to="/dashboard"
-              class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors"
+              class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-lg transition-colors"
             >
               <span class="material-symbols-outlined text-[18px]">dashboard</span>
               Dashboard
@@ -62,7 +61,7 @@ onMounted(async () => {
             </RouterLink>
             <RouterLink 
               to="/register"
-              class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-primary/25"
+              class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-primary/25"
             >
               Get Started
             </RouterLink>
@@ -81,7 +80,7 @@ onMounted(async () => {
         </div>
         
         <!-- Logo -->
-        <img src="/logo.png" alt="Crypto market anomaly detector" class="size-20 mx-auto mb-8" />
+        <img src="/logo.png" alt="" class="size-20 mx-auto mb-8" width="80" height="80" />
         
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
           Analyze Markets with <br/>
@@ -98,7 +97,7 @@ onMounted(async () => {
           <template v-if="authStore.isAuthenticated">
             <RouterLink 
               to="/dashboard"
-              class="flex items-center gap-2 h-14 px-8 bg-primary hover:bg-blue-600 text-white text-lg font-bold rounded-xl transition-colors shadow-lg shadow-primary/25"
+              class="flex items-center gap-2 h-14 px-8 bg-primary hover:bg-primary-dark text-white text-lg font-bold rounded-xl transition-colors shadow-lg shadow-primary/25"
             >
               <span class="material-symbols-outlined text-[24px]">dashboard</span>
               Go to Dashboard
@@ -107,7 +106,7 @@ onMounted(async () => {
           <template v-else>
             <RouterLink 
               to="/register"
-              class="flex items-center gap-2 h-14 px-8 bg-primary hover:bg-blue-600 text-white text-lg font-bold rounded-xl transition-colors shadow-lg shadow-primary/25"
+              class="flex items-center gap-2 h-14 px-8 bg-primary hover:bg-primary-dark text-white text-lg font-bold rounded-xl transition-colors shadow-lg shadow-primary/25"
             >
               <span class="material-symbols-outlined text-[24px]">rocket_launch</span>
               Start Trading

@@ -1,4 +1,5 @@
 <script setup>
+import BaseModal from '@/components/common/BaseModal.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useWatchlistStore } from '@/stores/watchlist'
 import { useCryptoStore } from '@/stores/crypto'
@@ -185,12 +186,12 @@ onMounted(async () => {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Watchlist</h1>
-        <p class="text-slate-500 dark:text-text-secondary text-sm">Track your favorite cryptocurrencies</p>
+        <p class="text-text-secondary text-sm">Track your favorite cryptocurrencies</p>
       </div>
       
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
+        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
         Add Coin
@@ -234,7 +235,7 @@ onMounted(async () => {
         <p class="text-text-secondary mb-6">Add coins to track their prices</p>
         <button
           @click="openAddModal"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
         >
           <span class="material-symbols-outlined text-[20px]">add</span>
           Add Your First Coin
@@ -264,7 +265,7 @@ onMounted(async () => {
           <!-- Price -->
           <div class="text-right">
             <p class="font-mono font-bold text-slate-900 dark:text-white">{{ formatUSD(coin.current_price) }}</p>
-            <p class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</p>
+            <p class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(coin.current_price) }}</p>
             <p 
               class="text-xs font-medium"
               :class="coin.price_change_24h >= 0 ? 'text-success' : 'text-danger'"
@@ -279,19 +280,19 @@ onMounted(async () => {
           
           <!-- Actions -->
           <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
+            <button type="button" aria-label="Set Alert"
               @click="openAlertModal(coin)"
               class="p-1.5 hover:bg-primary/10 rounded-lg transition-colors"
               title="Set Alert"
             >
-              <span class="material-symbols-outlined text-[18px] text-primary">notifications_active</span>
+              <span class="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">notifications_active</span>
             </button>
-            <button
+            <button type="button" aria-label="Remove"
               @click="removeCoin(coin.coinId)"
               class="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
               title="Remove"
             >
-              <span class="material-symbols-outlined text-[18px] text-slate-400 hover:text-danger">close</span>
+              <span class="material-symbols-outlined text-[18px] text-text-secondary hover:text-danger" aria-hidden="true">close</span>
             </button>
           </div>
         </div>
@@ -335,22 +336,22 @@ onMounted(async () => {
           
           <!-- Actions -->
           <div class="flex items-center gap-2">
-            <button
+            <button type="button" :aria-label="alert.active ? 'Pause' : 'Resume'"
               @click="watchlistStore.toggleAlert(alert._id)"
               class="p-1.5 rounded-lg transition-colors"
               :class="alert.active ? 'hover:bg-gray-100 dark:hover:bg-border-dark' : 'bg-gray-100 dark:bg-border-dark'"
               :title="alert.active ? 'Pause' : 'Resume'"
             >
-              <span class="material-symbols-outlined text-[18px] text-slate-500">
+              <span class="material-symbols-outlined text-[18px] text-text-secondary" aria-hidden="true">
                 {{ alert.active ? 'pause' : 'play_arrow' }}
               </span>
             </button>
-            <button
+            <button type="button" aria-label="Delete"
               @click="deleteAlert(alert._id)"
               class="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
               title="Delete"
             >
-              <span class="material-symbols-outlined text-[18px] text-slate-400 hover:text-danger">delete</span>
+              <span class="material-symbols-outlined text-[18px] text-text-secondary hover:text-danger" aria-hidden="true">delete</span>
             </button>
           </div>
         </div>
@@ -358,201 +359,156 @@ onMounted(async () => {
     </div>
 
     <!-- Add Coin Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div 
-          v-if="showAddModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="closeAddModal"
-        >
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          
-          <div class="relative bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-border-dark">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Add to Watchlist</h2>
-              <button @click="closeAddModal" class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg">
-                <span class="material-symbols-outlined text-slate-500">close</span>
-              </button>
-            </div>
+    <BaseModal :open="showAddModal" title="Add to Watchlist" @close="closeAddModal">
 
-            <div class="p-6">
-              <!-- Exchange and Quote selectors -->
-              <div class="grid grid-cols-2 gap-3 mb-4">
-                <div>
-                  <label class="block text-xs font-medium text-text-secondary mb-1">Exchange</label>
-                  <select
-                    v-model="selectedExchange"
-                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
-                  >
-                    <option value="binance">Binance</option>
-                    <option value="coinbase">Coinbase</option>
-                    <option value="kraken">Kraken</option>
-                    <option value="kucoin">KuCoin</option>
-                    <option value="bybit">Bybit</option>
-                    <option value="okx">OKX</option>
-                    <option value="bitget">Bitget</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-text-secondary mb-1">Quote Currency</label>
-                  <select
-                    v-model="selectedQuote"
-                    class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
-                  >
-                    <option value="USDT">USDT</option>
-                    <option value="USD">USD</option>
-                    <option value="BUSD">BUSD</option>
-                    <option value="USDC">USDC</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                  </select>
-                </div>
-              </div>
+      <div class="p-6">
+        <!-- Exchange and Quote selectors -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label for="watchlist-exchange" class="block text-xs font-medium text-text-secondary mb-1">Exchange</label>
+            <select id="watchlist-exchange"
+              v-model="selectedExchange"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
+            >
+              <option value="binance">Binance</option>
+              <option value="coinbase">Coinbase</option>
+              <option value="kraken">Kraken</option>
+              <option value="kucoin">KuCoin</option>
+              <option value="bybit">Bybit</option>
+              <option value="okx">OKX</option>
+              <option value="bitget">Bitget</option>
+            </select>
+          </div>
+          <div>
+            <label for="watchlist-quote-currency" class="block text-xs font-medium text-text-secondary mb-1">Quote Currency</label>
+            <select id="watchlist-quote-currency"
+              v-model="selectedQuote"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
+            >
+              <option value="USDT">USDT</option>
+              <option value="USD">USD</option>
+              <option value="BUSD">BUSD</option>
+              <option value="USDC">USDC</option>
+              <option value="BTC">BTC</option>
+              <option value="ETH">ETH</option>
+            </select>
+          </div>
+        </div>
 
-              <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
-                <input
-                  v-model="searchQuery"
-                  @focus="isSearching = true"
-                  type="text"
-                  placeholder="Search cryptocurrencies..."
-                  class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
-                />
-              </div>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+          <input
+            v-model="searchQuery"
+            @focus="isSearching = true"
+            type="text"
+            placeholder="Search cryptocurrencies..."
+                aria-label="Search cryptocurrencies"
+            class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
+          />
+        </div>
 
-              <!-- Search Results -->
-              <div v-if="filteredCoins.length > 0" class="mt-4 space-y-2">
-                <button
-                  v-for="coin in filteredCoins"
-                  :key="coin.id"
-                  @click="addCoin(coin)"
-                  class="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors text-left"
-                >
-                  <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
-                  <div class="flex-1">
-                    <p class="font-medium text-slate-900 dark:text-white">{{ coin.name }}</p>
-                    <p class="text-xs text-text-secondary">
-                      <span class="uppercase">{{ coin.symbol }}</span>
-                      <span class="mx-1">•</span>
-                      <span class="text-primary">{{ selectedExchange }}</span>
-                      <span class="mx-1">•</span>
-                      <span>{{ coin.symbol.toUpperCase() }}/{{ selectedQuote }}</span>
-                    </p>
-                  </div>
-                  <span class="font-mono text-sm text-slate-700 dark:text-gray-300">{{ formatUSD(coin.current_price) }}</span>
-                </button>
-              </div>
-
-              <p v-else-if="searchQuery.length >= 2" class="mt-4 text-center text-text-secondary">
-                No coins found matching "{{ searchQuery }}"
+        <!-- Search Results -->
+        <div v-if="filteredCoins.length > 0" class="mt-4 space-y-2">
+          <button
+            v-for="coin in filteredCoins"
+            :key="coin.id"
+            @click="addCoin(coin)"
+            class="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors text-left"
+          >
+            <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
+            <div class="flex-1">
+              <p class="font-medium text-slate-900 dark:text-white">{{ coin.name }}</p>
+              <p class="text-xs text-text-secondary">
+                <span class="uppercase">{{ coin.symbol }}</span>
+                <span class="mx-1">•</span>
+                <span class="text-primary">{{ selectedExchange }}</span>
+                <span class="mx-1">•</span>
+                <span>{{ coin.symbol.toUpperCase() }}/{{ selectedQuote }}</span>
               </p>
             </div>
-          </div>
+            <span class="font-mono text-sm text-slate-700 dark:text-gray-300">{{ formatUSD(coin.current_price) }}</span>
+          </button>
         </div>
-      </Transition>
-    </Teleport>
+
+        <p v-else-if="searchQuery.length >= 2" class="mt-4 text-center text-text-secondary">
+          No coins found matching "{{ searchQuery }}"
+        </p>
+      </div>
+    </BaseModal>
 
     <!-- Create Alert Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div 
-          v-if="showAlertModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="closeAlertModal"
-        >
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          
-          <div class="relative bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-border-dark">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Create Price Alert</h2>
-              <button @click="closeAlertModal" class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg">
-                <span class="material-symbols-outlined text-slate-500">close</span>
-              </button>
-            </div>
+    <BaseModal :open="showAlertModal" title="Create Price Alert" @close="closeAlertModal">
 
-            <div class="p-6 space-y-5">
-              <!-- Coin Info -->
-              <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
-                <span class="material-symbols-outlined text-primary">monetization_on</span>
-                <div>
-                  <p class="font-medium text-slate-900 dark:text-white">{{ alertForm.name }}</p>
-                  <p class="text-xs text-text-secondary">Current: {{ formatUSD(alertForm.currentPrice) }}</p>
-                </div>
-              </div>
-
-              <!-- Condition -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Alert Condition</label>
-                <div class="grid grid-cols-2 gap-2">
-                  <button
-                    @click="alertForm.condition = 'above'"
-                    class="py-3 px-4 rounded-lg border font-medium transition-all flex items-center gap-2 justify-center"
-                    :class="alertForm.condition === 'above' 
-                      ? 'border-success bg-success/10 text-success' 
-                      : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400'"
-                  >
-                    <span class="material-symbols-outlined text-[20px]">trending_up</span>
-                    Price Above
-                  </button>
-                  <button
-                    @click="alertForm.condition = 'below'"
-                    class="py-3 px-4 rounded-lg border font-medium transition-all flex items-center gap-2 justify-center"
-                    :class="alertForm.condition === 'below' 
-                      ? 'border-danger bg-danger/10 text-danger' 
-                      : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400'"
-                  >
-                    <span class="material-symbols-outlined text-[20px]">trending_down</span>
-                    Price Below
-                  </button>
-                </div>
-              </div>
-
-              <!-- Target Price -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Target Price (USD)</label>
-                <div class="relative">
-                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">$</span>
-                  <input
-                    v-model="alertForm.targetPrice"
-                    type="text"
-                    inputmode="decimal"
-                    placeholder="90000.00"
-                    class="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
-              <button
-                @click="closeAlertModal"
-                class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                @click="createAlert"
-                :disabled="!alertForm.targetPrice || watchlistStore.loading"
-                class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
-              >
-                Create Alert
-              </button>
-            </div>
+      <div class="p-6 space-y-5">
+        <!-- Coin Info -->
+        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-background-dark rounded-lg">
+          <span class="material-symbols-outlined text-primary">monetization_on</span>
+          <div>
+            <p class="font-medium text-slate-900 dark:text-white">{{ alertForm.name }}</p>
+            <p class="text-xs text-text-secondary">Current: {{ formatUSD(alertForm.currentPrice) }}</p>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <!-- Condition -->
+        <div>
+          <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Alert Condition</span>
+          <div role="group" aria-label="Alert Condition" class="grid grid-cols-2 gap-2">
+            <button type="button" :aria-pressed="alertForm.condition === 'above'"
+              @click="alertForm.condition = 'above'"
+              class="py-3 px-4 rounded-lg border font-medium transition-all flex items-center gap-2 justify-center"
+              :class="alertForm.condition === 'above' 
+                ? 'border-success bg-success/10 text-success' 
+                : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400'"
+            >
+              <span class="material-symbols-outlined text-[20px]">trending_up</span>
+              Price Above
+            </button>
+            <button type="button" :aria-pressed="alertForm.condition === 'below'"
+              @click="alertForm.condition = 'below'"
+              class="py-3 px-4 rounded-lg border font-medium transition-all flex items-center gap-2 justify-center"
+              :class="alertForm.condition === 'below' 
+                ? 'border-danger bg-danger/10 text-danger' 
+                : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400'"
+            >
+              <span class="material-symbols-outlined text-[20px]">trending_down</span>
+              Price Below
+            </button>
+          </div>
+        </div>
+
+        <!-- Target Price -->
+        <div>
+          <label for="watchlist-target-price-usd" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Target Price (USD)</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">$</span>
+            <input id="watchlist-target-price-usd"
+              v-model="alertForm.targetPrice"
+              type="text"
+              inputmode="decimal"
+              placeholder="90000.00"
+              class="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
+            />
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
+          <button
+            @click="closeAlertModal"
+            class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="createAlert"
+            :disabled="!alertForm.targetPrice || watchlistStore.loading"
+            class="flex-1 py-3 px-4 bg-primary hover:bg-primary-dark disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
+          >
+            Create Alert
+          </button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-</style>

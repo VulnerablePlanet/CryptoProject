@@ -115,7 +115,7 @@ const isNearLevel = (levelRatio) => {
           <p class="text-lg font-bold font-mono text-danger">
             ${{ formatFibPrice(swingHigh?.price) }}
           </p>
-          <p class="text-xs text-yellow-600 dark:text-yellow-400 font-mono">
+          <p class="text-xs text-yellow-700 dark:text-yellow-400 font-mono">
             {{ formatCOPWithFlag(swingHigh?.price) }}
           </p>
           <p class="text-[10px] text-text-secondary mt-1">
@@ -127,7 +127,7 @@ const isNearLevel = (levelRatio) => {
           <p class="text-lg font-bold font-mono text-success">
             ${{ formatFibPrice(swingLow?.price) }}
           </p>
-          <p class="text-xs text-yellow-600 dark:text-yellow-400 font-mono">
+          <p class="text-xs text-yellow-700 dark:text-yellow-400 font-mono">
             {{ formatCOPWithFlag(swingLow?.price) }}
           </p>
           <p class="text-[10px] text-text-secondary mt-1">
@@ -187,7 +187,7 @@ const isNearLevel = (levelRatio) => {
             <p class="font-mono text-sm font-bold text-slate-900 dark:text-white">
               ${{ formatFibPrice(level.price) }}
             </p>
-            <p class="text-[10px] text-yellow-600 dark:text-yellow-400 font-mono">
+            <p class="text-[10px] text-yellow-700 dark:text-yellow-400 font-mono">
               {{ formatCOPWithFlag(level.price) }}
             </p>
             <p class="text-[10px] text-text-secondary">
@@ -236,7 +236,7 @@ const isNearLevel = (levelRatio) => {
             <p class="font-mono text-sm font-bold" :class="level.isGoldenExtension ? 'text-warning' : 'text-purple-400'">
               ${{ formatFibPrice(level.price) }}
             </p>
-            <p class="text-[10px] text-yellow-600 dark:text-yellow-400 font-mono">
+            <p class="text-[10px] text-yellow-700 dark:text-yellow-400 font-mono">
               {{ formatCOPWithFlag(level.price) }}
             </p>
             <p class="text-[10px] text-text-secondary">

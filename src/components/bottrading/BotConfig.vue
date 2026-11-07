@@ -3,8 +3,11 @@
  * BotConfig Component
  * Configuration panel for trading bot settings
  */
-import { ref, computed } from 'vue'
+import { ref, computed, useId } from 'vue'
 import { useBotTradingStore } from '@/stores/botTrading'
+
+// Unique prefix so label/field ids stay valid with several instances
+const uid = useId()
 
 const store = useBotTradingStore()
 
@@ -61,10 +64,10 @@ const resetSettings = () => {
     <!-- Symbol & Timeframe -->
     <div class="grid grid-cols-2 gap-4 mb-6">
       <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-trading-pair`" class="block text-sm font-medium text-slate-700 dark:text-text-secondary mb-2">
           Trading Pair
         </label>
-        <select
+        <select :id="`${uid}-bot-config-trading-pair`"
           :value="store.config.symbol"
           @change="updateSymbol"
           class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -76,10 +79,10 @@ const resetSettings = () => {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-timeframe`" class="block text-sm font-medium text-slate-700 dark:text-text-secondary mb-2">
           Timeframe
         </label>
-        <select
+        <select :id="`${uid}-bot-config-timeframe`"
           :value="store.config.timeframe"
           @change="updateTimeframe"
           class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -100,11 +103,11 @@ const resetSettings = () => {
 
       <!-- Capital -->
       <div>
-        <label class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-trading-capital`" class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
           <span>Trading Capital</span>
           <span class="font-mono font-medium text-slate-900 dark:text-white">${{ localConfig.capital }}</span>
         </label>
-        <input
+        <input :id="`${uid}-bot-config-trading-capital`"
           v-model.number="localConfig.capital"
           type="range"
           min="100"
@@ -112,7 +115,7 @@ const resetSettings = () => {
           step="100"
           class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
         />
-        <div class="flex justify-between text-xs text-slate-400 mt-1">
+        <div class="flex justify-between text-xs text-text-secondary mt-1">
           <span>$100</span>
           <span>$100,000</span>
         </div>
@@ -120,11 +123,11 @@ const resetSettings = () => {
 
       <!-- Risk Per Trade -->
       <div>
-        <label class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-risk-per-trade`" class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
           <span>Risk Per Trade</span>
           <span class="font-mono font-medium text-slate-900 dark:text-white">{{ localConfig.riskPerTrade }}%</span>
         </label>
-        <input
+        <input :id="`${uid}-bot-config-risk-per-trade`"
           v-model.number="localConfig.riskPerTrade"
           type="range"
           min="0.5"
@@ -132,7 +135,7 @@ const resetSettings = () => {
           step="0.5"
           class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
         />
-        <div class="flex justify-between text-xs text-slate-400 mt-1">
+        <div class="flex justify-between text-xs text-text-secondary mt-1">
           <span>0.5%</span>
           <span>10%</span>
         </div>
@@ -140,11 +143,11 @@ const resetSettings = () => {
 
       <!-- Min Confidence -->
       <div>
-        <label class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-minimum-confidence`" class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
           <span>Minimum Confidence</span>
           <span class="font-mono font-medium text-slate-900 dark:text-white">{{ localConfig.minConfidence }}%</span>
         </label>
-        <input
+        <input :id="`${uid}-bot-config-minimum-confidence`"
           v-model.number="localConfig.minConfidence"
           type="range"
           min="30"
@@ -152,7 +155,7 @@ const resetSettings = () => {
           step="5"
           class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
         />
-        <div class="flex justify-between text-xs text-slate-400 mt-1">
+        <div class="flex justify-between text-xs text-text-secondary mt-1">
           <span>30%</span>
           <span>90%</span>
         </div>
@@ -160,11 +163,11 @@ const resetSettings = () => {
 
       <!-- ATR Multiplier -->
       <div>
-        <label class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-atr-multiplier-sl-distance`" class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
           <span>ATR Multiplier (SL Distance)</span>
           <span class="font-mono font-medium text-slate-900 dark:text-white">{{ localConfig.atrMultiplier }}x</span>
         </label>
-        <input
+        <input :id="`${uid}-bot-config-atr-multiplier-sl-distance`"
           v-model.number="localConfig.atrMultiplier"
           type="range"
           min="1"
@@ -172,7 +175,7 @@ const resetSettings = () => {
           step="0.5"
           class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
         />
-        <div class="flex justify-between text-xs text-slate-400 mt-1">
+        <div class="flex justify-between text-xs text-text-secondary mt-1">
           <span>1x (Tight)</span>
           <span>5x (Wide)</span>
         </div>
@@ -180,11 +183,11 @@ const resetSettings = () => {
 
       <!-- Max Open Trades -->
       <div>
-        <label class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
+        <label :for="`${uid}-bot-config-max-open-trades`" class="flex items-center justify-between text-sm text-slate-600 dark:text-text-secondary mb-2">
           <span>Max Open Trades</span>
           <span class="font-mono font-medium text-slate-900 dark:text-white">{{ localConfig.maxOpenTrades }}</span>
         </label>
-        <input
+        <input :id="`${uid}-bot-config-max-open-trades`"
           v-model.number="localConfig.maxOpenTrades"
           type="range"
           min="1"
@@ -192,7 +195,7 @@ const resetSettings = () => {
           step="1"
           class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
         />
-        <div class="flex justify-between text-xs text-slate-400 mt-1">
+        <div class="flex justify-between text-xs text-text-secondary mt-1">
           <span>1</span>
           <span>10</span>
         </div>
@@ -203,16 +206,16 @@ const resetSettings = () => {
     <div class="flex gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-border-dark">
       <button
         @click="saveSettings"
-        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
       >
         <span class="material-symbols-outlined text-xl">save</span>
         Save Settings
       </button>
-      <button
+      <button type="button" aria-label="Reset to defaults"
         @click="resetSettings"
         class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-text-secondary rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
       >
-        <span class="material-symbols-outlined text-xl">restart_alt</span>
+        <span class="material-symbols-outlined text-xl" aria-hidden="true">restart_alt</span>
       </button>
     </div>
 

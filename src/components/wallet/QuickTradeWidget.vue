@@ -1,5 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, useId } from 'vue'
+
+// Unique prefix so label/field ids stay valid with several instances
+const uid = useId()
 
 const props = defineProps({
   tabs: {
@@ -34,7 +37,7 @@ const currentAsset = computed(() =>
         class="flex-1 py-3 text-sm font-medium transition-colors"
         :class="activeTab === index 
           ? 'text-primary border-b-2 border-primary bg-primary/5 dark:bg-primary/10' 
-          : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+          : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         {{ tab }}
       </button>
@@ -43,32 +46,32 @@ const currentAsset = computed(() =>
     <div class="p-5 flex flex-col gap-5">
       <!-- Amount Input -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-slate-500 dark:text-text-secondary uppercase">
+        <label :for="`${uid}-amount`" class="text-xs font-semibold text-text-secondary uppercase">
           {{ activeTab === 0 ? 'Amount to spend' : activeTab === 1 ? 'Amount to sell' : 'Amount to convert' }}
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <span class="text-slate-400 dark:text-text-secondary font-bold">$</span>
+            <span class="text-text-secondary font-bold">$</span>
           </div>
-          <input
+          <input :id="`${uid}-amount`"
             v-model="amount"
             class="block w-full rounded-lg border border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark pl-8 pr-16 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary text-lg font-bold transition-all"
             placeholder="0.00"
             type="number"
           />
           <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-            <span class="text-slate-500 dark:text-text-secondary text-sm font-medium">USD</span>
+            <span class="text-text-secondary text-sm font-medium">USD</span>
           </div>
         </div>
       </div>
       
       <!-- Asset Selector -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-slate-500 dark:text-text-secondary uppercase">
+        <label :for="`${uid}-asset`" class="text-xs font-semibold text-text-secondary uppercase">
           {{ activeTab === 0 ? 'Asset to buy' : activeTab === 1 ? 'Asset to sell' : 'From' }}
         </label>
         <div class="relative">
-          <select
+          <select :id="`${uid}-asset`"
             v-model="selectedAsset"
             class="block w-full rounded-lg border border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium appearance-none cursor-pointer"
           >
@@ -77,7 +80,7 @@ const currentAsset = computed(() =>
             </option>
           </select>
           <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span class="material-symbols-outlined text-slate-400 dark:text-text-secondary text-[20px]">expand_more</span>
+            <span class="material-symbols-outlined text-text-secondary text-[20px]">expand_more</span>
           </div>
         </div>
       </div>
@@ -85,13 +88,13 @@ const currentAsset = computed(() =>
       <!-- Preview -->
       <div class="p-4 rounded-lg bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-border-dark">
         <div class="flex justify-between items-center text-sm">
-          <span class="text-slate-500 dark:text-text-secondary">You'll receive approx.</span>
+          <span class="text-text-secondary">You'll receive approx.</span>
           <span class="text-slate-900 dark:text-white font-bold font-mono">
             {{ amount ? (parseFloat(amount) / 98000).toFixed(8) : '0.00000000' }} {{ selectedAsset }}
           </span>
         </div>
         <div class="flex justify-between items-center text-sm mt-2">
-          <span class="text-slate-500 dark:text-text-secondary">Fee</span>
+          <span class="text-text-secondary">Fee</span>
           <span class="text-slate-900 dark:text-white font-mono">0.1%</span>
         </div>
       </div>
@@ -101,7 +104,7 @@ const currentAsset = computed(() =>
         class="w-full py-3 rounded-lg font-bold text-white transition-colors"
         :class="activeTab === 1 
           ? 'bg-danger hover:bg-red-600' 
-          : 'bg-primary hover:bg-blue-600'"
+          : 'bg-primary hover:bg-primary-dark'"
       >
         {{ activeTab === 0 ? 'Buy' : activeTab === 1 ? 'Sell' : 'Convert' }} {{ currentAsset.name }}
       </button>

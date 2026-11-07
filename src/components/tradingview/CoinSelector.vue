@@ -34,11 +34,9 @@ const handleSelect = (coinId) => {
 
 <template>
   <div class="select-none">
-    <label v-if="!compact" class="block text-xs text-text-secondary mb-1.5 font-medium">
-      Cryptocurrency
-    </label>
-    <div class="flex gap-2 flex-wrap">
-      <button
+    <span v-if="!compact" class="block text-xs text-text-secondary mb-1.5 font-medium">Cryptocurrency</span>
+    <div role="group" aria-label="Cryptocurrency" class="flex gap-2 flex-wrap">
+      <button type="button" :aria-pressed="selectedCoin === coin.id"
         v-for="coin in coins"
         :key="coin.id"
         @click="handleSelect(coin.id)"
