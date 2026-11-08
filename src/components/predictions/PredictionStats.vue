@@ -102,7 +102,7 @@ const confidenceLevel = computed(() => {
       <div class="text-2xl font-bold text-slate-900 dark:text-white">
         {{ formatPrice(currentPrice) }}
       </div>
-      <div class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-0.5">
+      <div class="text-yellow-700 dark:text-yellow-400 text-xs font-mono mt-0.5">
         {{ formatCOPWithFlag(currentPrice) }}
       </div>
       <div class="text-xs text-text-secondary mt-1">
@@ -119,7 +119,7 @@ const confidenceLevel = computed(() => {
       <div class="text-2xl font-bold text-slate-900 dark:text-white">
         {{ formatPrice(predictedPrice) }}
       </div>
-      <div class="text-yellow-600 dark:text-yellow-400 text-xs font-mono mt-0.5">
+      <div class="text-yellow-700 dark:text-yellow-400 text-xs font-mono mt-0.5">
         {{ formatCOPWithFlag(predictedPrice) }}
       </div>
       <div 

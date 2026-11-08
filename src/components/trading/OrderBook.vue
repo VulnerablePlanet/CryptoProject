@@ -45,13 +45,13 @@ const getDepthWidth = (amount, max) => {
     <div class="px-4 py-3 border-b border-gray-200 dark:border-border-dark flex justify-between items-center">
       <h3 class="text-sm font-bold text-slate-900 dark:text-white">Order Book</h3>
       <div class="flex gap-2">
-        <span class="material-symbols-outlined text-slate-400 dark:text-text-secondary text-sm cursor-pointer hover:text-slate-900 dark:hover:text-white">format_align_left</span>
-        <span class="material-symbols-outlined text-slate-400 dark:text-text-secondary text-sm cursor-pointer hover:text-slate-900 dark:hover:text-white">more_vert</span>
+        <span class="material-symbols-outlined text-text-secondary text-sm cursor-pointer hover:text-slate-900 dark:hover:text-white">format_align_left</span>
+        <span class="material-symbols-outlined text-text-secondary text-sm cursor-pointer hover:text-slate-900 dark:hover:text-white">more_vert</span>
       </div>
     </div>
     
     <!-- Column Headers -->
-    <div class="grid grid-cols-3 px-4 py-2 text-xs text-slate-500 dark:text-text-secondary font-medium">
+    <div class="grid grid-cols-3 px-4 py-2 text-xs text-text-secondary font-medium">
       <div>Price (USD)</div>
       <div class="text-right">Amount (BTC)</div>
       <div class="text-right">Total</div>
@@ -70,7 +70,7 @@ const getDepthWidth = (amount, max) => {
         ></div>
         <span class="text-danger relative z-10">{{ formatPrice(ask.price) }}</span>
         <span class="text-right text-slate-900 dark:text-white relative z-10">{{ formatAmount(ask.amount) }}</span>
-        <span class="text-right text-slate-500 dark:text-text-secondary relative z-10">{{ formatTotal(ask.total) }}</span>
+        <span class="text-right text-text-secondary relative z-10">{{ formatTotal(ask.total) }}</span>
       </div>
     </div>
     
@@ -90,7 +90,7 @@ const getDepthWidth = (amount, max) => {
           {{ priceChange >= 0 ? 'arrow_upward' : 'arrow_downward' }}
         </span>
       </div>
-      <span class="text-xs text-slate-500 dark:text-text-secondary font-mono">
+      <span class="text-xs text-text-secondary font-mono">
         ${{ formatPrice(currentPrice || 98230.50) }}
       </span>
     </div>
@@ -108,7 +108,7 @@ const getDepthWidth = (amount, max) => {
         ></div>
         <span class="text-success relative z-10">{{ formatPrice(bid.price) }}</span>
         <span class="text-right text-slate-900 dark:text-white relative z-10">{{ formatAmount(bid.amount) }}</span>
-        <span class="text-right text-slate-500 dark:text-text-secondary relative z-10">{{ formatTotal(bid.total) }}</span>
+        <span class="text-right text-text-secondary relative z-10">{{ formatTotal(bid.total) }}</span>
       </div>
     </div>
   </div>

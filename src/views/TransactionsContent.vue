@@ -1,4 +1,5 @@
 <script setup>
+import BaseModal from '@/components/common/BaseModal.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useTransactionStore } from '@/stores/transactions'
 import { useCryptoStore } from '@/stores/crypto'
@@ -20,6 +21,9 @@ const fetchingPrice = ref(false)
 
 // Modal state
 const showRecordModal = ref(false)
+// Server-side ledger errors (e.g. selling more than is held) shown to the user
+const formError = ref('')
+const pageError = ref('')
 const recordForm = ref({
   type: 'buy',
   coinId: '',
@@ -132,6 +136,7 @@ const selectCoin = async (coin) => {
 
 const openRecordModal = () => {
   resetForm()
+  formError.value = ''
   showRecordModal.value = true
 }
 
@@ -174,12 +179,18 @@ const handleSubmit = async () => {
 
   if (result.success) {
     closeRecordModal()
+  } else {
+    formError.value = result.error || 'Error creating transaction'
   }
 }
 
 const handleDelete = async (id) => {
   if (confirm('Are you sure you want to delete this transaction?')) {
-    await transactionStore.deleteTransaction(id)
+    pageError.value = ''
+    const result = await transactionStore.deleteTransaction(id)
+    if (!result?.success) {
+      pageError.value = result?.error || 'Error deleting transaction'
+    }
   }
 }
 
@@ -206,15 +217,28 @@ onMounted(async () => {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Transaction History</h1>
-        <p class="text-slate-500 dark:text-text-secondary text-sm">View and manage your trading activity</p>
+        <p class="text-text-secondary text-sm">View and manage your trading activity</p>
       </div>
       
       <button
         @click="openRecordModal"
-        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
+        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
         Record Transaction
+      </button>
+    </div>
+
+    <!-- Ledger error (e.g. deleting a buy whose coins were sold later) -->
+    <div
+      v-if="pageError"
+      role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
+    >
+      <span class="material-symbols-outlined text-danger" aria-hidden="true">error</span>
+      <p class="text-danger text-sm flex-1">{{ pageError }}</p>
+      <button type="button" aria-label="Dismiss error" @click="pageError = ''" class="text-danger hover:text-danger/80 transition-colors">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -222,6 +246,7 @@ onMounted(async () => {
     <div class="flex flex-wrap gap-3">
       <select
         v-model="typeFilter"
+        aria-label="Filter by transaction type"
         class="px-4 py-2 rounded-lg border border-gray-200 dark:border-border-dark bg-white dark:bg-card-dark text-slate-900 dark:text-white text-sm focus:border-primary outline-none"
       >
         <option value="">All Types</option>
@@ -249,7 +274,7 @@ onMounted(async () => {
         <p class="text-text-secondary mb-6">Record your first transaction to start tracking your activity</p>
         <button
           @click="openRecordModal"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
         >
           <span class="material-symbols-outlined text-[20px]">add</span>
           Record Transaction
@@ -314,7 +339,7 @@ onMounted(async () => {
               <td class="px-4 py-4 text-right">
                 <div class="flex flex-col items-end">
                   <span class="font-mono text-slate-700 dark:text-gray-300">{{ formatUSD(tx.priceAtTransaction) }}</span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(tx.priceAtTransaction) }}</span>
+                  <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">🇨🇴 {{ formatCOP(tx.priceAtTransaction) }}</span>
                 </div>
               </td>
               
@@ -329,7 +354,7 @@ onMounted(async () => {
                   >
                     {{ tx.type === 'sell' || tx.type === 'transfer_out' || tx.type === 'withdraw' ? '-' : '+' }}{{ formatUSD(tx.totalValue) }}
                   </span>
-                  <span class="text-yellow-600 dark:text-yellow-400 text-xs font-mono">
+                  <span class="text-yellow-700 dark:text-yellow-400 text-xs font-mono">
                     🇨🇴 {{ formatCOP(tx.totalValue) }}
                   </span>
                 </div>
@@ -342,12 +367,12 @@ onMounted(async () => {
               
               <!-- Actions -->
               <td class="px-4 py-4 text-right">
-                <button
+                <button type="button" aria-label="Delete"
                   @click="handleDelete(tx._id)"
                   class="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Delete"
                 >
-                  <span class="material-symbols-outlined text-[18px] text-slate-400 hover:text-danger">delete</span>
+                  <span class="material-symbols-outlined text-[18px] text-text-secondary hover:text-danger" aria-hidden="true">delete</span>
                 </button>
               </td>
             </tr>
@@ -372,193 +397,172 @@ onMounted(async () => {
     </div>
 
     <!-- Record Transaction Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div 
-          v-if="showRecordModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="closeRecordModal"
+    <BaseModal :open="showRecordModal" title="Record Transaction" @close="closeRecordModal">
+
+      <!-- Body -->
+      <div class="p-6 space-y-5">
+        <div
+          v-if="formError"
+          role="alert"
+          class="p-3 rounded-lg bg-danger/10 border border-danger/30 text-danger text-sm flex items-start gap-2"
         >
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          
-          <div class="relative bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <!-- Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-border-dark">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Record Transaction</h2>
-              <button @click="closeRecordModal" class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg">
-                <span class="material-symbols-outlined text-slate-500">close</span>
-              </button>
-            </div>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">error</span>
+          <span>{{ formError }}</span>
+        </div>
+        <!-- Type -->
+        <div>
+          <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Transaction Type</span>
+          <div role="group" aria-label="Transaction Type" class="grid grid-cols-2 gap-2">
+            <button type="button" :aria-pressed="recordForm.type === type"
+              v-for="type in ['buy', 'sell']"
+              :key="type"
+              @click="recordForm.type = type"
+              class="py-2 px-4 rounded-lg border font-medium transition-all capitalize"
+              :class="recordForm.type === type 
+                ? 'border-primary bg-primary/10 text-primary' 
+                : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400 hover:border-primary/50'"
+            >
+              {{ type }}
+            </button>
+          </div>
+        </div>
 
-            <!-- Body -->
-            <div class="p-6 space-y-5">
-              <!-- Type -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Transaction Type</label>
-                <div class="grid grid-cols-2 gap-2">
-                  <button
-                    v-for="type in ['buy', 'sell']"
-                    :key="type"
-                    @click="recordForm.type = type"
-                    class="py-2 px-4 rounded-lg border font-medium transition-all capitalize"
-                    :class="recordForm.type === type 
-                      ? 'border-primary bg-primary/10 text-primary' 
-                      : 'border-gray-200 dark:border-border-dark text-slate-600 dark:text-gray-400 hover:border-primary/50'"
-                  >
-                    {{ type }}
-                  </button>
-                </div>
-              </div>
+        <!-- Exchange and Quote selectors -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="transactions-exchange" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Exchange</label>
+            <select id="transactions-exchange"
+              v-model="selectedExchange"
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+            >
+              <option value="binance">Binance</option>
+              <option value="coinbase">Coinbase</option>
+              <option value="kraken">Kraken</option>
+              <option value="kucoin">KuCoin</option>
+              <option value="bybit">Bybit</option>
+              <option value="okx">OKX</option>
+              <option value="bitget">Bitget</option>
+            </select>
+          </div>
+          <div>
+            <label for="transactions-quote-currency" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Quote Currency</label>
+            <select id="transactions-quote-currency"
+              v-model="selectedQuote"
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
+            >
+              <option value="USDT">USDT</option>
+              <option value="USD">USD</option>
+              <option value="BUSD">BUSD</option>
+              <option value="USDC">USDC</option>
+              <option value="BTC">BTC</option>
+              <option value="ETH">ETH</option>
+            </select>
+          </div>
+        </div>
 
-              <!-- Exchange and Quote selectors -->
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Exchange</label>
-                  <select
-                    v-model="selectedExchange"
-                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
-                  >
-                    <option value="binance">Binance</option>
-                    <option value="coinbase">Coinbase</option>
-                    <option value="kraken">Kraken</option>
-                    <option value="kucoin">KuCoin</option>
-                    <option value="bybit">Bybit</option>
-                    <option value="okx">OKX</option>
-                    <option value="bitget">Bitget</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Quote Currency</label>
-                  <select
-                    v-model="selectedQuote"
-                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none"
-                  >
-                    <option value="USDT">USDT</option>
-                    <option value="USD">USD</option>
-                    <option value="BUSD">BUSD</option>
-                    <option value="USDC">USDC</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Coin Search -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Cryptocurrency</label>
-                <div class="relative">
-                  <input
-                    v-model="searchQuery"
-                    @focus="isSearching = true"
-                    type="text"
-                    placeholder="Search coin..."
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
-                  />
-                  
-                  <div 
-                    v-if="isSearching && filteredCoins.length > 0"
-                    class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto"
-                  >
-                    <button
-                      v-for="coin in filteredCoins"
-                      :key="coin.id"
-                      @click="selectCoin(coin)"
-                      class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-border-dark text-left"
-                    >
-                      <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
-                      <div class="flex-1">
-                        <p class="font-medium text-slate-900 dark:text-white">{{ coin.name }}</p>
-                        <p class="text-xs text-text-secondary uppercase">{{ coin.symbol }}</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Amount -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Amount</label>
-                <input
-                  v-model.number="recordForm.amount"
-                  type="number"
-                  step="any"
-                  min="0"
-                  placeholder="0.00"
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
-                />
-              </div>
-
-              <!-- Price -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Price at Transaction (USD)</label>
-                <div class="relative">
-                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">$</span>
-                  <input
-                    v-model.number="recordForm.priceAtTransaction"
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="0.00"
-                    class="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <!-- Notes -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
-                  Notes <span class="text-text-secondary font-normal">(optional)</span>
-                </label>
-                <textarea
-                  v-model="recordForm.notes"
-                  rows="2"
-                  placeholder="Add notes..."
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none resize-none"
-                ></textarea>
-              </div>
-
-              <!-- Total Preview -->
-              <div v-if="recordForm.amount && recordForm.priceAtTransaction" class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-text-secondary">Total Value</span>
-                  <span class="text-lg font-bold font-mono text-slate-900 dark:text-white">
-                    {{ formatUSD(recordForm.amount * recordForm.priceAtTransaction) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
+        <!-- Coin Search -->
+        <div>
+          <label for="transactions-cryptocurrency" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Cryptocurrency</label>
+          <div class="relative">
+            <input id="transactions-cryptocurrency"
+              v-model="searchQuery"
+              @focus="isSearching = true"
+              type="text"
+              placeholder="Search coin..."
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
+            />
+            
+            <div 
+              v-if="isSearching && filteredCoins.length > 0"
+              class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto"
+            >
               <button
-                @click="closeRecordModal"
-                class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
+                v-for="coin in filteredCoins"
+                :key="coin.id"
+                @click="selectCoin(coin)"
+                class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-border-dark text-left"
               >
-                Cancel
-              </button>
-              <button
-                @click="handleSubmit"
-                :disabled="!isFormValid || transactionStore.loading"
-                class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
-              >
-                {{ transactionStore.loading ? 'Recording...' : 'Record Transaction' }}
+                <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
+                <div class="flex-1">
+                  <p class="font-medium text-slate-900 dark:text-white">{{ coin.name }}</p>
+                  <p class="text-xs text-text-secondary uppercase">{{ coin.symbol }}</p>
+                </div>
               </button>
             </div>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <!-- Amount -->
+        <div>
+          <label for="transactions-amount" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Amount</label>
+          <input id="transactions-amount"
+            v-model.number="recordForm.amount"
+            type="number"
+            step="any"
+            min="0"
+            placeholder="0.00"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
+          />
+        </div>
+
+        <!-- Price -->
+        <div>
+          <label for="transactions-price" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Price at Transaction (USD)</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">$</span>
+            <input id="transactions-price"
+              v-model.number="recordForm.priceAtTransaction"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="0.00"
+              class="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label for="transactions-notes" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+            Notes <span class="text-text-secondary font-normal">(optional)</span>
+          </label>
+          <textarea id="transactions-notes"
+            v-model="recordForm.notes"
+            rows="2"
+            placeholder="Add notes..."
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Total Preview -->
+        <div v-if="recordForm.amount && recordForm.priceAtTransaction" class="p-4 bg-gray-50 dark:bg-background-dark rounded-lg">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-text-secondary">Total Value</span>
+            <span class="text-lg font-bold font-mono text-slate-900 dark:text-white">
+              {{ formatUSD(recordForm.amount * recordForm.priceAtTransaction) }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+
+        <!-- Footer -->
+        <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
+          <button
+            @click="closeRecordModal"
+            class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleSubmit"
+            :disabled="!isFormValid || transactionStore.loading"
+            class="flex-1 py-3 px-4 bg-primary hover:bg-primary-dark disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
+          >
+            {{ transactionStore.loading ? 'Recording...' : 'Record Transaction' }}
+          </button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-</style>

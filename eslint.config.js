@@ -22,6 +22,9 @@ const browserGlobals = {
 }
 
 const nodeGlobals = {
+  // Node >= 18 globals
+  fetch: 'readonly',
+  AbortController: 'readonly',
   __dirname: 'readonly',
   __filename: 'readonly',
   Buffer: 'readonly',

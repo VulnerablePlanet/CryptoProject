@@ -122,7 +122,7 @@ const formatNumber = (value, decimals = 2) => {
         <button
           @click="handleAnalyze"
           :disabled="isLoading"
-          class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
         >
           <span class="material-symbols-outlined text-[20px]" :class="{ 'animate-spin': isLoading }">
             {{ isLoading ? 'refresh' : 'psychology' }}
@@ -137,9 +137,9 @@ const formatNumber = (value, decimals = 2) => {
       <div class="flex flex-col md:flex-row gap-6">
         <!-- Exchange Selector -->
         <div class="flex flex-col gap-2">
-          <label class="text-sm text-text-secondary font-medium">Exchange</label>
+          <label for="talib-exchange" class="text-sm text-text-secondary font-medium">Exchange</label>
           <div class="relative">
-            <select
+            <select id="talib-exchange"
               :value="selectedExchange"
               @change="handleExchangeChange"
               class="w-full md:w-48 appearance-none bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-border-dark rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
@@ -160,10 +160,10 @@ const formatNumber = (value, decimals = 2) => {
 
         <!-- Symbol Selector -->
         <div class="flex flex-col gap-2 flex-1">
-          <label class="text-sm text-text-secondary font-medium">Select Symbol</label>
-          <div class="flex flex-wrap items-center gap-4">
+          <span class="text-sm text-text-secondary font-medium">Select Symbol</span>
+          <div role="group" aria-label="Select Symbol" class="flex flex-wrap items-center gap-4">
             <div class="flex gap-2 flex-wrap">
-              <button
+              <button type="button" :aria-pressed="talibStore.selectedSymbol.base === symbol.base && talibStore.selectedSymbol.quote === symbol.quote"
                 v-for="symbol in talibStore.POPULAR_SYMBOLS"
                 :key="`${symbol.base}${symbol.quote}`"
                 @click="handleSymbolSelect(symbol.base, symbol.quote)"
@@ -189,15 +189,16 @@ const formatNumber = (value, decimals = 2) => {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <p class="text-danger text-sm flex-1">{{ talibStore.error || proTradingStore.error }}</p>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="talibStore.clearError(); proTradingStore.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">close</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -633,7 +634,7 @@ const formatNumber = (value, decimals = 2) => {
               </div>
               <div class="bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-xl p-4">
                 <p class="text-xs text-text-secondary mb-1">Neutral</p>
-                <p class="text-2xl font-bold text-slate-500">{{ talibStore.patterns.summary.neutral }}</p>
+                <p class="text-2xl font-bold text-text-secondary">{{ talibStore.patterns.summary.neutral }}</p>
               </div>
             </div>
 

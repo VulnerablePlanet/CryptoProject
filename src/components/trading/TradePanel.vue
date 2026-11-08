@@ -1,5 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, useId } from 'vue'
+
+// Unique prefix so label/field ids stay valid with several instances
+const uid = useId()
 
 const props = defineProps({
   pair: {
@@ -43,8 +46,8 @@ const setPercentage = (pct) => {
         @click="side = 'buy'"
         class="flex-1 py-2 text-sm font-bold rounded transition-colors"
         :class="side === 'buy' 
-          ? 'bg-success text-white shadow-sm' 
-          : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+          ? 'bg-success text-white dark:text-background-dark shadow-sm' 
+          : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         Buy
       </button>
@@ -53,7 +56,7 @@ const setPercentage = (pct) => {
         class="flex-1 py-2 text-sm font-bold rounded transition-colors"
         :class="side === 'sell' 
           ? 'bg-danger text-white shadow-sm' 
-          : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+          : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         Sell
       </button>
@@ -63,19 +66,19 @@ const setPercentage = (pct) => {
     <div class="flex gap-4 text-xs font-medium">
       <button 
         @click="orderType = 'limit'"
-        :class="orderType === 'limit' ? 'text-primary' : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+        :class="orderType === 'limit' ? 'text-primary' : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         Limit
       </button>
       <button 
         @click="orderType = 'market'"
-        :class="orderType === 'market' ? 'text-primary' : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+        :class="orderType === 'market' ? 'text-primary' : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         Market
       </button>
       <button 
         @click="orderType = 'stop-limit'"
-        :class="orderType === 'stop-limit' ? 'text-primary' : 'text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white'"
+        :class="orderType === 'stop-limit' ? 'text-primary' : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'"
       >
         Stop Limit
       </button>
@@ -83,34 +86,34 @@ const setPercentage = (pct) => {
     
     <!-- Price Input (not for market orders) -->
     <div v-if="orderType !== 'market'" class="flex flex-col gap-1">
-      <label class="text-xs text-slate-500 dark:text-text-secondary">Price</label>
+      <label :for="`${uid}-trade-panel-price`" class="text-xs text-text-secondary">Price</label>
       <div class="flex rounded-lg border border-gray-200 dark:border-border-dark overflow-hidden bg-gray-50 dark:bg-background-dark">
-        <input 
+        <input :id="`${uid}-trade-panel-price`" 
           v-model="price"
           type="number"
           :placeholder="currentPrice.toString()"
           class="flex-1 bg-transparent border-none text-slate-900 dark:text-white text-sm font-mono px-3 py-2 focus:ring-0"
         />
-        <span class="px-3 py-2 text-xs text-slate-500 dark:text-text-secondary border-l border-gray-200 dark:border-border-dark bg-gray-100 dark:bg-border-dark/50">USD</span>
+        <span class="px-3 py-2 text-xs text-text-secondary border-l border-gray-200 dark:border-border-dark bg-gray-100 dark:bg-border-dark/50">USD</span>
       </div>
     </div>
     
     <!-- Amount Input -->
     <div class="flex flex-col gap-1">
       <div class="flex justify-between">
-        <label class="text-xs text-slate-500 dark:text-text-secondary">Amount</label>
-        <span class="text-xs text-slate-400 dark:text-text-secondary">
+        <label :for="`${uid}-trade-panel-amount`" class="text-xs text-text-secondary">Amount</label>
+        <span class="text-xs text-text-secondary">
           Available: <span class="text-slate-900 dark:text-white font-mono">{{ side === 'buy' ? '10,000.00 USD' : '0.50000000 BTC' }}</span>
         </span>
       </div>
       <div class="flex rounded-lg border border-gray-200 dark:border-border-dark overflow-hidden bg-gray-50 dark:bg-background-dark">
-        <input 
+        <input :id="`${uid}-trade-panel-amount`" 
           v-model="amount"
           type="number"
           placeholder="0.00000000"
           class="flex-1 bg-transparent border-none text-slate-900 dark:text-white text-sm font-mono px-3 py-2 focus:ring-0"
         />
-        <span class="px-3 py-2 text-xs text-slate-500 dark:text-text-secondary border-l border-gray-200 dark:border-border-dark bg-gray-100 dark:bg-border-dark/50">BTC</span>
+        <span class="px-3 py-2 text-xs text-text-secondary border-l border-gray-200 dark:border-border-dark bg-gray-100 dark:bg-border-dark/50">BTC</span>
       </div>
     </div>
     
@@ -120,7 +123,7 @@ const setPercentage = (pct) => {
         v-for="pct in [25, 50, 75, 100]" 
         :key="pct"
         @click="setPercentage(pct)"
-        class="flex-1 py-1 text-xs font-medium text-slate-500 dark:text-text-secondary bg-gray-100 dark:bg-border-dark rounded hover:text-slate-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        class="flex-1 py-1 text-xs font-medium text-text-secondary bg-gray-100 dark:bg-border-dark rounded hover:text-slate-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
       >
         {{ pct }}%
       </button>
@@ -128,7 +131,7 @@ const setPercentage = (pct) => {
     
     <!-- Total -->
     <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-border-dark">
-      <span class="text-xs text-slate-500 dark:text-text-secondary">Total</span>
+      <span class="text-xs text-text-secondary">Total</span>
       <span class="text-sm font-bold font-mono text-slate-900 dark:text-white">{{ estimatedTotal }} USD</span>
     </div>
     

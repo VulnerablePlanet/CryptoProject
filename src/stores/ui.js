@@ -3,8 +3,10 @@ import { ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 
 export const useUIStore = defineStore('ui', () => {
-  // Sidebar state - persisted
-  const sidebarOpen = useLocalStorage('cryptodev-sidebar-open', true)
+  // Mobile off-canvas sidebar: transient, always starts closed so it never
+  // covers the page on load (it used to be persisted with a `true` default).
+  const sidebarOpen = ref(false)
+  // Desktop collapsed/expanded preference - persisted
   const sidebarCollapsed = useLocalStorage('cryptodev-sidebar-collapsed', false)
 
   // Dropdowns state - not persisted

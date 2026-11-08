@@ -80,17 +80,17 @@ const formatPercent = (value) => {
           :class="[
             isLong ? 'bg-success/10 text-success' : '',
             isShort ? 'bg-danger/10 text-danger' : '',
-            isNoTrade ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-text-secondary' : ''
+            isNoTrade ? 'bg-slate-100 dark:bg-slate-700 text-text-secondary' : ''
           ]"
         >
           {{ signal.type || 'NO SIGNAL' }}
         </span>
-        <span v-if="signal.symbol" class="text-sm text-slate-500 dark:text-text-secondary">
+        <span v-if="signal.symbol" class="text-sm text-text-secondary">
           {{ signal.symbol }}
         </span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-400 dark:text-text-secondary">
+        <span class="text-xs text-text-secondary">
           {{ confidencePercent }}%
         </span>
         <div class="w-16 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -108,7 +108,7 @@ const formatPercent = (value) => {
     </div>
 
     <!-- No Trade Reason -->
-    <div v-if="isNoTrade && signal.reason" class="text-sm text-slate-500 dark:text-text-secondary">
+    <div v-if="isNoTrade && signal.reason" class="text-sm text-text-secondary">
       <span class="material-symbols-outlined text-sm align-middle mr-1">info</span>
       {{ signal.reason }}
     </div>
@@ -118,19 +118,19 @@ const formatPercent = (value) => {
       <!-- Entry / SL / TP Row -->
       <div class="grid grid-cols-3 gap-2">
         <div class="text-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Entry</p>
+          <p class="text-xs text-text-secondary mb-1">Entry</p>
           <p class="font-mono font-medium text-slate-900 dark:text-white text-sm">
             {{ formatPrice(signal.entry) }}
           </p>
         </div>
         <div class="text-center p-2 bg-danger/5 dark:bg-danger/10 rounded-lg">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Stop Loss</p>
+          <p class="text-xs text-text-secondary mb-1">Stop Loss</p>
           <p class="font-mono font-medium text-danger text-sm">
             {{ formatPrice(signal.stopLoss) }}
           </p>
         </div>
         <div class="text-center p-2 bg-success/5 dark:bg-success/10 rounded-lg">
-          <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Take Profit</p>
+          <p class="text-xs text-text-secondary mb-1">Take Profit</p>
           <p class="font-mono font-medium text-success text-sm">
             {{ formatPrice(signal.takeProfit) }}
           </p>
@@ -140,18 +140,18 @@ const formatPercent = (value) => {
       <!-- Risk/Reward & Distance -->
       <div v-if="!compact" class="grid grid-cols-2 gap-2 text-sm">
         <div class="flex justify-between">
-          <span class="text-slate-500 dark:text-text-secondary">Risk:</span>
+          <span class="text-text-secondary">Risk:</span>
           <span class="font-medium text-danger">{{ formatPercent(signal.riskPercent) }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-500 dark:text-text-secondary">R:R:</span>
+          <span class="text-text-secondary">R:R:</span>
           <span class="font-medium text-slate-900 dark:text-white">{{ riskRewardRatio }}</span>
         </div>
       </div>
 
       <!-- Explanation -->
       <div v-if="!compact && signal.explanation" class="pt-2 border-t border-gray-100 dark:border-border-dark">
-        <p class="text-xs text-slate-500 dark:text-text-secondary mb-1">Reasons:</p>
+        <p class="text-xs text-text-secondary mb-1">Reasons:</p>
         <ul class="text-xs text-slate-600 dark:text-text-secondary space-y-1">
           <li v-for="(reason, idx) in signal.explanation?.slice(0, 3)" :key="idx" class="flex items-start gap-1">
             <span class="material-symbols-outlined text-xs mt-0.5">check_circle</span>
@@ -163,7 +163,7 @@ const formatPercent = (value) => {
 
     <!-- Timestamp -->
     <div v-if="signal.timestamp" class="mt-3 pt-2 border-t border-gray-100 dark:border-border-dark">
-      <p class="text-xs text-slate-400 dark:text-text-secondary">
+      <p class="text-xs text-text-secondary">
         {{ new Date(signal.timestamp).toLocaleString() }}
       </p>
     </div>

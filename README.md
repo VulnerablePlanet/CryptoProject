@@ -27,7 +27,7 @@
 | Tecnología | Versión | Propósito |
 |---|---|---|
 | **Vue.js 3** | ^3.4.35 | Framework UI con `<script setup>` SFC |
-| **Vite** | ^5.4.0 | Build tool y dev server |
+| **Vite** | ^8.0 | Build tool y dev server |
 | **Pinia** | ^3.0.4 | State management |
 | **Vue Router** | ^4.6.3 | Enrutamiento SPA |
 | **TailwindCSS** | ^4.1.17 | Framework CSS utility-first |
@@ -39,8 +39,8 @@
 ### Backend
 | Tecnología | Versión | Propósito |
 |---|---|---|
-| **Node.js + Express** | ^4.18.2 | Servidor HTTP y API REST |
-| **MongoDB + Mongoose** | ^8.0.3 | Base de datos NoSQL y ODM |
+| **Node.js + Express** | ^5.2.1 | Servidor HTTP y API REST |
+| **MongoDB + Mongoose** | ^9.6.1 | Base de datos NoSQL y ODM (replica set recomendado: transacciones del ledger) |
 | **Socket.io** | ^4.7.2 | WebSocket server |
 | **CCXT** | ^4.5.30 | Librería unificada multi-exchange |
 | **JWT (jsonwebtoken)** | ^9.0.2 | Autenticación por tokens |
@@ -55,7 +55,6 @@
 |---|---|
 | **CoinGecko API** | Datos de mercado, precios, gráficos |
 | **CCXT (Binance, etc.)** | OHLCV, order book, ticker de 10+ exchanges |
-| **PokéAPI** | Módulo de entretenimiento/demo |
 
 ---
 
@@ -94,9 +93,9 @@
 
 ### Patrón de Diseño
 - **Frontend**: Composition API + Pinia stores (flujo unidireccional de datos)
-- **Backend**: MVC (Models → Controllers → Routes) + Services layer
+- **Backend**: Routes → Controllers → Services → Models. Reglas de negocio puras en `server/domain/` (p. ej. el ledger de cartera); el agente de trading en `server/trading/agent/` con su runtime y su pasarela de exchange
 - **Comunicación**: REST API + WebSocket (Socket.io) para datos en tiempo real
-- **Proxy**: Vite proxy redirige `/api` → `localhost:5000` y `/api/coingecko` → CoinGecko API
+- **Proxy**: en desarrollo Vite redirige `/api` → `localhost:5000`. CoinGecko se consulta siempre a través del backend (`/api/coingecko`, con rate limit y API key del servidor)
 
 ---
 
@@ -108,7 +107,6 @@ CryptoProject/
 ├── 📄 index.html                   # Punto de entrada HTML
 ├── 📄 package.json                 # Dependencias frontend
 ├── 📄 vite.config.js               # Configuración Vite + proxy
-├── 📄 tailwind.config.js           # Design system (colores, fuentes)
 ├── 📄 postcss.config.js            # PostCSS pipelines
 │
 ├── 📂 src/                         # ── FRONTEND ──
@@ -116,7 +114,7 @@ CryptoProject/
 │   ├── 📄 App.vue                  # Componente raíz
 │   │
 │   ├── 📂 assets/                  # Recursos estáticos
-│   │   └── 📄 main.css             # Estilos globales + Tailwind
+│   │   └── 📄 main.css             # Design tokens (@theme) + estilos globales + Tailwind
 │   │
 │   ├── 📂 router/                  # Enrutamiento
 │   │   └── 📄 index.js             # 19 rutas + navigation guards
@@ -142,17 +140,14 @@ CryptoProject/
 │   │   ├── ProfileContent.vue      # Perfil de usuario
 │   │   ├── ApiKeysContent.vue      # Gestión API keys
 │   │   ├── UsersContent.vue        # Administración usuarios
-│   │   ├── DocsContent.vue         # Documentación API
-│   │   └── PokemonContent.vue      # Módulo demo/entretenimiento
+│   │   └── DocsContent.vue         # Documentación API
 │   │
 │   ├── 📂 components/              # Componentes reutilizables (41)
 │   │   ├── 📂 common/              # Genéricos
 │   │   │   ├── LoadingSpinner.vue
 │   │   │   ├── RealtimeIndicator.vue
-│   │   │   ├── SearchInput.vue
 │   │   │   └── ThemeToggle.vue
 │   │   ├── 📂 layout/              # Estructura visual
-│   │   │   ├── AppHeader.vue
 │   │   │   ├── AppSidebar.vue
 │   │   │   ├── AuthLayout.vue
 │   │   │   └── DashboardHeader.vue
@@ -220,7 +215,7 @@ CryptoProject/
 │   │   ├── fibonacciCcxtService.js # Fibonacci CCXT calls
 │   │   ├── talibService.js         # TA-Lib API calls
 │   │   ├── tradingview.js          # TradingView data
-│   │   └── pokemon.js              # PokéAPI client
+│   │   └── ohlc.js                 # OHLC API (velas CoinGecko en MongoDB)
 │   │
 │   └── 📂 utils/                   # Utilidades (4)
 │       ├── technicalIndicators.js  # RSI, SMA, EMA, MACD (client-side)
@@ -233,13 +228,17 @@ CryptoProject/
 │   ├── 📄 package.json             # Dependencias backend
 │   │
 │   ├── 📂 config/
-│   │   └── 📄 db.js                # Conexión MongoDB/Mongoose
+│   │   ├── 📄 db.js                # Conexión MongoDB/Mongoose (+ detección de transacciones)
+│   │   └── 📄 env.js               # Validación de configuración, modo de trading, ruta de uploads
+│   │
+│   ├── 📂 domain/
+│   │   └── 📄 portfolioLedger.js   # Reglas puras de cartera (coste medio, ventas, reversión)
 │   │
 │   ├── 📂 middleware/
 │   │   ├── 📄 auth.js              # JWT auth + optional auth
 │   │   └── 📄 upload.js            # Multer (avatar upload, 5MB max)
 │   │
-│   ├── 📂 models/                  # Esquemas Mongoose (8)
+│   ├── 📂 models/                  # Esquemas Mongoose (8; el agente define 4 más en trading/agent/models)
 │   │   ├── User.js
 │   │   ├── Portfolio.js
 │   │   ├── Transaction.js
@@ -249,7 +248,7 @@ CryptoProject/
 │   │   ├── Candle.js
 │   │   └── RefreshToken.js
 │   │
-│   ├── 📂 controllers/             # Controladores (11)
+│   ├── 📂 controllers/             # Controladores (10)
 │   │   ├── authController.js
 │   │   ├── portfolioController.js
 │   │   ├── transactionController.js
@@ -259,10 +258,9 @@ CryptoProject/
 │   │   ├── fibonacciController.js
 │   │   ├── fibonacciCcxtController.js
 │   │   ├── talibController.js
-│   │   ├── ohlcController.js
-│   │   └── pokeController.js
+│   │   └── ohlcController.js
 │   │
-│   ├── 📂 routes/                  # Rutas API (14)
+│   ├── 📂 routes/                  # Rutas API (15)
 │   │   ├── auth.js                 # /api/auth
 │   │   ├── portfolio.js            # /api/portfolio
 │   │   ├── transactions.js         # /api/transactions
@@ -276,10 +274,11 @@ CryptoProject/
 │   │   ├── exchange.js             # /api/exchange
 │   │   ├── apikeys.js              # /api/apikeys
 │   │   ├── predictions.js          # /api/predictions
-│   │   └── pokemon.js              # /api/pokemon
+│   │   ├── agent.js                # /api/agent (solo admin)
+│   │   └── coingecko.js            # /api/coingecko (proxy con lista blanca + caché)
 │   │
-│   ├── 📂 services/                # Lógica de negocio (12)
-│   │   ├── predictionService.js    # ML: SimpleTransformer + Kalman
+│   ├── 📂 services/                # Lógica de negocio (13)
+│   │   ├── predictionService.js    # Kalman + Holt (suavizado exponencial doble)
 │   │   ├── kalmanService.js        # Filtro Kalman 2D
 │   │   ├── fibonacciService.js     # Análisis Fibonacci + ZigZag
 │   │   ├── fibonacciCcxtService.js # Fibonacci via exchanges CCXT
@@ -290,7 +289,7 @@ CryptoProject/
 │   │   ├── priceService.js         # Servicio de precios periódico
 │   │   ├── alertMonitoringService.js # Monitoreo de alertas de precio
 │   │   ├── coingeckoRateLimiter.js # Rate limiter CoinGecko
-│   │   └── pokeService.js          # PokéAPI service
+│   │   └── ledgerService.js        # Transacciones + cartera (atómico / compensado)
 │   │
 │   ├── 📂 socket/
 │   │   └── 📄 index.js             # Socket.io setup + auth + rooms
@@ -299,17 +298,11 @@ CryptoProject/
 │   │   ├── 📂 backtesting/         # Backtesting de estrategias
 │   │   ├── 📂 context/             # Contexto de mercado
 │   │   ├── 📂 data/                # Gestión de datos
-│   │   ├── 📂 indicators/          # Indicadores técnicos
-│   │   │   ├── atr.js              # Average True Range
-│   │   │   ├── bollingerBands.js   # Bandas de Bollinger
-│   │   │   ├── macd.js             # MACD
-│   │   │   ├── momentum.js         # Momentum
-│   │   │   ├── movingAverages.js   # SMA, EMA
-│   │   │   ├── rsi.js              # RSI
-│   │   │   └── vwap.js             # VWAP
+│   │   ├── 📂 agent/               # Agente autónomo (orchestrator, fases, kill switch,
+│   │   │                           #   runtime, exchangeGateway, modelos)
+│   │   ├── 📂 indicators/          # index.js: indicadores sobre `technicalindicators`
 │   │   ├── 📂 levels/              # Niveles de soporte/resistencia
 │   │   ├── 📂 mtf/                 # Multi-timeframe analysis
-│   │   ├── 📂 patterns/            # Detección de patrones
 │   │   ├── 📂 priceAction/         # Price action analysis
 │   │   └── 📂 signals/             # Señales de trading
 │   │
@@ -429,13 +422,13 @@ CryptoProject/
 |---|---|---|
 | `userId` | ObjectId → User | Propietario |
 | `name` | String | Nombre descriptivo |
-| `key` | String | Hash SHA-256 de la clave |
+| `key` | String | Hash bcrypt de la clave |
 | `keyPreview` | String | Preview (sk_live_xxxx...yyyy) |
 | `provider` | String | Proveedor (default: Custom) |
 | `rateLimit` | String | Límite de peticiones |
 | `active` | Boolean | Estado |
 
-**Hooks**: Pre-save hash SHA-256 de la clave.  
+**Hooks**: Pre-save hash bcrypt (salt 12) de la clave. La clave original no se puede recuperar, por lo que hoy no se usa para llamadas salientes (los exchanges usan variables de entorno).  
 **Statics**: `generateKey()` (crypto.randomBytes 24), `createPreview()`.
 
 #### 7. `Candle` — Datos OHLCV
@@ -493,7 +486,6 @@ CryptoProject/
 | `ApiKeysContent` | `/settings/api-keys` | ✅ | Gestión de API keys |
 | `UsersContent` | `/settings/users` | ✅ | Admin usuarios |
 | `DocsContent` | `/docs` | ✅ | Documentación API |
-| `PokemonContent` | `/pokemon` | ✅ | Demo/entretenimiento |
 
 ### Stores Pinia (14)
 
@@ -541,7 +533,7 @@ CryptoProject/
 
 ## ⚙ Módulos del Backend
 
-### Controllers (11)
+### Controllers (10)
 
 | Controller | Responsabilidad |
 |---|---|
@@ -555,13 +547,12 @@ CryptoProject/
 | `fibonacciCcxtController` | Análisis Fibonacci con CCXT |
 | `talibController` | Indicadores TA-Lib avanzados |
 | `ohlcController` | Datos OHLCV y caché a MongoDB |
-| `pokeController` | PokéAPI proxy |
 
-### Services (12)
+### Services (13)
 
 | Servicio | Descripción |
 |---|---|
-| `predictionService` | Pipeline ML: Kalman → SimpleTransformer → predicciones |
+| `predictionService` | Pipeline: Kalman → Holt (tendencia lineal) → predicciones |
 | `kalmanService` | Filtro Kalman 2D (precio + velocidad) |
 | `fibonacciService` | ZigZag pivots → Fibonacci retracement/extensión |
 | `fibonacciCcxtService` | Fibonacci con datos CCXT multi-exchange |
@@ -572,7 +563,7 @@ CryptoProject/
 | `priceService` | Servicio periódico de actualización de precios |
 | `alertMonitoringService` | Monitoreo continuo de alertas de precio |
 | `coingeckoRateLimiter` | Rate limiter para CoinGecko API |
-| `pokeService` | Servicio PokéAPI |
+| `ledgerService` | Transacciones y cartera consistentes (transacción MongoDB o escritura compensada, concurrencia optimista) |
 
 ### Trading Engine (`server/trading/`)
 
@@ -580,13 +571,13 @@ Motor de trading avanzado con 9 sub-módulos:
 
 | Módulo | Propósito |
 |---|---|
-| `indicators/` | ATR, Bollinger Bands, MACD, Momentum, Moving Averages, RSI, VWAP |
+| `agent/` | Agente autónomo de 5 fases, kill switch, runtime y pasarela de exchange |
+| `indicators/` | ATR, Bollinger Bands, MACD, Momentum, Moving Averages, RSI (Wilder), VWAP — `index.js` |
 | `backtesting/` | Simulación de estrategias en datos históricos |
 | `context/` | Análisis de contexto de mercado |
 | `data/` | Gestión y acceso a datos |
 | `levels/` | Soporte y resistencia |
 | `mtf/` | Análisis multi-timeframe |
-| `patterns/` | Detección de patrones chartistas |
 | `priceAction/` | Análisis de acción del precio |
 | `signals/` | Generación de señales de trading |
 
@@ -691,8 +682,10 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 | `/api/ohlc` | Datos OHLC con caché MongoDB |
 | `/api/exchange` | Info de exchanges soportados |
 | `/api/apikeys` | CRUD API keys del usuario |
-| `/api/pokemon` | PokéAPI proxy |
-| `/api/health` | Health check del servidor |
+| `/api/coingecko/*` | Proxy CoinGecko autenticado (lista blanca, caché 30 s) |
+| `/api/agent/*` | Control del agente de trading (solo admin) |
+| `/api/health` | Liveness (incluye estado de la BD) |
+| `/api/health/ready` | Readiness: 503 si MongoDB no está disponible |
 
 ---
 
@@ -706,16 +699,13 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 - **Uso**: Suavizado de series temporales de precios, eliminación de ruido de mercado
 - **Output**: Precio suavizado, velocidad (tasa de cambio), intervalo de confianza
 
-### 2. SimpleTransformer (`predictionService.js`)
-- **Tipo**: Self-Attention simplificado para series temporales
-- **Arquitectura**:
-  - Weights: Query (Wq), Key (Wk), Value (Wv), Output (Wo)
-  - Self-attention: `softmax(Q·K^T / √d) · V`
-  - Feed-forward: proyección lineal de salida
-- **Sequence Length**: 30 candles de entrada
-- **Prediction Horizon**: 5 candles futuras
-- **Feature Engineering**: RSI, SMA-10, momentum, volatilidad
-- **Confianza**: Basada en volatilidad de input
+### 2. Holt — tendencia lineal (`predictionService.js`)
+- **Tipo**: suavizado exponencial doble (método de Holt), determinista
+- **Parámetros**: α = 0,25 (nivel), β = 0,10 (tendencia)
+- **Entrada**: serie suavizada previamente con el filtro de Kalman
+- **Horizonte**: 5 velas futuras
+- **Confianza**: intervalos basados en la dispersión de los residuos
+- Sustituye al antiguo "SimpleTransformer", que inicializaba pesos aleatorios y daba resultados distintos en cada arranque
 
 ### 3. Fibonacci ZigZag (`fibonacciService.js`)
 - **Pivot Detection**: Algoritmo ZigZag con lookback window (default 5)
@@ -738,7 +728,7 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 ### 5. Indicadores Técnicos
 | Indicador | Cálculo |
 |---|---|
-| **RSI** | Relative Strength Index (Wilder's smoothing) |
+| **RSI** | Relative Strength Index (Wilder's smoothing). Frontend y servidor dan el mismo valor (test de paridad) |
 | **SMA** | Simple Moving Average |
 | **EMA** | Exponential Moving Average (multiplier = 2/(period+1)) |
 | **MACD** | EMA(12) - EMA(26), Signal = EMA(9) del MACD |
@@ -758,7 +748,7 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 | **JWT Access Token** | Firmado con `JWT_SECRET`, expira en 15 min |
 | **JWT Refresh Token** | crypto.randomBytes(64), expira en 7 días |
 | **Password Hashing** | bcrypt con salt factor 12 |
-| **API Key Hashing** | SHA-256 para almacenamiento seguro |
+| **API Key Hashing** | bcrypt (salt 12) |
 
 ### Middleware de Autenticación
 - **`auth`**: Obligatorio — verifica JWT y adjunta usuario al request
@@ -773,9 +763,11 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 | **Refresh Token Tracking** | Almacena `userAgent` e `ipAddress` |
 | **TTL Auto-cleanup** | Tokens y notificaciones expirados se eliminan automáticamente |
 | **File Upload** | Filtro MIME (solo imágenes), límite 5MB |
-| **Rate Limiting** | CoinGecko rate limiter implementado |
+| **Rate Limiting** | Global (200 req/15 min en producción), login/registro/refresh, exchanges por usuario (IPv6 normalizado) y cola centralizada de CoinGecko |
 | **Input Validation** | express-validator en rutas |
-| **Graceful Shutdown** | Cierre ordenado de HTTP, Socket.io y MongoDB |
+| **Graceful Shutdown** | Detiene precios y agente (cancela órdenes), cierra Socket.io, HTTP y MongoDB; sale con código 0 |
+| **Configuración** | Validada al arrancar (`JWT_SECRET`, URI de MongoDB, `CORS_ORIGIN` en producción) |
+| **CSP** | Helmet con imágenes de CoinGecko y Google Fonts permitidas |
 
 ### Rutas Protegidas
 - Todas las rutas excepto `/`, `/login`, `/register` requieren autenticación
@@ -812,20 +804,26 @@ Motor de análisis técnico avanzado con 17 sub-módulos:
 ## ⚡ Configuración y Ejecución
 
 ### Requisitos
-- **Node.js** >= 18.x
-- **MongoDB** (local o Atlas)
+- **Node.js** >= 18.x (CI y Docker usan 20)
+- **MongoDB** 7 (local o Atlas). Se recomienda **replica set** (aunque sea de un nodo): el ledger de transacciones usa transacciones multi-documento; en un servidor *standalone* funciona con escrituras compensadas.
 - **npm** >= 9.x
 
 ### Variables de Entorno (`.env`)
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/coingecko-app
-JWT_SECRET=<tu-secret-seguro>
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-CORS_ORIGIN=http://localhost:5173
-COINGECKO_API_KEY=<tu-api-key>
-```
+Ver `.env.example`. El servidor **valida la configuración al arrancar** y se niega a iniciar si falta algo obligatorio.
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `JWT_SECRET` | Sí | ≥ 32 caracteres (obligatorio en producción; en desarrollo solo avisa) |
+| `MONGODB_URI_LOCAL` / `MONGODB_URI_PROD` | Sí | URI según `NODE_ENV` |
+| `CORS_ORIGIN` | En producción | Origen permitido del frontend |
+| `PORT` | No | Por defecto 5000 |
+| `COINGECKO_API_KEY` | No | Se envía desde el backend en `/api/coingecko` y en el servicio de precios |
+| `UPLOADS_DIR` | No | Carpeta de avatares (por defecto `public/uploads`; en Docker `/app/uploads` con volumen) |
+| `LOG_LEVEL` | No | `error`, `warn`, `info`, `debug` |
+| `BINANCE_API_KEY` / `BINANCE_API_SECRET` | Para el agente | Credenciales del exchange |
+| `BINANCE_MODE` | No | `sandbox` (testnet, por defecto) o `production` (dinero real). Cualquier otro valor equivale a `sandbox` |
+| `AGENT_ALLOW_LIVE_TRADING` | No | Debe ser `true` **además** de `BINANCE_MODE=production` para operar con dinero real |
+| `AGENT_OWNER_USER_ID` | No | Usuario con permisos de administrador sobre el agente |
 
 ### Instalación
 ```bash
@@ -849,7 +847,23 @@ npm run server
 
 # Build de producción
 npm run build
+
+# Tests unitarios (rápidos, sin red)
+npm test
+
+# Tests de integración con MongoDB real en memoria (replica set y standalone).
+# La primera ejecución descarga un binario de mongod.
+npm run test:integration
+
+# Producción con Docker (MongoDB como replica set de un nodo)
+docker compose up --build
 ```
+
+### 🤖 Agente de trading: seguridad
+- **Por defecto opera en testnet** (`BINANCE_MODE=sandbox`). Todas las conexiones autenticadas (órdenes, cancelaciones, verificación de claves) pasan por `server/trading/agent/exchangeGateway.js`, que aplica el modo de forma consistente.
+- **Dinero real requiere doble confirmación**: `BINANCE_MODE=production` **y** `AGENT_ALLOW_LIVE_TRADING=true`. Sin ambas, `POST /api/agent/start` responde 409.
+- **Kill switch**: en cada ciclo se evalúan la pérdida diaria (3 %), el drawdown desde el máximo (10 %) y las pérdidas consecutivas (5) sobre el *equity* (capital + P&L no realizado), además de las alertas de volatilidad de la fase de monitorización. Al dispararse se detiene el bucle, se cancelan las órdenes abiertas y el estado se persiste: tras un reinicio el agente sigue bloqueado hasta `POST /api/agent/kill-switch/reset` (solo admin).
+- **Limitación conocida**: la conciliación automática de posiciones cerradas con el exchange (TP/SL ejecutados → P&L realizado → capital) **no está implementada**. Por eso el modo real exige la confirmación explícita.
 
 ---
 
@@ -869,19 +883,18 @@ npm run build
 | **Pro Trading** | ✅ Completo | Gráfico avanzado, depth chart, oscillators | 8 componentes |
 | **Fibonacci (CoinGecko)** | ✅ Completo | ZigZag, retracement, extensión, pivots | Confluence analysis |
 | **Fibonacci (CCXT)** | ✅ Completo | Fibonacci multi-exchange | 10+ exchanges |
-| **Predicciones ML** | ✅ Completo | SimpleTransformer + Kalman | Feature engineering |
+| **Predicciones** | ✅ Completo | Holt + Kalman | Determinista |
 | **TradingView Charts** | ✅ Completo | Gráficos interactivos, multi-chart type | 6 componentes |
 | **Technical Analysis** | ✅ Completo | RSI, SMA, EMA, MACD client-side | Sparklines |
 | **TA-Lib Avanzado** | ✅ Completo | 17 sub-módulos especializados | Tests incluidos |
 | **Trading Engine** | ✅ Completo | 9 sub-módulos (indicators, signals, etc.) | Backtesting |
-| **API Keys** | ✅ Completo | CRUD, hash SHA-256, preview | — |
+| **API Keys** | ⚠️ Parcial | CRUD, hash bcrypt, preview | Las claves guardadas no se usan aún en llamadas salientes |
 | **Security Settings** | ✅ Completo | Config de seguridad del usuario | — |
 | **Users Admin** | ✅ Completo | Administración de usuarios | — |
 | **Documentación** | ✅ Completo | Docs interactivos in-app | — |
 | **Socket.io Real-time** | ✅ Completo | Precios, notificaciones, alertas | Auth en handshake |
 | **Alert Monitoring** | ✅ Completo | Monitoreo continuo de precios | Auto-trigger |
-| **Rate Limiting** | ✅ Completo | CoinGecko rate limiter | — |
-| **Pokémon (Demo)** | ✅ Completo | Módulo de demostración | PokéAPI |
+| **Rate Limiting** | ✅ Completo | Global, auth, exchanges, CoinGecko | — |
 | **Learn** | ✅ Completo | Contenido educativo | — |
 | **Design System** | ✅ Completo | TailwindCSS custom, Inter/JetBrains Mono | Dark/Light theme |
 
@@ -895,9 +908,9 @@ npm run build
 | **Services Frontend** | 10 |
 | **Utilidades Frontend** | 4 |
 | **Modelos MongoDB** | 8 |
-| **Controllers Backend** | 11 |
-| **Routes Backend** | 14 |
-| **Services Backend** | 12 |
+| **Controllers Backend** | 10 |
+| **Routes Backend** | 15 |
+| **Services Backend** | 13 |
 | **Middlewares** | 2 |
 | **Sub-módulos Trading** | 9 |
 | **Sub-módulos TA-Lib** | 17 |
@@ -906,4 +919,4 @@ npm run build
 
 ## 📝 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la licencia **GNU AGPL-3.0**. Ver el archivo [LICENSE](LICENSE) para más detalles.

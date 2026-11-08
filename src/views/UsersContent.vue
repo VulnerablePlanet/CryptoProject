@@ -74,7 +74,7 @@ onMounted(() => {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Usuarios</h1>
-        <p class="text-slate-500 dark:text-text-secondary text-sm">
+        <p class="text-text-secondary text-sm">
           {{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} registrado{{ users.length !== 1 ? 's' : '' }}
         </p>
       </div>
@@ -86,13 +86,15 @@ onMounted(() => {
           v-model="searchQuery"
           type="text"
           placeholder="Buscar usuarios..."
+          aria-label="Buscar usuarios"
           class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white placeholder-text-secondary focus:border-primary outline-none"
         />
       </div>
     </div>
 
     <!-- Error message -->
-    <div v-if="error" class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex gap-4">
+    <div v-if="error" role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex gap-4">
       <span class="material-symbols-outlined text-danger shrink-0">error</span>
       <p class="text-sm text-danger">{{ error }}</p>
     </div>

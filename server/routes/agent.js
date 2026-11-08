@@ -12,6 +12,8 @@
  * GET  /api/agent/signal       - Get latest signal
  * GET  /api/agent/positions    - Get open positions
  * GET  /api/agent/state        - Get agent state
+ * POST /api/agent/kill-switch/reset - Clear a triggered kill switch
+ * GET  /api/agent/verify-keys  - Validate exchange credentials
  */
 
 const express = require('express')
@@ -26,36 +28,18 @@ const logger = createLogger('routes:agent')
 router.use(auth)
 router.use(requireAdmin)
 
-// Lazy-load the orchestrator to avoid circular deps
-let tradingAgentOrchestrator = null
-let agentConfig = null
+const { getOrchestrator } = require('../trading/agent/runtime')
+const { createTradingExchange, getCredentials } = require('../trading/agent/exchangeGateway')
+const { getTradingMode, isLiveTradingAllowed } = require('../config/env')
+const { AgentState, Position } = require('../trading/agent/models')
 
-function getOrchestrator() {
-  if (!tradingAgentOrchestrator) {
-    try {
-      const { TradingAgentOrchestrator } = require('../trading/agent/orchestrator')
-      const { KillSwitch } = require('../trading/agent/killSwitch')
-      agentConfig = agentConfig || require('../trading/agent/config')
-
-      // Attach mongoose if available
-      const mongoose = require('mongoose')
-      if (mongoose.connection.readyState === 1) {
-        tradingAgentOrchestrator = new TradingAgentOrchestrator(agentConfig)
-        tradingAgentOrchestrator.setMongoose(mongoose)
-
-        // Initialize and attach the kill switch with configured thresholds
-        const killSwitch = new KillSwitch(agentConfig.RISK?.KILL_SWITCH || {})
-        tradingAgentOrchestrator.setKillSwitch(killSwitch)
-
-        logger.info('Orchestrator initialized with MongoDB + kill switch')
-      } else {
-        logger.warn('MongoDB not connected yet')
-      }
-    } catch (error) {
-      logger.error('Failed to initialize orchestrator', error)
-    }
+// Domain errors the client can act on → 409 Conflict with a clear message
+const CONFLICT_CODES = new Set(['KILL_SWITCH_ACTIVE', 'LIVE_TRADING_DISABLED', 'CYCLE_IN_PROGRESS'])
+const sendAgentError = (res, error, fallbackMessage) => {
+  if (CONFLICT_CODES.has(error.code)) {
+    return res.status(409).json({ error: error.message, code: error.code })
   }
-  return tradingAgentOrchestrator
+  return res.status(500).json({ error: fallbackMessage })
 }
 
 // GET /api/agent/status - Get agent status
@@ -72,14 +56,16 @@ router.get('/status', (req, res) => {
 
   // Check if API keys are configured
   const hasApiKeys = {
-    binance: !!(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET),
-    mode: process.env.BINANCE_MODE || 'sandbox'
+    binance: Boolean(getCredentials('binance')),
+    mode: getTradingMode(),
+    liveTradingAllowed: isLiveTradingAllowed()
   }
 
   res.json({
     isRunning: orchestrator.isRunning,
     state: state.state,
     capital: state.capital,
+    equity: state.equity,
     openPositions: state.openPositions,
     killSwitchActive: state.killSwitchActive,
     killReason: state.killReason,
@@ -112,7 +98,7 @@ router.post('/start', async (req, res) => {
     })
   } catch (error) {
     logger.error('Failed to start agent', error)
-    res.status(500).json({ error: 'Failed to start agent' })
+    sendAgentError(res, error, 'Failed to start agent')
   }
 })
 
@@ -146,12 +132,8 @@ router.post('/cycle', async (req, res) => {
 
     const { symbol = 'BTC/USDT' } = req.body
 
-    // Run one cycle for the symbol
-    if (!orchestrator.isRunning) {
-      orchestrator.isRunning = true // Allow manual cycle
-    }
-
-    await orchestrator.runCycle()
+    // Runs exactly one cycle; the agent is not left marked as running
+    await orchestrator.runManualCycle([symbol])
 
     res.json({
       message: 'Cycle completed',
@@ -160,7 +142,7 @@ router.post('/cycle', async (req, res) => {
     })
   } catch (error) {
     logger.error('Failed to run manual cycle', error)
-    res.status(500).json({ error: 'Failed to run cycle' })
+    sendAgentError(res, error, 'Failed to run cycle')
   }
 })
 
@@ -208,7 +190,6 @@ router.get('/positions', async (req, res) => {
       return res.status(503).json({ error: 'MongoDB not connected' })
     }
 
-    const Position = mongoose.model('Position')
     const positions = await Position.find({ status: 'OPEN' }).lean()
 
     res.json({ positions, count: positions.length })
@@ -227,7 +208,6 @@ router.get('/state', async (req, res) => {
       return res.status(503).json({ error: 'MongoDB not connected' })
     }
 
-    const AgentState = mongoose.model('AgentState')
     const state = await AgentState.findOne({ agentId: 'main' }).lean()
 
     if (!state) {
@@ -241,28 +221,42 @@ router.get('/state', async (req, res) => {
   }
 })
 
+// POST /api/agent/kill-switch/reset - Clear a triggered kill switch after review
+router.post('/kill-switch/reset', async (req, res) => {
+  try {
+    const orchestrator = getOrchestrator()
+    if (!orchestrator) {
+      return res.status(503).json({ error: 'Agent not initialized' })
+    }
+    if (orchestrator.isRunning) {
+      return res.status(409).json({ error: 'Stop the agent before resetting the kill switch' })
+    }
+    await orchestrator.resetKillSwitch()
+    logger.warn('Kill switch reset', { userId: req.user?._id?.toString() })
+    res.json({ message: 'Kill switch reset', state: orchestrator.getState() })
+  } catch (error) {
+    logger.error('Failed to reset kill switch', error)
+    res.status(500).json({ error: 'Failed to reset kill switch' })
+  }
+})
+
 // GET /api/agent/verify-keys - Verify Binance API keys are valid
 router.get('/verify-keys', async (req, res) => {
-  try {
-    const ccxt = require('ccxt')
+  const mode = getTradingMode()
+  const credentials = getCredentials('binance')
 
-    const apiKey = process.env.BINANCE_API_KEY
-    const apiSecret = process.env.BINANCE_API_SECRET
-
-    if (!apiKey || !apiSecret) {
-      return res.json({
-        configured: false,
-        message: 'API keys not configured. Set BINANCE_API_KEY and BINANCE_API_SECRET in .env',
-        mode: process.env.BINANCE_MODE || 'sandbox'
-      })
-    }
-
-    // Create exchange with API keys
-    const exchange = new ccxt.binance({
-      apiKey,
-      secret: apiSecret,
-      enableRateLimit: true
+  if (!credentials) {
+    return res.json({
+      configured: false,
+      message: 'API keys not configured. Set BINANCE_API_KEY and BINANCE_API_SECRET in .env',
+      mode
     })
+  }
+
+  try {
+    // Same sandbox-aware client the agent trades with: testnet keys are
+    // verified against the testnet, production keys against production.
+    const exchange = createTradingExchange('binance', { requireCredentials: true })
 
     // Validate the keys by performing an authenticated call.
     // NEVER expose account balances (total/used/free) in the response —
@@ -272,8 +266,8 @@ router.get('/verify-keys', async (req, res) => {
     res.json({
       configured: true,
       valid: true,
-      mode: process.env.BINANCE_MODE || 'sandbox',
-      apiKeyPreview: apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4),
+      mode,
+      apiKeyPreview: credentials.apiKey.substring(0, 4) + '...' + credentials.apiKey.substring(credentials.apiKey.length - 4),
       message: 'API keys are valid'
     })
   } catch (error) {
@@ -282,6 +276,7 @@ router.get('/verify-keys', async (req, res) => {
     res.status(400).json({
       configured: true,
       valid: false,
+      mode,
       message: 'API keys are invalid or lack the required permissions'
     })
   }

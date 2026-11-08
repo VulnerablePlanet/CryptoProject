@@ -288,11 +288,11 @@ const priceChange = computed(() => {
       <!-- COP Row -->
       <div class="flex items-center justify-between text-xs opacity-70">
         <div class="flex items-center gap-3">
-          <span class="text-yellow-600 dark:text-yellow-400">🇨🇴 COP</span>
+          <span class="text-yellow-700 dark:text-yellow-400">🇨🇴 COP</span>
           <span class="text-text-secondary">O: <span class="font-mono">{{ formatPriceCOP(currentCandle?.open) }}</span></span>
           <span class="text-text-secondary">C: <span class="font-mono">{{ formatPriceCOP(currentCandle?.close) }}</span></span>
         </div>
-        <span class="font-mono text-yellow-600 dark:text-yellow-400 text-sm">
+        <span class="font-mono text-yellow-700 dark:text-yellow-400 text-sm">
           {{ formatPriceCOP(currentCandle?.close) }}
         </span>
       </div>
@@ -460,8 +460,8 @@ const priceChange = computed(() => {
       </div>
       <!-- COP Prices -->
       <div class="pt-2 border-t border-gray-200 dark:border-border-dark">
-        <p class="text-yellow-600 dark:text-yellow-400 font-bold mb-1">🇨🇴 COP</p>
-        <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-yellow-600 dark:text-yellow-400">
+        <p class="text-yellow-700 dark:text-yellow-400 font-bold mb-1">🇨🇴 COP</p>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-yellow-700 dark:text-yellow-400">
           <span>Open:</span>
           <span class="font-mono text-right">{{ formatPriceCOP(hoveredCandle.data.open) }}</span>
           <span>Close:</span>

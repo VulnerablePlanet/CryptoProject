@@ -1,18 +1,8 @@
-import axios from 'axios'
+import { createApiClient } from '@/services/api'
 
-// Use Vite proxy to avoid CORS issues during development
-// The proxy is configured in vite.config.js to forward to api.coingecko.com
-const BASE_URL = '/api/coingecko'
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Accept': 'application/json',
-  }
-})
-
+// Served by our backend (server/routes/coingecko.js) in every environment:
+// authenticated, rate limited and using the server's CoinGecko API key.
+const api = createApiClient('/api/coingecko')
 
 // Rate limiting helper (30 calls/min for free tier, using 5 sec minimum to be safe)
 let lastCallTime = 0

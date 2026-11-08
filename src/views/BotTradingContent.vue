@@ -87,7 +87,7 @@ onUnmounted(() => {
           </div>
           <div>
             <h1 class="text-lg font-bold text-slate-900 dark:text-white">Trading Bot</h1>
-            <p class="text-xs text-slate-500 dark:text-text-secondary">
+            <p class="text-xs text-text-secondary">
               Automated signal generation & backtesting
             </p>
           </div>
@@ -118,7 +118,7 @@ onUnmounted(() => {
           :class="[
             activeTab === tab.id
               ? 'text-primary'
-              : 'text-slate-500 dark:text-text-secondary hover:text-slate-700 dark:hover:text-white'
+              : 'text-text-secondary hover:text-slate-700 dark:hover:text-white'
           ]"
         >
           <span class="material-symbols-outlined text-lg">{{ tab.icon }}</span>
@@ -164,7 +164,7 @@ onUnmounted(() => {
                 <div v-if="store.signalLoading" class="flex items-center justify-center py-12">
                   <div class="text-center">
                     <span class="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-                    <p class="text-sm text-slate-500 dark:text-text-secondary mt-2">Analyzing market...</p>
+                    <p class="text-sm text-text-secondary mt-2">Analyzing market...</p>
                   </div>
                 </div>
 
@@ -179,8 +179,8 @@ onUnmounted(() => {
                   <span class="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600 mb-3">
                     signal_cellular_null
                   </span>
-                  <p class="text-slate-500 dark:text-text-secondary">No signal generated yet</p>
-                  <p class="text-sm text-slate-400 dark:text-text-secondary mt-1">
+                  <p class="text-text-secondary">No signal generated yet</p>
+                  <p class="text-sm text-text-secondary mt-1">
                     Start the bot to generate trading signals
                   </p>
                 </div>
@@ -208,32 +208,32 @@ onUnmounted(() => {
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <label class="block text-xs text-slate-500 dark:text-text-secondary mb-1">Periods</label>
-                    <input 
+                    <label for="bot-trading-periods" class="block text-xs text-text-secondary mb-1">Periods</label>
+                    <input id="bot-trading-periods" 
                       type="number" 
                       value="200" 
                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label class="block text-xs text-slate-500 dark:text-text-secondary mb-1">Start Index</label>
-                    <input 
+                    <label for="bot-trading-start-index" class="block text-xs text-text-secondary mb-1">Start Index</label>
+                    <input id="bot-trading-start-index" 
                       type="number" 
                       value="100" 
                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label class="block text-xs text-slate-500 dark:text-text-secondary mb-1">Capital</label>
-                    <input 
+                    <label for="bot-trading-capital" class="block text-xs text-text-secondary mb-1">Capital</label>
+                    <input id="bot-trading-capital" 
                       type="number" 
                       :value="store.config.capital"
                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label class="block text-xs text-slate-500 dark:text-text-secondary mb-1">Risk %</label>
-                    <input 
+                    <label for="bot-trading-risk" class="block text-xs text-text-secondary mb-1">Risk %</label>
+                    <input id="bot-trading-risk" 
                       type="number" 
                       :value="store.config.riskPerTrade"
                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-border-dark rounded-lg text-sm text-slate-900 dark:text-white"
@@ -244,7 +244,7 @@ onUnmounted(() => {
                 <button
                   @click="store.runBacktest()"
                   :disabled="store.backtestLoading"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   <span class="material-symbols-outlined" :class="{ 'animate-spin': store.backtestLoading }">
                     {{ store.backtestLoading ? 'sync' : 'play_arrow' }}

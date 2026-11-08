@@ -86,7 +86,7 @@ const directionIcon = computed(() => {
             :class="{
               'bg-success/10 text-success': priceDirection === 'up',
               'bg-danger/10 text-danger': priceDirection === 'down',
-              'bg-gray-100 dark:bg-border-dark text-slate-500 dark:text-text-secondary': priceDirection === 'neutral'
+              'bg-gray-100 dark:bg-border-dark text-text-secondary': priceDirection === 'neutral'
             }"
           >
             <span class="material-symbols-outlined text-[16px]">{{ directionIcon }}</span>
@@ -95,7 +95,7 @@ const directionIcon = computed(() => {
         </div>
         
         <!-- COP Price -->
-        <p class="text-yellow-600 dark:text-yellow-400 text-sm font-mono mt-0.5">
+        <p class="text-yellow-700 dark:text-yellow-400 text-sm font-mono mt-0.5">
           {{ formatCOPWithFlag(currentPrice) }}
         </p>
       </div>
@@ -107,21 +107,21 @@ const directionIcon = computed(() => {
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-text-secondary font-medium">Open</span>
         <span class="font-mono font-semibold text-slate-900 dark:text-white">{{ formatUSD(openPrice) }}</span>
-        <span class="text-xs font-mono text-yellow-600 dark:text-yellow-400">{{ formatCOPWithFlag(openPrice) }}</span>
+        <span class="text-xs font-mono text-yellow-700 dark:text-yellow-400">{{ formatCOPWithFlag(openPrice) }}</span>
       </div>
       
       <!-- High -->
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-text-secondary font-medium">High</span>
         <span class="font-mono font-semibold text-success">{{ formatUSD(highPrice) }}</span>
-        <span class="text-xs font-mono text-yellow-600 dark:text-yellow-400">{{ formatCOPWithFlag(highPrice) }}</span>
+        <span class="text-xs font-mono text-yellow-700 dark:text-yellow-400">{{ formatCOPWithFlag(highPrice) }}</span>
       </div>
       
       <!-- Low -->
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-text-secondary font-medium">Low</span>
         <span class="font-mono font-semibold text-danger">{{ formatUSD(lowPrice) }}</span>
-        <span class="text-xs font-mono text-yellow-600 dark:text-yellow-400">{{ formatCOPWithFlag(lowPrice) }}</span>
+        <span class="text-xs font-mono text-yellow-700 dark:text-yellow-400">{{ formatCOPWithFlag(lowPrice) }}</span>
       </div>
       
       <!-- Volume -->

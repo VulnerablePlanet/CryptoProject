@@ -7,7 +7,7 @@
 
 const express = require('express')
 const router = express.Router()
-const rateLimit = require('express-rate-limit')
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit')
 const { body, validationResult } = require('express-validator')
 const ccxtService = require('../services/ccxtService')
 const ccxtPriceService = require('../services/ccxtPriceService')
@@ -37,8 +37,10 @@ const exchangeLimiter = rateLimit({
   max: 60, // 60 requests per minute
   standardHeaders: true,
   legacyHeaders: false,
+  // ipKeyGenerator normalizes IPv6 addresses to their /56 subnet so a client
+  // cannot bypass the limit by rotating addresses inside its own block.
   keyGenerator: (req) => {
-    return req.user?._id?.toString() || req.ip
+    return req.user?._id?.toString() || ipKeyGenerator(req.ip)
   },
   message: {
     success: false,

@@ -29,6 +29,9 @@ const agentStateSchema = new mongoose.Schema({
     type: Number,
     default: 10000
   },
+  // Calendar day (UTC, YYYY-MM-DD) that dailyStartCapital refers to, so a
+  // restart does not reset the daily-loss baseline.
+  dailyStartDate: String,
 
   // Cycle tracking
   cycleCount: {
@@ -132,11 +135,11 @@ const agentStateSchema = new mongoose.Schema({
 })
 
 // Ensure singleton - only one agent state document
-agentStateSchema.pre('save', function(next) {
+// (Mongoose 9: pre hooks no longer receive `next`; calling it threw on every save.)
+agentStateSchema.pre('save', function() {
   if (this.agentId !== 'main') {
     this.agentId = 'main'
   }
-  next()
 })
 
 // Static method to get or create agent state
@@ -173,4 +176,4 @@ agentStateSchema.methods.recordTrade = async function(pnl) {
   await this.save()
 }
 
-module.exports = mongoose.model('AgentState', agentStateSchema)
+module.exports = mongoose.models.AgentState || mongoose.model('AgentState', agentStateSchema)

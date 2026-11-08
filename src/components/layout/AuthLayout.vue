@@ -34,6 +34,14 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-background-light dark:bg-background-dark flex">
+    <!-- Keyboard users can bypass the navigation (WCAG 2.4.1) -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+    >
+      Skip to main content
+    </a>
+
     <!-- Sidebar -->
     <AppSidebar />
     
@@ -43,7 +51,7 @@ onUnmounted(() => {
       <DashboardHeader />
 
       <!-- Page Content -->
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-background-light dark:bg-background-dark">
+      <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-background-light dark:bg-background-dark outline-none">
         <div class="max-w-[1400px] mx-auto">
           <RouterView />
         </div>

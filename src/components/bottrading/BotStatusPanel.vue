@@ -98,7 +98,7 @@ const handleResume = () => {
           {{ statusIcon }}
         </span>
         <p class="mt-2 text-lg font-medium text-slate-900 dark:text-white">{{ statusText }}</p>
-        <p v-if="store.lastUpdate" class="text-xs text-slate-500 dark:text-text-secondary mt-1">
+        <p v-if="store.lastUpdate" class="text-xs text-text-secondary mt-1">
           Last update: {{ new Date(store.lastUpdate).toLocaleTimeString() }}
         </p>
       </div>
@@ -118,7 +118,7 @@ const handleResume = () => {
         v-if="store.isStopped || store.hasError"
         @click="handleStart"
         :disabled="store.status === BOT_STATUS.STARTING"
-        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
+        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white dark:text-background-dark rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
       >
         <span class="material-symbols-outlined text-xl">play_arrow</span>
         Start
@@ -127,7 +127,7 @@ const handleResume = () => {
       <button
         v-if="store.isRunning"
         @click="handlePause"
-        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors"
+        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-warning text-white dark:text-background-dark rounded-lg hover:bg-warning/90 transition-colors"
       >
         <span class="material-symbols-outlined text-xl">pause</span>
         Pause
@@ -136,7 +136,7 @@ const handleResume = () => {
       <button
         v-if="store.isPaused"
         @click="handleResume"
-        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition-colors"
+        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white dark:text-background-dark rounded-lg hover:bg-success/90 transition-colors"
       >
         <span class="material-symbols-outlined text-xl">play_arrow</span>
         Resume
@@ -155,13 +155,13 @@ const handleResume = () => {
     <!-- Current Symbol Info -->
     <div class="mt-4 pt-4 border-t border-gray-200 dark:border-border-dark">
       <div class="flex items-center justify-between text-sm">
-        <span class="text-slate-500 dark:text-text-secondary">Symbol</span>
+        <span class="text-text-secondary">Symbol</span>
         <span class="font-medium text-slate-900 dark:text-white">
           {{ store.currentSymbol?.symbol }}/{{ store.config.quote || 'USD' }}
         </span>
       </div>
       <div class="flex items-center justify-between text-sm mt-2">
-        <span class="text-slate-500 dark:text-text-secondary">Timeframe</span>
+        <span class="text-text-secondary">Timeframe</span>
         <span class="font-medium text-slate-900 dark:text-white">{{ store.currentTimeframe?.label }}</span>
       </div>
     </div>

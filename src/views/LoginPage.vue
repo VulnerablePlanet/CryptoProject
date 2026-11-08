@@ -24,7 +24,7 @@ const handleLogin = async () => {
   <div class="min-h-screen relative flex items-center justify-center p-4">
     <!-- Full Screen Background -->
     <div class="absolute inset-0 z-0">
-      <img src="@/assets/images/login-bg-full.jpg" alt="Background" class="w-full h-full object-cover" />
+      <img src="@/assets/images/login-bg-full.jpg" alt="" class="w-full h-full object-cover" decoding="async" fetchpriority="low" />
       <div class="absolute inset-0 bg-black/50"></div>
     </div>
 
@@ -32,7 +32,7 @@ const handleLogin = async () => {
     <div class="relative z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <!-- Left Side - Branding (Floating) -->
       <div class="hidden lg:flex flex-col justify-center text-white">
-        <img src="/logo.png" alt="Crypto market anomaly detector" class="size-20 mb-8" />
+        <img src="/logo.png" alt="" class="size-20 mb-8" width="80" height="80" />
         <h1 class="text-5xl font-black mb-6 leading-tight">Crypto market anomaly detector</h1>
         <p class="text-xl text-white/90 max-w-lg leading-relaxed">
           Technical trading analysis.
@@ -44,7 +44,7 @@ const handleLogin = async () => {
         <div class="w-full max-w-md bg-white/90 dark:bg-card-dark/80 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20 dark:border-white/10">
           <!-- Mobile Logo -->
           <div class="lg:hidden flex items-center gap-3 mb-8">
-            <img src="/logo.png" alt="Crypto market anomaly detector" class="size-10" />
+            <img src="/logo.png" alt="" class="size-10" width="40" height="40" />
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Crypto market anomaly detector</h1>
           </div>
 
@@ -57,9 +57,10 @@ const handleLogin = async () => {
           <!-- Error Message -->
           <div 
             v-if="authStore.error"
+            role="alert"
             class="mb-6 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm flex items-center gap-2"
           >
-            <span class="material-symbols-outlined text-[18px]">error</span>
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">error</span>
             {{ authStore.error }}
           </div>
 
@@ -67,16 +68,17 @@ const handleLogin = async () => {
           <form @submit.prevent="handleLogin" class="space-y-5">
             <!-- Email -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label for="login-email-address" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Email Address
               </label>
               <div class="relative">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" aria-hidden="true">
                   mail
                 </span>
-                <input
+                <input id="login-email-address"
                   v-model="email"
                   type="email"
+                  autocomplete="email"
                   placeholder="you@example.com"
                   class="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark 
                          bg-white/50 dark:bg-black/20 text-slate-900 dark:text-white 
@@ -89,16 +91,17 @@ const handleLogin = async () => {
 
             <!-- Password -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label for="login-password" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <div class="relative">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" aria-hidden="true">
                   lock
                 </span>
-                <input
+                <input id="login-password"
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
+                  autocomplete="current-password"
                   placeholder="••••••••"
                   class="w-full pl-12 pr-12 py-3 rounded-lg border border-gray-300 dark:border-border-dark 
                          bg-white/50 dark:bg-black/20 text-slate-900 dark:text-white 
@@ -109,9 +112,11 @@ const handleLogin = async () => {
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  :aria-pressed="showPassword"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-lg text-text-secondary hover:text-primary transition-colors"
                 >
-                  <span class="material-symbols-outlined text-[20px]">
+                  <span class="material-symbols-outlined text-[20px]" aria-hidden="true">
                     {{ showPassword ? 'visibility_off' : 'visibility' }}
                   </span>
                 </button>
@@ -133,7 +138,7 @@ const handleLogin = async () => {
             <button
               type="submit"
               :disabled="authStore.isLoading"
-              class="w-full py-3 px-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 
+              class="w-full py-3 px-4 bg-primary hover:bg-primary-dark disabled:bg-primary/50 
                      text-white font-bold rounded-lg transition-colors shadow-lg shadow-primary/25
                      flex items-center justify-center gap-2"
             >

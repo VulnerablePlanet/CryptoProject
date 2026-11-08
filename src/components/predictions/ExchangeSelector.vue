@@ -4,7 +4,10 @@
  * Dropdown for selecting cryptocurrency exchange
  */
 
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
+
+// Unique prefix so label/field ids stay valid with several instances
+const uid = useId()
 
 const props = defineProps({
   exchanges: {
@@ -38,11 +41,11 @@ const currentExchange = computed(() => {
 
 <template>
   <div class="exchange-selector">
-    <label class="block text-sm font-medium text-text-secondary mb-1.5">
+    <label :for="`${uid}-exchange-selector-exchange`" class="block text-sm font-medium text-text-secondary mb-1.5">
       Exchange
     </label>
     <div class="relative">
-      <select
+      <select :id="`${uid}-exchange-selector-exchange`"
         v-model="selectedExchange"
         :disabled="disabled"
         class="w-full appearance-none bg-white dark:bg-card-dark border border-gray-200 dark:border-border-dark rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -70,6 +73,6 @@ const currentExchange = computed(() => {
 }
 
 .exchange-selector select:focus {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 </style>

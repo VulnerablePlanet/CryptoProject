@@ -126,11 +126,11 @@ onMounted(async () => {
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Wallet</h1>
-        <p class="text-slate-500 dark:text-text-secondary text-sm">Manage your crypto portfolio</p>
+        <p class="text-text-secondary text-sm">Manage your crypto portfolio</p>
       </div>
       <button
         @click="openAddModal"
-        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
+        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors shadow-lg shadow-primary/20"
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
         Add Holding
@@ -168,7 +168,7 @@ onMounted(async () => {
             <p class="text-text-secondary mb-6">Start building your portfolio by adding your first holding</p>
             <button
               @click="openAddModal"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
             >
               <span class="material-symbols-outlined text-[20px]">add</span>
               Add Your First Holding
@@ -221,19 +221,19 @@ onMounted(async () => {
               
               <!-- Actions -->
               <div class="flex items-center gap-1">
-                <button
+                <button type="button" aria-label="Edit"
                   @click="openEditModal(holding)"
                   class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg transition-colors"
                   title="Edit"
                 >
-                  <span class="material-symbols-outlined text-[18px] text-slate-500 dark:text-text-secondary">edit</span>
+                  <span class="material-symbols-outlined text-[18px] text-text-secondary" aria-hidden="true">edit</span>
                 </button>
-                <button
+                <button type="button" aria-label="Delete"
                   @click="handleDelete(holding._id)"
                   class="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Delete"
                 >
-                  <span class="material-symbols-outlined text-[18px] text-slate-500 dark:text-text-secondary hover:text-danger">delete</span>
+                  <span class="material-symbols-outlined text-[18px] text-text-secondary hover:text-danger" aria-hidden="true">delete</span>
                 </button>
               </div>
             </div>

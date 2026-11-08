@@ -11,6 +11,9 @@
  */
 
 const ccxtService = require('../../../services/ccxtService')
+const { createLogger } = require('../../../utils/logger')
+
+const logger = createLogger('agent:monitoring')
 
 // Risk thresholds — CRITICAL: errors here = potential losses
 const THRESHOLDS = {
@@ -86,7 +89,7 @@ async function checkPositions(options = {}) {
         totalPnl += realizedPnl + unrealizedPnl
       } catch (error) {
         // Handle missing price data gracefully
-        console.warn(`[Monitoring] Failed to fetch price for ${position.symbol}:`, error.message)
+        logger.warn(`Failed to fetch price for ${position.symbol}:`, error.message)
         positionPnLs.push({
           ...position,
           currentPrice: position.entryPrice,
@@ -105,7 +108,7 @@ async function checkPositions(options = {}) {
 
     return { positions: positionPnLs, summary }
   } catch (error) {
-    console.error('[Monitoring] checkPositions error:', error.message)
+    logger.error('checkPositions error:', error.message)
     return { positions: [], summary: { openCount: 0, totalPnl: 0, unrealizedPnl: 0 } }
   }
 }
@@ -181,7 +184,7 @@ async function runRiskChecks(agentState, options = {}) {
       checks
     }
   } catch (error) {
-    console.error('[Monitoring] runRiskChecks error:', error.message)
+    logger.error('runRiskChecks error:', error.message)
     // Fail safe: if risk checks fail, trigger kill-switch
     return {
       triggered: true,
@@ -218,9 +221,10 @@ async function processClosedPosition(position, options = {}) {
     // Update win/loss tracking in agent state would happen via updateAgentState
     // For now, log trade to TradeLog collection
     if (mongoose) {
-      const TradeLog = mongoose.model('TradeLog')
+      const TradeLog = mongoose.models.TradeLog
       if (TradeLog) {
         const tradeLogEntry = {
+          positionId: position._id || position.positionId,
           symbol: position.symbol,
           side: position.side,
           entryPrice: position.entryPrice,
@@ -268,7 +272,7 @@ async function processClosedPosition(position, options = {}) {
     result.processed = true
     return result
   } catch (error) {
-    console.error('[Monitoring] processClosedPosition error:', error.message)
+    logger.error('processClosedPosition error:', error.message)
     return { ...result, error: error.message }
   }
 }
@@ -299,7 +303,8 @@ async function updateAgentState(updates, options = {}) {
             capital: updates.capital,
             peakCapital: updates.peakCapital,
             dailyStartCapital: updates.dailyStartCapital,
-            openPositions: updates.openPositions,
+            // `openPositions` is an array in the schema; the count used to be
+            // written here, which failed with a CastError on every cycle.
             consecutiveLosses: updates.consecutiveLosses,
             killSwitchActive: updates.killSwitchActive,
             state: updates.state || 'MONITORING',
@@ -310,7 +315,7 @@ async function updateAgentState(updates, options = {}) {
       )
     }
   } catch (error) {
-    console.error('[Monitoring] updateAgentState error:', error.message)
+    logger.error('updateAgentState error:', error.message)
   }
 }
 
@@ -353,7 +358,9 @@ async function runMonitoringCycle(agentState, options = {}) {
     eventBus = null,
     killSwitch = null,
     currentATR = null,
-    avgATR = null
+    avgATR = null,
+    // The orchestrator is the single writer of AgentState; it passes false.
+    persistState = true
   } = options
 
   const events = []
@@ -380,7 +387,7 @@ async function runMonitoringCycle(agentState, options = {}) {
 
     // If kill-switch triggered, execute IMMEDIATELY (synchronous)
     if (riskStatus.triggered) {
-      console.log(`[Monitoring] KILL-SWITCH TRIGGERED: ${riskStatus.reason}`)
+      logger.info(`KILL-SWITCH TRIGGERED: ${riskStatus.reason}`)
 
       // Emit kill_switch:triggered event first
       emitEvent('kill_switch:triggered', {
@@ -397,7 +404,7 @@ async function runMonitoringCycle(agentState, options = {}) {
     }
 
     // 3. Update agent state in MongoDB AFTER emitting events (so dashboard updates)
-    await updateAgentState({
+    if (persistState) await updateAgentState({
       agentId: agentState.agentId || 'main',
       capital: agentState.capital,
       peakCapital: Math.max(agentState.peakCapital || agentState.capital || 0, agentState.capital || 0),
@@ -411,13 +418,14 @@ async function runMonitoringCycle(agentState, options = {}) {
     // 4. Build result
     const result = {
       positions,
+      summary: positionsResult.summary,
       riskStatus,
       agentState: updatedAgentState,
       events,
       timestamp: Date.now()
     }
 
-    console.log('[Monitoring] Cycle completed:', {
+    logger.info('Cycle completed:', {
       openPositions: positions.length,
       unrealizedPnl: positionsResult.summary.unrealizedPnl.toFixed(2),
       riskTriggered: riskStatus.triggered,
@@ -426,7 +434,7 @@ async function runMonitoringCycle(agentState, options = {}) {
 
     return result
   } catch (error) {
-    console.error('[Monitoring] runMonitoringCycle error:', error.message)
+    logger.error('runMonitoringCycle error:', error.message)
 
     emitEvent('agent:error', {
       phase: 'MONITORING',

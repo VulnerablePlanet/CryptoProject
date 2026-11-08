@@ -11,8 +11,11 @@
  * Exports: { runExecutionCycle, checkPreExecution, calculatePositionSize }
  */
 
-const ccxt = require('ccxt')
 const ccxtService = require('../../../services/ccxtService')
+const { createTradingExchange } = require('../exchangeGateway')
+const { createLogger } = require('../../../utils/logger')
+
+const logger = createLogger('agent:execution')
 
 // ============================================================================
 // Constants
@@ -53,68 +56,17 @@ const POSITION_STATUS = {
  *   BITGET_API_KEY / BITGET_API_SECRET
  *   etc.
  *
- * Modes:
- *   sandbox = true → testnet (no real money)
- *   sandbox = false → production (real money)
+ * Mode comes from BINANCE_MODE (config/env.js): anything other than an
+ * explicit 'production' uses the exchange testnet.
  *
  * @param {string} exchangeId - Exchange ID (e.g., 'binance', 'bitget')
- * @param {object} options - Additional options
- * @param {boolean} options.sandbox - Use sandbox/testnet mode
+ * @param {object} options - Passed to createTradingExchange (see exchangeGateway.js)
  * @returns {object} Configured CCXT exchange instance
  */
 function createExchangeInstance(exchangeId, options = {}) {
-  const id = exchangeId.toLowerCase()
-
-  // Build credentials from environment variables
-  const apiKey = process.env[`${id.toUpperCase()}_API_KEY`]
-  const apiSecret = process.env[`${id.toUpperCase()}_API_SECRET`]
-
-  // Base configuration
-  const config = {
-    enableRateLimit: true,
-    timeout: 30000,
-    // User agent to avoid blocks
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  }
-
-  // Add credentials if available
-  if (apiKey && apiSecret) {
-    config.apiKey = apiKey
-    config.secret = apiSecret
-    console.log(`[Execution] Using API credentials for ${id} (${apiKey.substring(0, 8)}...)`)
-  } else {
-    console.warn(`[Execution] No API credentials for ${id} — using public data only (read-only)`)
-  }
-
-  // Sandbox/testnet mode for exchanges that support it
-  if (options.sandbox || process.env.BINANCE_MODE === 'sandbox') {
-    config.sandbox = true
-    console.log(`[Execution] Sandbox mode enabled for ${id}`)
-  }
-
-  // Exchange-specific options
-  if (id === 'binance') {
-    config.options = {
-      defaultType: 'spot', // 'spot', 'margin', 'futures'
-      adjustForTimeDifference: true
-    }
-  } else if (id === 'bitget') {
-    config.options = {
-      defaultType: 'spot',
-      defaultSubType: 'spot'
-    }
-  } else if (id === 'bybit') {
-    config.options = {
-      defaultType: 'spot'
-    }
-  }
-
-  const ExchangeClass = ccxt[id]
-  if (!ExchangeClass) {
-    throw new Error(`Exchange ${id} not supported by CCXT`)
-  }
-
-  return new ExchangeClass(config)
+  // Delegates to the single sandbox-aware factory. The previous inline
+  // implementation duplicated credential/sandbox handling with other callers.
+  return createTradingExchange(exchangeId, options)
 }
 
 // ============================================================================
@@ -128,8 +80,10 @@ function createExchangeInstance(exchangeId, options = {}) {
  * @returns {object} { allowed: boolean, reason?: string }
  */
 function checkPreExecution(symbol, agentState) {
-  // Check 1: Kill switch NOT triggered
-  if (agentState.killSwitch === true) {
+  // Check 1: Kill switch NOT triggered.
+  // The orchestrator's state exposes `killSwitchActive`; the old check read a
+  // non-existent `killSwitch` field and therefore never blocked execution.
+  if (agentState.killSwitchActive === true || agentState.killSwitch === true) {
     return {
       allowed: false,
       reason: `Kill switch active: ${agentState.killReason || 'No reason provided'}`
@@ -172,7 +126,7 @@ function calculatePositionSize(capital, riskPct, atr, entryPrice, stopLoss) {
   const riskPerUnit = Math.abs(entryPrice - stopLoss)
 
   if (riskPerUnit <= 0) {
-    console.warn('[Execution] Invalid stop loss distance, using ATR-based fallback')
+    logger.warn('Invalid stop loss distance, using ATR-based fallback')
     // Fallback: use ATR as stop distance
     const adjustedStopLoss = entryPrice - atr
     const fallbackRiskPerUnit = Math.abs(entryPrice - adjustedStopLoss)
@@ -196,7 +150,7 @@ function calculatePositionSize(capital, riskPct, atr, entryPrice, stopLoss) {
   const finalAmount = Math.max(amount, MIN_POSITION_SIZE)
 
   if (amount < MIN_POSITION_SIZE) {
-    console.warn(`[Execution] Position size ${amount} below minimum ${MIN_POSITION_SIZE}, adjusted to minimum`)
+    logger.warn(`Position size ${amount} below minimum ${MIN_POSITION_SIZE}, adjusted to minimum`)
   }
 
   return {
@@ -306,7 +260,7 @@ async function placeOrder(symbol, side, type, amount, price, options = {}) {
         order = await exchangeInstance.createMarketOrder(symbol, side, amount)
     }
 
-    console.log(`[Execution] Order placed: ${order.side} ${order.type} ${order.amount} ${symbol} @ ${order.price || 'MARKET'}`)
+    logger.info(`Order placed: ${order.side} ${order.type} ${order.amount} ${symbol} @ ${order.price || 'MARKET'}`)
 
     return {
       success: true,
@@ -319,7 +273,7 @@ async function placeOrder(symbol, side, type, amount, price, options = {}) {
       timestamp: Date.now()
     }
   } catch (error) {
-    console.error(`[Execution] Order placement failed: ${error.message}`)
+    logger.error(`Order placement failed: ${error.message}`)
 
     // Handle common CCXT errors gracefully
     let errorType = 'UNKNOWN'
@@ -386,7 +340,7 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
         }
       )
 
-      console.log(`[Execution] OCO placed as bracket order: ${bracketOrder.id}`)
+      logger.info(`OCO placed as bracket order: ${bracketOrder.id}`)
 
       return {
         success: true,
@@ -400,7 +354,7 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
       }
     } catch (bracketError) {
       // Bracket not supported, fall back to separate orders
-      console.log(`[Execution] Bracket order not supported, using separate orders`)
+      logger.info(`Bracket order not supported, using separate orders`)
     }
 
     // Fallback: Place stop loss and take profit as separate OCO-linked orders
@@ -431,7 +385,7 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
         )
       } catch (stopError) {
         // Last resort: use market order for stop loss
-        console.warn(`[Execution] Stop loss order failed, will manage manually: ${stopError.message}`)
+        logger.warn(`Stop loss order failed, will manage manually: ${stopError.message}`)
       }
     }
 
@@ -446,14 +400,14 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
         { stopPrice: takeProfit }
       )
     } catch (tpError) {
-      console.warn(`[Execution] Take profit order failed: ${tpError.message}`)
+      logger.warn(`Take profit order failed: ${tpError.message}`)
     }
 
     const orderIds = []
     if (stopLossOrder?.id) orderIds.push(stopLossOrder.id)
     if (takeProfitOrder?.id) orderIds.push(takeProfitOrder.id)
 
-    console.log(`[Execution] OCO placed as separate orders: SL=${stopLossOrder?.id}, TP=${takeProfitOrder?.id}`)
+    logger.info(`OCO placed as separate orders: SL=${stopLossOrder?.id}, TP=${takeProfitOrder?.id}`)
 
     return {
       success: true,
@@ -466,7 +420,7 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
       timestamp: Date.now()
     }
   } catch (error) {
-    console.error(`[Execution] OCO placement failed: ${error.message}`)
+    logger.error(`OCO placement failed: ${error.message}`)
     return {
       success: false,
       error: error.message,
@@ -488,8 +442,7 @@ async function placeOCOOrders(symbol, side, amount, entryPrice, takeProfit, stop
  */
 async function recordPosition(positionData, mongoose) {
   try {
-    // Dynamic require to avoid circular dependencies
-    const Position = require('../models/position')
+    const { Position } = require('../models')
 
     const position = new Position({
       ...positionData,
@@ -498,7 +451,7 @@ async function recordPosition(positionData, mongoose) {
 
     const saved = await position.save()
 
-    console.log(`[Execution] Position recorded: ${saved._id}`)
+    logger.info(`Position recorded: ${saved._id}`)
 
     return {
       success: true,
@@ -506,7 +459,7 @@ async function recordPosition(positionData, mongoose) {
       position: saved
     }
   } catch (error) {
-    console.error(`[Execution] Position save failed: ${error.message}`)
+    logger.error(`Position save failed: ${error.message}`)
     return {
       success: false,
       error: error.message
@@ -526,7 +479,7 @@ async function recordPosition(positionData, mongoose) {
  */
 function emitPositionEvent(eventBus, eventName, data) {
   if (!eventBus) {
-    console.log(`[Execution] Event bus not available, skipping emit: ${eventName}`)
+    logger.info(`Event bus not available, skipping emit: ${eventName}`)
     return
   }
 
@@ -535,9 +488,9 @@ function emitPositionEvent(eventBus, eventName, data) {
       ...data,
       timestamp: Date.now()
     })
-    console.log(`[Execution] Event emitted: ${eventName}`)
+    logger.info(`Event emitted: ${eventName}`)
   } catch (error) {
-    console.error(`[Execution] Event emit failed: ${error.message}`)
+    logger.error(`Event emit failed: ${error.message}`)
   }
 }
 
@@ -565,12 +518,12 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
     capital = agentState?.capital || 10000
   } = options
 
-  console.log(`[Execution] Starting execution cycle for ${symbol}`)
+  logger.info(`Starting execution cycle for ${symbol}`)
 
   // Step 1: Pre-execution checks
   const preCheck = checkPreExecution(symbol, agentState)
   if (!preCheck.allowed) {
-    console.log(`[Execution] Pre-check failed: ${preCheck.reason}`)
+    logger.info(`Pre-check failed: ${preCheck.reason}`)
     return {
       executed: false,
       error: preCheck.reason,
@@ -635,14 +588,14 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
           : entryPrice - (priceAtr * 2.0)
       }
 
-      console.log(`[Execution] Calculated prices from market: Entry=${entryPrice}, SL=${stopLoss}, TP=${takeProfit}`)
+      logger.info(`Calculated prices from market: Entry=${entryPrice}, SL=${stopLoss}, TP=${takeProfit}`)
     }
 
     // Step 4: Calculate position size
     const riskPct = 0.01 // 1% risk per trade
     const sizing = calculatePositionSize(capital, riskPct, atr || 1, entryPrice, stopLoss)
 
-    console.log(`[Execution] Position sizing: ${sizing.amount.toFixed(6)} @ ${entryPrice}`)
+    logger.info(`Position sizing: ${sizing.amount.toFixed(6)} @ ${entryPrice}`)
 
     // Step 5: Determine order type and place entry order
     const orderMethod = scoringData.decision === 'MARKET_ORDER' ? 'market' : 'limit'
@@ -664,7 +617,7 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
     const filledEntryPrice = orderResult.averagePrice || entryPrice
     const filledAmount = orderResult.filledAmount || sizing.amount
 
-    console.log(`[Execution] Entry order filled: ${orderResult.orderId} @ ${filledEntryPrice}`)
+    logger.info(`Entry order filled: ${orderResult.orderId} @ ${filledEntryPrice}`)
 
     // Step 6: Place OCO orders (MANDATORY) - after entry fills
     const ocoResult = await placeOCOOrders(
@@ -678,7 +631,7 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
     )
 
     if (!ocoResult.success) {
-      console.warn(`[Execution] OCO placement had issues: ${ocoResult.error}`)
+      logger.warn(`OCO placement had issues: ${ocoResult.error}`)
       // Continue anyway - position was entered, OCO is best-effort
     }
 
@@ -732,16 +685,16 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
     })
 
     // Log success
-    console.log(`[Execution] ========== POSITION OPENED ==========`)
-    console.log(`[Execution] Symbol: ${symbol}`)
-    console.log(`[Execution] Side: ${direction}`)
-    console.log(`[Execution] Size: ${filledAmount.toFixed(6)}`)
-    console.log(`[Execution] Entry: ${filledEntryPrice}`)
-    console.log(`[Execution] SL: ${stopLoss}`)
-    console.log(`[Execution] TP: ${takeProfit}`)
-    console.log(`[Execution] OCO Group: ${ocoResult.ocoGroupId}`)
-    console.log(`[Execution] Score: ${(score * 100).toFixed(1)}%`)
-    console.log(`[Execution] ======================================`)
+    logger.info(`========== POSITION OPENED ==========`)
+    logger.info(`Symbol: ${symbol}`)
+    logger.info(`Side: ${direction}`)
+    logger.info(`Size: ${filledAmount.toFixed(6)}`)
+    logger.info(`Entry: ${filledEntryPrice}`)
+    logger.info(`SL: ${stopLoss}`)
+    logger.info(`TP: ${takeProfit}`)
+    logger.info(`OCO Group: ${ocoResult.ocoGroupId}`)
+    logger.info(`Score: ${(score * 100).toFixed(1)}%`)
+    logger.info(`======================================`)
 
     return {
       executed: true,
@@ -750,7 +703,7 @@ async function runExecutionCycle(symbol, scoringData, agentState, options = {}) 
       message: `${direction} position opened on ${symbol}`
     }
   } catch (error) {
-    console.error(`[Execution] Execution failed: ${error.message}`)
+    logger.error(`Execution failed: ${error.message}`)
 
     // Emit error event
     emitPositionEvent(eventBus, 'position:error', {

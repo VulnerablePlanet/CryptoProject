@@ -25,6 +25,9 @@ const { findNearestLevels } = require('../../levels/detector')
 const { getPatternSummary } = require('../../priceAction/patterns')
 
 const { detectTrend } = require('../../mtf/analyzer')
+const { createLogger } = require('../../../utils/logger')
+
+const logger = createLogger('agent:analysis')
 
 // ============================================================================
 // Configuration
@@ -232,7 +235,7 @@ function calculateIndicators(candles) {
       atrPercent
     }
   } catch (error) {
-    console.error('[Analysis] Indicator calculation error:', error.message)
+    logger.error('Indicator calculation error:', error.message)
     return {
       rsi: null,
       macd: null,
@@ -312,7 +315,7 @@ function detectRegime(indicators, currentPrice) {
 
     return regimes[minDistIdx]
   } catch (error) {
-    console.error('[Analysis] Regime detection error:', error.message)
+    logger.error('Regime detection error:', error.message)
     return 'UNKNOWN'
   }
 }
@@ -457,7 +460,7 @@ function detectRegimeWithKMeans(candles) {
 
     return regimeLabel
   } catch (error) {
-    console.error('[Analysis] K-means regime detection error:', error.message)
+    logger.error('K-means regime detection error:', error.message)
     return 'UNKNOWN'
   }
 }
@@ -546,7 +549,7 @@ function detectPatterns(candles) {
   try {
     return getPatternSummary(candles)
   } catch (error) {
-    console.error('[Analysis] Pattern detection error:', error.message)
+    logger.error('Pattern detection error:', error.message)
     return { patterns: [], summary: { totalPatterns: 0 } }
   }
 }
@@ -574,7 +577,7 @@ function findSupportResistance(candles) {
   try {
     return findNearestLevels(candles)
   } catch (error) {
-    console.error('[Analysis] S/R detection error:', error.message)
+    logger.error('S/R detection error:', error.message)
     return {
       nearestSupport: null,
       nearestResistance: null,
@@ -596,7 +599,7 @@ function findSupportResistance(candles) {
  * @returns {Promise<object>} Complete analysis results
  */
 async function runAnalysisCycle(symbol, researchData) {
-  console.log(`[Analysis] Starting analysis cycle for ${symbol}`)
+  logger.info(`Starting analysis cycle for ${symbol}`)
 
   const result = {
     indicators: {},
@@ -632,10 +635,10 @@ async function runAnalysisCycle(symbol, researchData) {
           latestTimestamp: candles.length > 0 ? candles[candles.length - 1].timestamp : null
         }
 
-        console.log(`[Analysis] Fetched ${candles.length} candles for ${tf}`)
+        logger.info(`Fetched ${candles.length} candles for ${tf}`)
         return { tf, success: true }
       } catch (error) {
-        console.error(`[Analysis] Failed to fetch ${tf} candles:`, error.message)
+        logger.error(`Failed to fetch ${tf} candles:`, error.message)
         result.candles[tf] = { count: 0, error: error.message }
         return { tf, success: false }
       }
@@ -650,7 +653,7 @@ async function runAnalysisCycle(symbol, researchData) {
     const primaryCandles = candlesByTF['1h']
     if (primaryCandles && primaryCandles.length > 0) {
       result.indicators = calculateIndicators(primaryCandles)
-      console.log(`[Analysis] Indicators calculated - RSI: ${result.indicators.rsi?.toFixed(2) ?? 'N/A'}`)
+      logger.info(`Indicators calculated - RSI: ${result.indicators.rsi?.toFixed(2) ?? 'N/A'}`)
     }
 
     // ========================================================================
@@ -664,14 +667,14 @@ async function runAnalysisCycle(symbol, researchData) {
       result.regime = detectRegime(result.indicators, primaryCandles?.[primaryCandles.length - 1]?.close)
     }
 
-    console.log(`[Analysis] Regime detected: ${result.regime}`)
+    logger.info(`Regime detected: ${result.regime}`)
 
     // ========================================================================
     // 4. Multi-Timeframe Trend Analysis
     // ========================================================================
 
     result.mtfTrend = analyzeMTFTrend(candlesByTF)
-    console.log(`[Analysis] MTF Trend: ${result.mtfTrend.dominantTrend}`)
+    logger.info(`MTF Trend: ${result.mtfTrend.dominantTrend}`)
 
     // ========================================================================
     // 5. Support & Resistance Levels
@@ -681,10 +684,10 @@ async function runAnalysisCycle(symbol, researchData) {
       result.levels = findSupportResistance(primaryCandles)
 
       if (result.levels.nearestSupport) {
-        console.log(`[Analysis] Nearest Support: ${result.levels.nearestSupport.price?.toFixed(2)}`)
+        logger.info(`Nearest Support: ${result.levels.nearestSupport.price?.toFixed(2)}`)
       }
       if (result.levels.nearestResistance) {
-        console.log(`[Analysis] Nearest Resistance: ${result.levels.nearestResistance.price?.toFixed(2)}`)
+        logger.info(`Nearest Resistance: ${result.levels.nearestResistance.price?.toFixed(2)}`)
       }
     }
 
@@ -694,7 +697,7 @@ async function runAnalysisCycle(symbol, researchData) {
 
     if (primaryCandles && primaryCandles.length > 0) {
       result.patterns = detectPatterns(primaryCandles)
-      console.log(`[Analysis] Patterns detected: ${result.patterns.summary?.totalPatterns ?? 0}`)
+      logger.info(`Patterns detected: ${result.patterns.summary?.totalPatterns ?? 0}`)
     }
 
     // ========================================================================
@@ -707,12 +710,12 @@ async function runAnalysisCycle(symbol, researchData) {
       socialMetrics: researchData?.socialMetrics ?? null
     }
 
-    console.log(`[Analysis] Analysis cycle completed for ${symbol}`)
+    logger.info(`Analysis cycle completed for ${symbol}`)
 
     return result
 
   } catch (error) {
-    console.error('[Analysis] Analysis cycle error:', error.message)
+    logger.error('Analysis cycle error:', error.message)
     return {
       ...result,
       error: error.message,

@@ -239,7 +239,7 @@ const formatDate = (dateString) => {
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Información Personal</h1>
-            <p class="text-slate-500 dark:text-text-secondary text-sm">
+            <p class="text-text-secondary text-sm">
               Administra tu información personal y datos de contacto.
             </p>
           </div>
@@ -256,7 +256,7 @@ const formatDate = (dateString) => {
               </button>
               <button 
                 @click="saveProfile"
-                class="px-6 py-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                class="px-6 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-colors flex items-center gap-2"
                 :disabled="isSaving || !hasChanges"
               >
                 <span v-if="isSaving" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
@@ -266,7 +266,7 @@ const formatDate = (dateString) => {
             <button 
               v-else
               @click="startEditing"
-              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors flex items-center gap-2"
             >
               <span class="material-symbols-outlined text-[18px]">edit</span>
               Editar Perfil
@@ -278,12 +278,13 @@ const formatDate = (dateString) => {
         <Transition name="fade">
           <div 
             v-if="errorMessage"
-            class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
+            role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
           >
             <span class="material-symbols-outlined text-danger">error</span>
             <p class="text-danger font-medium">{{ errorMessage }}</p>
-            <button @click="errorMessage = ''" class="ml-auto text-danger hover:text-red-700">
-              <span class="material-symbols-outlined text-[18px]">close</span>
+            <button type="button" aria-label="Dismiss error" @click="errorMessage = ''" class="ml-auto text-danger hover:text-red-700">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
             </button>
           </div>
         </Transition>
@@ -334,7 +335,7 @@ const formatDate = (dateString) => {
               >
                 Eliminar
               </button>
-              <label class="px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors cursor-pointer">
+              <label class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors cursor-pointer">
                 Subir Foto
                 <input 
                   type="file" 
@@ -361,11 +362,11 @@ const formatDate = (dateString) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Display Name -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Nombre de Usuario</label>
+                <label for="profile-nombre-de-usuario" class="block text-sm text-text-secondary mb-2">Nombre de Usuario</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white">
                   {{ profileForm.displayName || '—' }}
                 </div>
-                <input 
+                <input id="profile-nombre-de-usuario" 
                   v-else 
                   v-model="profileForm.displayName"
                   type="text"
@@ -375,11 +376,11 @@ const formatDate = (dateString) => {
 
               <!-- Legal Name -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Nombre Completo</label>
+                <label for="profile-nombre-completo" class="block text-sm text-text-secondary mb-2">Nombre Completo</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white">
                   {{ profileForm.legalName || '—' }}
                 </div>
-                <input 
+                <input id="profile-nombre-completo" 
                   v-else 
                   v-model="profileForm.legalName"
                   type="text"
@@ -389,12 +390,12 @@ const formatDate = (dateString) => {
 
               <!-- Birth Date -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Fecha de Nacimiento</label>
+                <label for="profile-fecha-de-nacimiento" class="block text-sm text-text-secondary mb-2">Fecha de Nacimiento</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span class="material-symbols-outlined text-text-secondary text-[18px]">cake</span>
                   {{ formatDate(profileForm.birthDate) || '—' }}
                 </div>
-                <input 
+                <input id="profile-fecha-de-nacimiento" 
                   v-else 
                   v-model="profileForm.birthDate"
                   type="date"
@@ -404,12 +405,12 @@ const formatDate = (dateString) => {
 
               <!-- Location -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Ubicación</label>
+                <label for="profile-ubicaci-n" class="block text-sm text-text-secondary mb-2">Ubicación</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span class="material-symbols-outlined text-text-secondary text-[18px]">location_on</span>
                   {{ profileForm.location || '—' }}
                 </div>
-                <input 
+                <input id="profile-ubicaci-n" 
                   v-else 
                   v-model="profileForm.location"
                   type="text"
@@ -439,12 +440,12 @@ const formatDate = (dateString) => {
 
               <!-- Phone -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Teléfono</label>
+                <label for="profile-tel-fono" class="block text-sm text-text-secondary mb-2">Teléfono</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span class="material-symbols-outlined text-text-secondary text-[18px]">phone</span>
                   {{ profileForm.phone || '—' }}
                 </div>
-                <input 
+                <input id="profile-tel-fono" 
                   v-else 
                   v-model="profileForm.phone"
                   type="tel"
@@ -454,12 +455,12 @@ const formatDate = (dateString) => {
 
               <!-- GitHub -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">GitHub / Portfolio</label>
+                <label for="profile-github-portfolio" class="block text-sm text-text-secondary mb-2">GitHub / Portfolio</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span class="material-symbols-outlined text-text-secondary text-[18px]">code</span>
                   {{ profileForm.github || '—' }}
                 </div>
-                <input 
+                <input id="profile-github-portfolio" 
                   v-else 
                   v-model="profileForm.github"
                   type="url"
@@ -470,12 +471,12 @@ const formatDate = (dateString) => {
 
               <!-- Website -->
               <div>
-                <label class="block text-sm text-text-secondary mb-2">Sitio Web</label>
+                <label for="profile-sitio-web" class="block text-sm text-text-secondary mb-2">Sitio Web</label>
                 <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span class="material-symbols-outlined text-text-secondary text-[18px]">language</span>
                   {{ profileForm.website || '—' }}
                 </div>
-                <input 
+                <input id="profile-sitio-web" 
                   v-else 
                   v-model="profileForm.website"
                   type="url"
@@ -494,11 +495,11 @@ const formatDate = (dateString) => {
             </div>
             
             <div>
-              <label class="block text-sm text-text-secondary mb-2">Biografía</label>
+              <label for="profile-biograf-a" class="block text-sm text-text-secondary mb-2">Biografía</label>
               <div v-if="!isEditing" class="px-4 py-3 bg-gray-50 dark:bg-background-dark rounded-lg text-slate-900 dark:text-white min-h-[80px]">
                 {{ profileForm.bio || '—' }}
               </div>
-              <textarea 
+              <textarea id="profile-biograf-a" 
                 v-else 
                 v-model="profileForm.bio"
                 rows="3"
@@ -516,7 +517,7 @@ const formatDate = (dateString) => {
       <template v-if="activeSection === 'preferences'">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Preferencias de Cuenta</h1>
-          <p class="text-slate-500 dark:text-text-secondary text-sm">
+          <p class="text-text-secondary text-sm">
             Configura el idioma, zona horaria y formato de visualización.
           </p>
         </div>
@@ -527,9 +528,9 @@ const formatDate = (dateString) => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Language -->
             <div>
-              <label class="block text-sm text-text-secondary mb-2">Idioma</label>
+              <label for="profile-idioma" class="block text-sm text-text-secondary mb-2">Idioma</label>
               <div class="relative">
-                <select class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
+                <select id="profile-idioma" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
                   <option value="es">Español</option>
                   <option value="en">English</option>
                   <option value="pt">Português</option>
@@ -540,9 +541,9 @@ const formatDate = (dateString) => {
 
             <!-- Timezone -->
             <div>
-              <label class="block text-sm text-text-secondary mb-2">Zona Horaria</label>
+              <label for="profile-zona-horaria" class="block text-sm text-text-secondary mb-2">Zona Horaria</label>
               <div class="relative">
-                <select class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
+                <select id="profile-zona-horaria" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
                   <option value="America/Bogota">Bogotá (UTC-5)</option>
                   <option value="America/Mexico_City">Ciudad de México (UTC-6)</option>
                   <option value="America/New_York">Nueva York (UTC-5)</option>
@@ -555,9 +556,9 @@ const formatDate = (dateString) => {
 
             <!-- Currency -->
             <div>
-              <label class="block text-sm text-text-secondary mb-2">Moneda Preferida</label>
+              <label for="profile-moneda-preferida" class="block text-sm text-text-secondary mb-2">Moneda Preferida</label>
               <div class="relative">
-                <select class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
+                <select id="profile-moneda-preferida" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
                   <option value="COP">🇨🇴 COP - Peso Colombiano</option>
                   <option value="USD">🇺🇸 USD - Dólar Estadounidense</option>
                   <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
@@ -570,9 +571,9 @@ const formatDate = (dateString) => {
 
             <!-- Date Format -->
             <div>
-              <label class="block text-sm text-text-secondary mb-2">Formato de Fecha</label>
+              <label for="profile-formato-de-fecha" class="block text-sm text-text-secondary mb-2">Formato de Fecha</label>
               <div class="relative">
-                <select class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
+                <select id="profile-formato-de-fecha" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none appearance-none pr-10">
                   <option value="DD/MM/YYYY">DD/MM/AAAA</option>
                   <option value="MM/DD/YYYY">MM/DD/AAAA</option>
                   <option value="YYYY-MM-DD">AAAA-MM-DD</option>
@@ -597,8 +598,8 @@ const formatDate = (dateString) => {
                 </div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <input type="checkbox" checked role="switch" aria-label="Correo Electrónico" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
 
@@ -611,8 +612,8 @@ const formatDate = (dateString) => {
                 </div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <input type="checkbox" checked role="switch" aria-label="Alertas de Precio" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
 
@@ -625,8 +626,8 @@ const formatDate = (dateString) => {
                 </div>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <input type="checkbox" role="switch" aria-label="Novedades y Promociones" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
           </div>
@@ -639,7 +640,7 @@ const formatDate = (dateString) => {
       <template v-if="activeSection === 'security'">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Seguridad de la Cuenta</h1>
-          <p class="text-slate-500 dark:text-text-secondary text-sm">
+          <p class="text-text-secondary text-sm">
             Administra la seguridad de tu cuenta, contraseña y sesiones.
           </p>
         </div>
@@ -656,7 +657,7 @@ const formatDate = (dateString) => {
                 <p class="text-xs text-text-secondary">Última actualización: hace 30 días</p>
               </div>
             </div>
-            <button class="px-4 py-2 bg-primary hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
+            <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors">
               Cambiar Contraseña
             </button>
           </div>
@@ -748,15 +749,3 @@ const formatDate = (dateString) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-</style>

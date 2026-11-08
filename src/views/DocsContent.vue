@@ -227,9 +227,9 @@ const frontendStores = [
 ]
 
 const methodColors = {
-  GET: 'bg-success text-white',
+  GET: 'bg-success text-white dark:text-background-dark',
   POST: 'bg-primary text-white',
-  PUT: 'bg-warning text-white',
+  PUT: 'bg-warning text-white dark:text-background-dark',
   PATCH: 'bg-purple-500 text-white',
   DELETE: 'bg-danger text-white',
 }
@@ -427,7 +427,6 @@ const methodColors = {
 │   └── main.js
 │
 ├── vite.config.js             # Vite configuration
-├── tailwind.config.js         # Tailwind CSS config
 └── package.json</pre>
           </div>
         </div>

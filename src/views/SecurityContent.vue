@@ -1,4 +1,5 @@
 <script setup>
+import BaseModal from '@/components/common/BaseModal.vue'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { logger } from '@/utils/logger'
@@ -67,7 +68,7 @@ const getStatusColor = (status) => {
     <!-- Header -->
     <div>
       <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Security</h1>
-      <p class="text-slate-500 dark:text-text-secondary text-sm">Manage your account security and privacy settings</p>
+      <p class="text-text-secondary text-sm">Manage your account security and privacy settings</p>
     </div>
 
     <!-- Security Score Card -->
@@ -139,18 +140,18 @@ const getStatusColor = (status) => {
         <div class="space-y-4">
           <label class="flex items-center justify-between cursor-pointer">
             <span class="text-sm text-slate-700 dark:text-gray-300">Email notifications</span>
-            <input type="checkbox" v-model="emailNotifications" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative"></div>
+            <input type="checkbox" role="switch" v-model="emailNotifications" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-card-dark dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative" aria-hidden="true"></div>
           </label>
           <label class="flex items-center justify-between cursor-pointer">
             <span class="text-sm text-slate-700 dark:text-gray-300">Login alerts</span>
-            <input type="checkbox" v-model="loginAlerts" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative"></div>
+            <input type="checkbox" role="switch" v-model="loginAlerts" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-card-dark dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative" aria-hidden="true"></div>
           </label>
           <label class="flex items-center justify-between cursor-pointer">
             <span class="text-sm text-slate-700 dark:text-gray-300">Withdrawal email confirmation</span>
-            <input type="checkbox" v-model="withdrawalConfirmation" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative"></div>
+            <input type="checkbox" role="switch" v-model="withdrawalConfirmation" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-card-dark dark:bg-border-dark peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary relative" aria-hidden="true"></div>
           </label>
         </div>
       </div>
@@ -223,53 +224,27 @@ const getStatusColor = (status) => {
     </div>
 
     <!-- Change Password Modal -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div 
-          v-if="showPasswordModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="showPasswordModal = false"
-        >
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div class="relative bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-border-dark">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Change Password</h2>
-              <button @click="showPasswordModal = false" class="p-2 hover:bg-gray-100 dark:hover:bg-border-dark rounded-lg">
-                <span class="material-symbols-outlined text-slate-500">close</span>
-              </button>
-            </div>
-            <div class="p-6 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Current Password</label>
-                <input v-model="passwordForm.current" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">New Password</label>
-                <input v-model="passwordForm.new" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Confirm New Password</label>
-                <input v-model="passwordForm.confirm" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
-              </div>
-            </div>
-            <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
-              <button @click="showPasswordModal = false" class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors">Cancel</button>
-              <button @click="changePassword" class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Update Password</button>
-            </div>
-          </div>
+    <BaseModal :open="showPasswordModal" title="Change Password" @close="showPasswordModal = false">
+      <div class="p-6 space-y-4">
+        <div>
+          <label for="security-current-password" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Current Password</label>
+          <input id="security-current-password" v-model="passwordForm.current" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
         </div>
-      </Transition>
-    </Teleport>
+        <div>
+          <label for="security-new-password" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">New Password</label>
+          <input id="security-new-password" v-model="passwordForm.new" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
+        </div>
+        <div>
+          <label for="security-confirm-new-password" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+          <input id="security-confirm-new-password" v-model="passwordForm.confirm" type="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-border-dark bg-white dark:bg-background-dark text-slate-900 dark:text-white focus:border-primary outline-none" />
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-border-dark bg-gray-50 dark:bg-background-dark">
+          <button @click="showPasswordModal = false" class="flex-1 py-3 px-4 border border-gray-300 dark:border-border-dark text-slate-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-border-dark transition-colors">Cancel</button>
+          <button @click="changePassword" class="flex-1 py-3 px-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-colors">Update Password</button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-</style>

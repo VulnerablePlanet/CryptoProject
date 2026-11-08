@@ -15,6 +15,7 @@ import { useFibonacciStore } from '@/stores/fibonacci'
 const FibonacciChart = defineAsyncComponent(() => import('@/components/fibonacci/FibonacciChart.vue'))
 import FibonacciLevels from '@/components/fibonacci/FibonacciLevels.vue'
 import { logger } from '@/utils/logger'
+import { getCandles } from '@/services/ohlc'
 
 // Store
 const store = useFibonacciStore()
@@ -38,9 +39,7 @@ const lastUpdatedText = computed(() => {
 const fetchCandleData = async () => {
   loadingCandles.value = true
   try {
-    const baseUrl = import.meta.env.PROD ? '/api/ohlc' : 'http://localhost:5000/api/ohlc'
-    const response = await fetch(`${baseUrl}/${store.selectedCoin}/candles?timeframe=${store.selectedTimeframe}&limit=100`)
-    const data = await response.json()
+    const data = await getCandles(store.selectedCoin, { timeframe: store.selectedTimeframe, limit: 100 })
     if (data.success) {
       candleData.value = data.candles || []
     }
@@ -114,16 +113,16 @@ onMounted(async () => {
       <div class="flex flex-wrap items-end gap-4 lg:gap-6">
         <!-- Coin Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-2">Criptomoneda</label>
-          <div class="flex gap-2 flex-wrap">
-            <button
+          <span class="block text-xs text-text-secondary mb-2">Criptomoneda</span>
+          <div role="group" aria-label="Criptomoneda" class="flex gap-2 flex-wrap">
+            <button type="button" :aria-pressed="store.selectedCoin === coin.id"
               v-for="coin in store.supportedCoins"
               :key="coin.id"
               @click="handleCoinSelect(coin.id)"
               :disabled="isLoading"
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
               :class="store.selectedCoin === coin.id
-                ? 'bg-warning text-white'
+                ? 'bg-warning text-white dark:text-background-dark'
                 : 'bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-text-secondary hover:bg-gray-200 dark:hover:bg-border-dark'"
             >
               {{ coin.symbol }}
@@ -135,9 +134,9 @@ onMounted(async () => {
 
         <!-- Timeframe Selector -->
         <div>
-          <label class="block text-xs text-text-secondary mb-2">Temporalidad</label>
-          <div class="flex gap-1">
-            <button
+          <span class="block text-xs text-text-secondary mb-2">Temporalidad</span>
+          <div role="group" aria-label="Temporalidad" class="flex gap-1">
+            <button type="button" :aria-pressed="store.selectedTimeframe === tf.value"
               v-for="tf in store.timeframes"
               :key="tf.value"
               @click="handleTimeframeSelect(tf.value)"
@@ -145,7 +144,7 @@ onMounted(async () => {
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 relative"
               :class="store.selectedTimeframe === tf.value
                 ? 'bg-warning/10 text-warning border border-warning/30'
-                : 'bg-gray-50 dark:bg-background-dark text-slate-500 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-border-dark'"
+                : 'bg-gray-50 dark:bg-background-dark text-text-secondary hover:bg-gray-100 dark:hover:bg-border-dark'"
             >
               {{ tf.label }}
               <span 
@@ -180,15 +179,16 @@ onMounted(async () => {
     <!-- Error Alert -->
     <div 
       v-if="hasError" 
+      role="alert"
       class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
     >
       <span class="material-symbols-outlined text-danger">error</span>
       <p class="text-danger text-sm flex-1">{{ store.error }}</p>
-      <button 
+      <button type="button" aria-label="Dismiss error" 
         @click="store.clearError()" 
         class="text-danger hover:text-danger/80 transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">close</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 

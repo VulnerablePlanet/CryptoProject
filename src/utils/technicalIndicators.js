@@ -2,56 +2,66 @@
  * Technical Indicators Utility Functions
  * Calculate common crypto trading indicators from OHLC data
  *
- * @deprecated FRONTEND DUPLICATE. The server now delegates all indicator
- *   calculations to the well-tested `technicalindicators` npm package
- *   (see server/trading/indicators/index.js). This frontend copy exists
- *   because the frontend uses different data shapes (scalar values for
- *   dashboard displays rather than full time series). Keep for now, but
- *   prefer server-side calculations for accuracy.
+ * Client-side copy used for chart overlays (Pro Trading) so charts do not
+ * need a server round trip per redraw. It MUST produce the same values as
+ * the server's `technicalindicators`-based implementation:
+ * test/utils/technicalIndicatorsParity.test.js enforces that parity.
  */
 
 /**
- * Calculate RSI (Relative Strength Index)
+ * Wilder's RSI series (the standard definition, and the one the server and
+ * the trading agent use via `technicalindicators`).
+ *
+ * Seed: simple average of the first `period` gains/losses; then Wilder
+ * smoothing avg = (prev * (period - 1) + current) / period.
+ * The previous implementation averaged only the last `period` changes
+ * (Cutler's RSI), so the same chart showed a different RSI here than in
+ * TA-Lib, signals and the agent (e.g. 46.03 vs 60.88).
+ *
+ * @param {number[]} prices - Closing prices
+ * @param {number} period
+ * @returns {(number|null)[]} RSI per price index (null until enough data)
+ */
+const wilderRSISeries = (prices, period) => {
+  const result = new Array(prices.length).fill(null)
+  if (!prices || prices.length < period + 1) return result
+
+  let avgGain = 0
+  let avgLoss = 0
+  for (let i = 1; i <= period; i++) {
+    const change = prices[i] - prices[i - 1]
+    if (change > 0) avgGain += change
+    else avgLoss -= change
+  }
+  avgGain /= period
+  avgLoss /= period
+
+  const toRSI = () => (avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss))
+  result[period] = toRSI()
+
+  for (let i = period + 1; i < prices.length; i++) {
+    const change = prices[i] - prices[i - 1]
+    const gain = change > 0 ? change : 0
+    const loss = change < 0 ? -change : 0
+    avgGain = (avgGain * (period - 1) + gain) / period
+    avgLoss = (avgLoss * (period - 1) + loss) / period
+    result[i] = toRSI()
+  }
+  return result
+}
+
+const round2 = (value) => (value === null ? null : Math.round(value * 100) / 100)
+
+/**
+ * Calculate RSI (Relative Strength Index, Wilder)
  * @param {number[]} prices - Array of closing prices
  * @param {number} period - RSI period (default: 14)
- * @returns {number} RSI value (0-100)
+ * @returns {number|null} RSI value (0-100)
  */
 export const calculateRSI = (prices, period = 14) => {
   if (!prices || prices.length < period + 1) return null
-
-  // Calculate price changes
-  const changes = []
-  for (let i = 1; i < prices.length; i++) {
-    changes.push(prices[i] - prices[i - 1])
-  }
-
-  // Get the last 'period' changes
-  const recentChanges = changes.slice(-period)
-
-  // Separate gains and losses
-  let gains = 0
-  let losses = 0
-
-  recentChanges.forEach(change => {
-    if (change > 0) {
-      gains += change
-    } else {
-      losses += Math.abs(change)
-    }
-  })
-
-  // Calculate averages
-  const avgGain = gains / period
-  const avgLoss = losses / period
-
-  // Avoid division by zero
-  if (avgLoss === 0) return 100
-
-  // Calculate RSI
-  const rs = avgGain / avgLoss
-  const rsi = 100 - (100 / (1 + rs))
-
-  return Math.round(rsi * 100) / 100
+  const series = wilderRSISeries(prices, period)
+  return round2(series[series.length - 1])
 }
 
 /**
@@ -298,22 +308,8 @@ export const generateSparklinePath = (data, width = 80, height = 30) => {
  */
 export const calculateRSIHistory = (prices, period = 14) => {
   if (!prices || prices.length < period + 1) return []
-  
-  const result = []
-  
-  // Pad with nulls for the first period values where RSI can't be calculated
-  for (let i = 0; i < period; i++) {
-    result.push(null)
-  }
-  
-  // Calculate RSI for each point where we have enough data
-  for (let i = period; i < prices.length; i++) {
-    const slice = prices.slice(0, i + 1)
-    const rsi = calculateRSI(slice, period)
-    result.push(rsi)
-  }
-  
-  return result
+  // Single O(n) pass (was O(n²): one full RSI per slice)
+  return wilderRSISeries(prices, period).map(round2)
 }
 
 export default {

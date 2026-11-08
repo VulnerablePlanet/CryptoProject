@@ -58,13 +58,13 @@ onUnmounted(() => {
     <span class="text-xs font-medium"
           :class="isConnected && cryptoStore.realtimeEnabled 
             ? 'text-success' 
-            : 'text-slate-500 dark:text-text-secondary'"
+            : 'text-text-secondary'"
     >
       {{ isConnected && cryptoStore.realtimeEnabled ? 'LIVE' : 'OFFLINE' }}
     </span>
     
     <!-- Last update -->
-    <span class="text-xs text-slate-400 dark:text-text-secondary font-mono hidden sm:inline">
+    <span class="text-xs text-text-secondary font-mono hidden sm:inline">
       {{ lastUpdateText }}
     </span>
   </div>

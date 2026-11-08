@@ -90,6 +90,16 @@ class KillSwitch extends EventEmitter {
   }
 
   /**
+   * Trigger the kill switch from an external risk source (e.g. the monitoring
+   * phase's volatility check, or a persisted trigger restored after restart).
+   * Idempotent: an already-triggered switch keeps its original reason.
+   */
+  trigger(reason, data = {}) {
+    if (this.triggered) return
+    this._trigger(reason, data)
+  }
+
+  /**
    * Reset kill switch (e.g., after manual review)
    */
   reset() {

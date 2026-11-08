@@ -38,6 +38,12 @@ const transactionSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  // Average cost per unit removed from the holding by an outflow
+  // (sell/transfer_out/withdraw). Lets a deleted outflow be reverted exactly.
+  costBasisPerUnit: {
+    type: Number,
+    min: 0
+  },
   fee: {
     type: Number,
     default: 0
