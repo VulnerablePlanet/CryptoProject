@@ -40,7 +40,8 @@ const initializeSocket = (io) => {
     logger.info('Client connected', {
       socketId: socket.id,
       authenticated: !!socket.user,
-      userEmail: socket.user?.email
+      // user id only: no personal data (email) in logs
+      userId: socket.user?._id?.toString()
     })
     
     // Join user's personal room if authenticated

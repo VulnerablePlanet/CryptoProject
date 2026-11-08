@@ -15,6 +15,7 @@ import { useFibonacciStore } from '@/stores/fibonacci'
 const FibonacciChart = defineAsyncComponent(() => import('@/components/fibonacci/FibonacciChart.vue'))
 import FibonacciLevels from '@/components/fibonacci/FibonacciLevels.vue'
 import { logger } from '@/utils/logger'
+import { getCandles } from '@/services/ohlc'
 
 // Store
 const store = useFibonacciStore()
@@ -38,9 +39,7 @@ const lastUpdatedText = computed(() => {
 const fetchCandleData = async () => {
   loadingCandles.value = true
   try {
-    const baseUrl = import.meta.env.PROD ? '/api/ohlc' : 'http://localhost:5000/api/ohlc'
-    const response = await fetch(`${baseUrl}/${store.selectedCoin}/candles?timeframe=${store.selectedTimeframe}&limit=100`)
-    const data = await response.json()
+    const data = await getCandles(store.selectedCoin, { timeframe: store.selectedTimeframe, limit: 100 })
     if (data.success) {
       candleData.value = data.candles || []
     }

@@ -1,10 +1,26 @@
 const { validationResult } = require('express-validator')
 const Transaction = require('../models/Transaction')
-const Portfolio = require('../models/Portfolio')
+const ledgerService = require('../services/ledgerService')
+const { LedgerError } = require('../domain/portfolioLedger')
 const Notification = require('../models/Notification')
 const { createLogger } = require('../utils/logger')
 
 const logger = createLogger('transactionController')
+
+/**
+ * Map ledger rule violations to client errors:
+ *  - REVERT_CONFLICT → 409 (the request conflicts with later history)
+ *  - anything else (oversell, invalid amount/price/type) → 400
+ */
+const sendLedgerError = (res, error) => {
+  const status = error.code === 'REVERT_CONFLICT' ? 409 : 400
+  return res.status(status).json({
+    success: false,
+    code: error.code,
+    message: error.message,
+    details: error.details
+  })
+}
 
 /**
  * @desc    Get user's transactions
@@ -139,9 +155,8 @@ const createTransaction = async (req, res) => {
 
     const totalValue = amount * priceAtTransaction
 
-    // Create transaction
-    const transaction = await Transaction.create({
-      user: req.user._id,
+    // Transaction + portfolio update as one consistent ledger operation
+    const { transaction, portfolio } = await ledgerService.recordTransaction(req.user._id, {
       type,
       coinId,
       symbol: symbol.toUpperCase(),
@@ -158,56 +173,6 @@ const createTransaction = async (req, res) => {
       tradingPair: tradingPair || `${symbol.toUpperCase()}/USDT`,
       status: 'completed'
     })
-
-    // Update portfolio based on transaction type
-    let portfolio = await Portfolio.findOne({ user: req.user._id })
-    
-    if (!portfolio) {
-      portfolio = new Portfolio({
-        user: req.user._id,
-        holdings: [],
-        totalInvested: 0
-      })
-    }
-
-    const holdingIndex = portfolio.holdings.findIndex(h => h.coinId === coinId)
-
-    if (type === 'buy' || type === 'transfer_in' || type === 'deposit') {
-      // Add to holdings
-      if (holdingIndex >= 0) {
-        const existing = portfolio.holdings[holdingIndex]
-        const totalCost = (existing.amount * existing.avgBuyPrice) + (amount * priceAtTransaction)
-        const newAmount = existing.amount + amount
-        existing.avgBuyPrice = newAmount > 0 ? totalCost / newAmount : 0
-        existing.amount = newAmount
-      } else {
-        portfolio.holdings.push({
-          coinId,
-          symbol: symbol.toUpperCase(),
-          name: coinName,
-          amount,
-          avgBuyPrice: priceAtTransaction
-        })
-      }
-      portfolio.totalInvested += totalValue
-    } else if (type === 'sell' || type === 'transfer_out' || type === 'withdraw') {
-      // Remove from holdings
-      if (holdingIndex >= 0) {
-        const existing = portfolio.holdings[holdingIndex]
-        existing.amount = Math.max(0, existing.amount - amount)
-        
-        // Remove holding if amount is 0
-        if (existing.amount === 0) {
-          portfolio.holdings.splice(holdingIndex, 1)
-        }
-        
-        // Reduce total invested proportionally
-        const soldValue = amount * existing.avgBuyPrice
-        portfolio.totalInvested = Math.max(0, portfolio.totalInvested - soldValue)
-      }
-    }
-
-    await portfolio.save()
 
     // Emit realtime update via Socket.io
     const socketHelpers = req.app.get('socketHelpers')
@@ -244,6 +209,9 @@ const createTransaction = async (req, res) => {
       portfolio
     })
   } catch (error) {
+    if (error instanceof LedgerError) {
+      return sendLedgerError(res, error)
+    }
     logger.error('Failed to create transaction', {
       error,
       userId: req.user?._id?.toString(),
@@ -264,77 +232,20 @@ const createTransaction = async (req, res) => {
  */
 const deleteTransaction = async (req, res) => {
   try {
-    // First, find the transaction to get its details before deleting
-    const transaction = await Transaction.findOne({
-      _id: req.params.id,
-      user: req.user._id
-    })
+    const result = await ledgerService.deleteTransaction(req.user._id, req.params.id)
 
-    if (!transaction) {
+    if (!result) {
       return res.status(404).json({
         success: false,
         message: 'Transaction not found'
       })
     }
 
-    // Revert the portfolio changes
-    let portfolio = await Portfolio.findOne({ user: req.user._id })
-
-    if (portfolio) {
-      const { type, coinId, symbol, coinName, amount, priceAtTransaction, totalValue } = transaction
-      const holdingIndex = portfolio.holdings.findIndex(h => h.coinId === coinId)
-
-      // Reverse the original transaction effect
-      if (type === 'buy' || type === 'transfer_in' || type === 'deposit') {
-        // Original was adding: reverse it by removing the bought lot AND
-        // recomputing the weighted-average buy price from the remaining cost.
-        // (Previously avgBuyPrice was left stale, corrupting the average.)
-        if (holdingIndex >= 0) {
-          const existing = portfolio.holdings[holdingIndex]
-          const remainingCost = (existing.amount * existing.avgBuyPrice) - (amount * priceAtTransaction)
-          const newAmount = existing.amount - amount
-
-          if (newAmount > 0) {
-            existing.avgBuyPrice = Math.max(0, remainingCost / newAmount)
-            existing.amount = newAmount
-          } else {
-            // Nothing left of this holding — remove it entirely.
-            portfolio.holdings.splice(holdingIndex, 1)
-          }
-        }
-        portfolio.totalInvested = Math.max(0, portfolio.totalInvested - totalValue)
-      } else if (type === 'sell' || type === 'transfer_out' || type === 'withdraw') {
-        // Original was removing, so now we add back
-        if (holdingIndex >= 0) {
-          const existing = portfolio.holdings[holdingIndex]
-          existing.amount += amount
-        } else {
-          // Re-create the holding if it was removed
-          portfolio.holdings.push({
-            coinId,
-            symbol: symbol.toUpperCase(),
-            name: coinName,
-            amount,
-            avgBuyPrice: priceAtTransaction
-          })
-        }
-        // Add back to total invested
-        portfolio.totalInvested += amount * priceAtTransaction
-      }
-
-      // Mark holdings array as modified for Mongoose to detect changes
-      portfolio.markModified('holdings')
-      await portfolio.save()
-
-      // Emit realtime portfolio update
-      const socketHelpers = req.app.get('socketHelpers')
-      if (socketHelpers) {
-        socketHelpers.emitPortfolioUpdate(req.user._id.toString(), portfolio)
-      }
+    const { portfolio } = result
+    const socketHelpers = req.app.get('socketHelpers')
+    if (portfolio && socketHelpers) {
+      socketHelpers.emitPortfolioUpdate(req.user._id.toString(), portfolio)
     }
-
-    // Now delete the transaction
-    await Transaction.findByIdAndDelete(req.params.id)
 
     res.json({
       success: true,
@@ -342,6 +253,9 @@ const deleteTransaction = async (req, res) => {
       portfolio
     })
   } catch (error) {
+    if (error instanceof LedgerError) {
+      return sendLedgerError(res, error)
+    }
     logger.error('Failed to delete transaction', {
       error,
       userId: req.user?._id?.toString(),

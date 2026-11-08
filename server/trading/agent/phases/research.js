@@ -13,6 +13,9 @@
  */
 
 const axios = require('axios')
+const { createLogger } = require('../../../utils/logger')
+
+const logger = createLogger('agent:research')
 
 // Allow injection of axios mock for testing
 let _axios = axios
@@ -91,7 +94,7 @@ async function fetchFearAndGreed() {
     setCache('fearGreed', data)
     return data
   } catch (error) {
-    console.error('[Research] Fear & Greed fetch failed:', error.message)
+    logger.error('Fear & Greed fetch failed:', error.message)
     const cached = getCached('fearGreed')
     if (cached) return cached
     // Return neutral fallback if no cache
@@ -111,7 +114,7 @@ async function fetchCryptoPanic(currency = 'BTC') {
 
   // If no API key, return neutral sentiment gracefully
   if (!apiKey) {
-    console.log('[Research] CryptoPanic: No API key, returning neutral sentiment')
+    logger.info('CryptoPanic: No API key, returning neutral sentiment')
     return { news: [], sentimentScore: 0.5 }
   }
 
@@ -175,7 +178,7 @@ async function fetchCryptoPanic(currency = 'BTC') {
     setCache('cryptoPanic', result)
     return result
   } catch (error) {
-    console.error('[Research] CryptoPanic fetch failed:', error.message)
+    logger.error('CryptoPanic fetch failed:', error.message)
     const cached = getCached('cryptoPanic')
     if (cached) return cached
     return { news: [], sentimentScore: 0.5 }
@@ -212,7 +215,7 @@ async function fetchSocialMetrics() {
     setCache('apeWisdom', result)
     return result
   } catch (error) {
-    console.error('[Research] ApeWisdom fetch failed:', error.message)
+    logger.error('ApeWisdom fetch failed:', error.message)
     const cached = getCached('apeWisdom')
     if (cached) return cached
     return { topMentions: [], totalMentions: 0 }
@@ -226,7 +229,7 @@ async function fetchSocialMetrics() {
  * @returns {Promise<{fearGreed: object, sentiment: object, socialMetrics: object, timestamp: number}>}
  */
 async function runResearchCycle(symbol) {
-  console.log(`[Research] Starting research cycle for ${symbol}`)
+  logger.info(`Starting research cycle for ${symbol}`)
 
   // Extract base currency from symbol
   const baseCurrency = symbol.split('/')[0]
@@ -260,7 +263,7 @@ async function runResearchCycle(symbol) {
     timestamp: Date.now()
   }
 
-  console.log(`[Research] Completed: FG=${fearGreed.classification}, ` +
+  logger.info(`Completed: FG=${fearGreed.classification}, ` +
     `Sentiment=${cryptoPanic.sentimentScore.toFixed(2)}, ` +
     `Social=${socialMetrics.totalMentions} mentions`)
 

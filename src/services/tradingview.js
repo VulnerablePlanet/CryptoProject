@@ -3,13 +3,11 @@
  * Handles data transformation and fetching for TradingView charts
  */
 
-// API endpoint for OHLC data
-// API endpoint for OHLC data
-const API_BASE = import.meta.env.PROD
-  ? '/api/ohlc'
-  : 'http://localhost:5000/api/ohlc'
-
 import { logger } from '@/utils/logger'
+// Authenticated OHLC client (raw fetch() here sent no token → always 401)
+import { getCandles, syncCoin, getStatus } from '@/services/ohlc'
+
+const errorMessage = (error) => error.response?.data?.message || error.message
 
 // ============================================================================
 // Data Transformation
@@ -96,10 +94,7 @@ export const transformLineData = (candles, priceType = 'close') => {
  */
 export const fetchHistoricalData = async (coinId, timeframe = '1h', limit = 100) => {
   try {
-    const response = await fetch(
-      `${API_BASE}/${coinId}/candles?timeframe=${timeframe}&limit=${limit}`
-    )
-    const data = await response.json()
+    const data = await getCandles(coinId, { timeframe, limit })
     
     if (data.success) {
       return {
@@ -119,7 +114,7 @@ export const fetchHistoricalData = async (coinId, timeframe = '1h', limit = 100)
     logger.error('TradingView Service - fetchHistoricalData error:', error)
     return {
       success: false,
-      error: error.message,
+      error: errorMessage(error),
       candles: []
     }
   }
@@ -134,15 +129,7 @@ export const fetchHistoricalData = async (coinId, timeframe = '1h', limit = 100)
  */
 export const syncCoinData = async (coinId, timeframe = '1h') => {
   try {
-    const response = await fetch(`${API_BASE}/${coinId}/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timeframe,
-        vs_currency: 'usd'
-      })
-    })
-    const data = await response.json()
+    const data = await syncCoin(coinId, { timeframe, vs_currency: 'usd' })
     
     return {
       success: data.success,
@@ -153,7 +140,7 @@ export const syncCoinData = async (coinId, timeframe = '1h') => {
     logger.error('TradingView Service - syncCoinData error:', error)
     return {
       success: false,
-      error: error.message
+      error: errorMessage(error)
     }
   }
 }
@@ -165,8 +152,7 @@ export const syncCoinData = async (coinId, timeframe = '1h') => {
  */
 export const getApiStatus = async () => {
   try {
-    const response = await fetch(`${API_BASE}/status`)
-    const data = await response.json()
+    const data = await getStatus()
     
     return {
       success: data.success,
@@ -176,7 +162,7 @@ export const getApiStatus = async () => {
     logger.error('TradingView Service - getApiStatus error:', error)
     return {
       success: false,
-      error: error.message,
+      error: errorMessage(error),
       status: {}
     }
   }

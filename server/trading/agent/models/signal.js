@@ -113,4 +113,4 @@ signalSchema.index({ symbol: 1, timestamp: -1 })
 signalSchema.index({ type: 1, timestamp: -1 })
 signalSchema.index({ decision: 1, timestamp: -1 })
 
-module.exports = mongoose.model('Signal', signalSchema)
+module.exports = mongoose.models.Signal || mongoose.model('Signal', signalSchema)

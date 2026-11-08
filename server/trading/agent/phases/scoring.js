@@ -11,6 +11,9 @@
  */
 
 const ccxtService = require('../../../services/ccxtService')
+const { createLogger } = require('../../../utils/logger')
+
+const logger = createLogger('agent:scoring')
 
 // Scoring weights (must sum to 1.0)
 const WEIGHTS = {
@@ -481,7 +484,7 @@ function calculatePriceTargets(direction, analysis, score) {
  * @returns {Promise<object>} Complete scoring result
  */
 async function runScoringCycle(symbol, researchData, analysisData) {
-  console.log(`[Scoring] Starting scoring cycle for ${symbol}`)
+  logger.info(`Starting scoring cycle for ${symbol}`)
 
   try {
     // Validate inputs
@@ -590,13 +593,13 @@ async function runScoringCycle(symbol, researchData, analysisData) {
       timestamp: Date.now()
     }
 
-    console.log(`[Scoring] Completed: ${decisionResult.decision} | Score: ${(compositeScore * 100).toFixed(1)}% | Direction: ${direction}`)
-    console.log(`[Scoring] Breakdown: T=${(techScore * WEIGHTS.technical * 100).toFixed(0)}% R=${(regimeScore.score * WEIGHTS.regime * 100).toFixed(0)}% S=${(sentimentScore.score * WEIGHTS.sentiment * 100).toFixed(0)}%`)
+    logger.info(`Completed: ${decisionResult.decision} | Score: ${(compositeScore * 100).toFixed(1)}% | Direction: ${direction}`)
+    logger.info(`Breakdown: T=${(techScore * WEIGHTS.technical * 100).toFixed(0)}% R=${(regimeScore.score * WEIGHTS.regime * 100).toFixed(0)}% S=${(sentimentScore.score * WEIGHTS.sentiment * 100).toFixed(0)}%`)
 
     return result
 
   } catch (error) {
-    console.error('[Scoring] Phase failed:', error.message)
+    logger.error('Phase failed:', error.message)
     throw error
   }
 }

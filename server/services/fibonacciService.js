@@ -16,6 +16,13 @@
 const ohlcService = require('./ohlcService')
 const { findPivots, filterAlternatingPivots, getRecentSwings, detectTrend, calculateRetracementLevels, calculateExtensionLevels, findNearestLevel } = require('./pivotDetectionService')
 
+/**
+ * Expected outcome when the market data cannot support an analysis (too few
+ * candles or pivots). Controllers answer 422 with this message instead of a
+ * generic 500.
+ */
+const insufficientData = (message) => Object.assign(new Error(message), { code: 'INSUFFICIENT_DATA' })
+
 // ============================================================================
 // Fibonacci Ratios
 // ============================================================================
@@ -63,21 +70,21 @@ const analyzeFibonacci = async (coinId, timeframe = '4h', options = {}) => {
     )
     
     if (!candles || candles.length < lookback * 2 + 1) {
-      throw new Error(`Insufficient candle data. Need at least ${lookback * 2 + 1} candles, got ${candles?.length || 0}`)
+      throw insufficientData(`Insufficient candle data. Need at least ${lookback * 2 + 1} candles, got ${candles?.length || 0}`)
     }
     
     // Find pivot points
     const allPivots = findPivots(candles, lookback, threshold)
     
     if (allPivots.length < 2) {
-      throw new Error('Could not detect enough pivot points for Fibonacci analysis')
+      throw insufficientData('Could not detect enough pivot points for Fibonacci analysis')
     }
     
     // Get most recent swings
     const { swingHigh, swingLow } = getRecentSwings(allPivots)
     
     if (!swingHigh || !swingLow) {
-      throw new Error('Could not identify swing high and swing low')
+      throw insufficientData('Could not identify swing high and swing low')
     }
     
     // Detect trend

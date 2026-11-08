@@ -5,6 +5,14 @@
 > Alcance: frontend Vue/Pinia, backend Express/Socket.io, trading agent, algoritmos, datos, seguridad, DevOps, documentación.  
 > Restricción aplicada: no se ejecutó `npm run build`.
 
+> **Estado al 2026-11-08 (verificado en Linux, Node 22):** B-001 y B-002 están resueltos:
+> `npm run lint` termina con 0 errores, `npm test` ejecuta la suite unitaria y
+> `npm run test:integration` prueba el ledger y la persistencia del agente contra
+> MongoDB real. B-004 está mitigado: el kill switch se evalúa con métricas reales,
+> cancela órdenes y persiste; el modo real exige `AGENT_ALLOW_LIVE_TRADING=true`.
+> Sigue pendiente la conciliación de posiciones cerradas con el exchange.
+> El resto del documento conserva el diagnóstico original como referencia histórica.
+
 ---
 
 ## 1. Resumen ejecutivo

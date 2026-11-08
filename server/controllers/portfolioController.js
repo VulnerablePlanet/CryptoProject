@@ -1,5 +1,7 @@
 const { validationResult } = require('express-validator')
 const Portfolio = require('../models/Portfolio')
+const ledgerService = require('../services/ledgerService')
+const ledger = require('../domain/portfolioLedger')
 const { createLogger } = require('../utils/logger')
 
 const logger = createLogger('portfolioController')
@@ -13,13 +15,19 @@ const getPortfolio = async (req, res) => {
   try {
     let portfolio = await Portfolio.findOne({ user: req.user._id })
     
-    // Create portfolio if doesn't exist
+    // Create portfolio if doesn't exist (a concurrent request may create it
+    // first: the unique index rejects the duplicate, so read it back)
     if (!portfolio) {
-      portfolio = await Portfolio.create({
-        user: req.user._id,
-        holdings: [],
-        totalInvested: 0
-      })
+      try {
+        portfolio = await Portfolio.create({
+          user: req.user._id,
+          holdings: [],
+          totalInvested: 0
+        })
+      } catch (error) {
+        if (error?.code !== 11000) throw error
+        portfolio = await Portfolio.findOne({ user: req.user._id })
+      }
     }
     
     res.json({
@@ -52,50 +60,25 @@ const addHolding = async (req, res) => {
 
     const { coinId, symbol, name, amount, buyPrice, notes } = req.body
 
-    let portfolio = await Portfolio.findOne({ user: req.user._id })
-    
-    if (!portfolio) {
-      portfolio = new Portfolio({
-        user: req.user._id,
-        holdings: [],
-        totalInvested: 0
-      })
-    }
-
-    // Check if holding already exists
-    const existingIndex = portfolio.holdings.findIndex(h => h.coinId === coinId)
-    
-    if (existingIndex >= 0) {
-      // Update existing holding (average buy price calculation)
-      const existing = portfolio.holdings[existingIndex]
-      const totalCost = (existing.amount * existing.avgBuyPrice) + (amount * buyPrice)
-      const newAmount = existing.amount + amount
-      existing.avgBuyPrice = newAmount > 0 ? totalCost / newAmount : 0
-      existing.amount = newAmount
-      if (notes) existing.notes = notes
-    } else {
-      // Add new holding
-      portfolio.holdings.push({
-        coinId,
-        symbol: symbol.toUpperCase(),
-        name,
-        amount,
-        avgBuyPrice: buyPrice,
-        notes: notes || ''
-      })
-    }
-
-    // Update total invested
-    portfolio.totalInvested += amount * buyPrice
-
-    await portfolio.save()
+    const { portfolio, result: existed } = await ledgerService.updatePortfolio(
+      req.user._id,
+      (p) => {
+        const existed = p.holdings.some((h) => h.coinId === coinId)
+        ledger.addLot(p, { coinId, symbol, name, amount, price: buyPrice, notes })
+        return existed
+      },
+      { create: true }
+    )
 
     res.status(201).json({
       success: true,
-      message: existingIndex >= 0 ? 'Holding updated' : 'Holding added',
+      message: existed ? 'Holding updated' : 'Holding added',
       portfolio
     })
   } catch (error) {
+    if (error instanceof ledger.LedgerError) {
+      return res.status(400).json({ success: false, code: error.code, message: error.message })
+    }
     logger.error('Failed to add holding', {
       error,
       userId: req.user?._id?.toString(),
@@ -118,44 +101,29 @@ const updateHolding = async (req, res) => {
     const { holdingId } = req.params
     const { amount, avgBuyPrice, notes } = req.body
 
-    const portfolio = await Portfolio.findOne({ user: req.user._id })
-    
-    if (!portfolio) {
-      return res.status(404).json({
-        success: false,
-        message: 'Portfolio not found'
-      })
+    const outcome = await ledgerService.updatePortfolio(req.user._id, (portfolio) => {
+      const holding = portfolio.holdings.id(holdingId)
+      if (!holding) return false
+      ledger.updateHoldingValues(portfolio, holding, { amount, avgBuyPrice, notes })
+      return true
+    })
+
+    if (!outcome) {
+      return res.status(404).json({ success: false, message: 'Portfolio not found' })
     }
-
-    const holding = portfolio.holdings.id(holdingId)
-    
-    if (!holding) {
-      return res.status(404).json({
-        success: false,
-        message: 'Holding not found'
-      })
+    if (!outcome.result) {
+      return res.status(404).json({ success: false, message: 'Holding not found' })
     }
-
-    // Calculate investment difference for totalInvested update
-    const oldInvestment = holding.amount * holding.avgBuyPrice
-    const newInvestment = (amount ?? holding.amount) * (avgBuyPrice ?? holding.avgBuyPrice)
-
-    // Update fields
-    if (amount !== undefined) holding.amount = amount
-    if (avgBuyPrice !== undefined) holding.avgBuyPrice = avgBuyPrice
-    if (notes !== undefined) holding.notes = notes
-
-    // Update total invested
-    portfolio.totalInvested = portfolio.totalInvested - oldInvestment + newInvestment
-
-    await portfolio.save()
 
     res.json({
       success: true,
       message: 'Holding updated',
-      portfolio
+      portfolio: outcome.portfolio
     })
   } catch (error) {
+    if (error instanceof ledger.LedgerError) {
+      return res.status(400).json({ success: false, code: error.code, message: error.message })
+    }
     logger.error('Failed to update holding', {
       error,
       userId: req.user?._id?.toString(),
@@ -177,37 +145,21 @@ const deleteHolding = async (req, res) => {
   try {
     const { holdingId } = req.params
 
-    const portfolio = await Portfolio.findOne({ user: req.user._id })
-    
-    if (!portfolio) {
-      return res.status(404).json({
-        success: false,
-        message: 'Portfolio not found'
-      })
+    const outcome = await ledgerService.updatePortfolio(req.user._id, (portfolio) =>
+      ledger.removeHolding(portfolio, holdingId)
+    )
+
+    if (!outcome) {
+      return res.status(404).json({ success: false, message: 'Portfolio not found' })
     }
-
-    const holding = portfolio.holdings.id(holdingId)
-    
-    if (!holding) {
-      return res.status(404).json({
-        success: false,
-        message: 'Holding not found'
-      })
+    if (!outcome.result) {
+      return res.status(404).json({ success: false, message: 'Holding not found' })
     }
-
-    // Update total invested before removing
-    const investment = holding.amount * holding.avgBuyPrice
-    portfolio.totalInvested = Math.max(0, portfolio.totalInvested - investment)
-
-    // Remove holding
-    portfolio.holdings.pull(holdingId)
-
-    await portfolio.save()
 
     res.json({
       success: true,
       message: 'Holding deleted',
-      portfolio
+      portfolio: outcome.portfolio
     })
   } catch (error) {
     logger.error('Failed to delete holding', {
@@ -229,24 +181,19 @@ const deleteHolding = async (req, res) => {
  */
 const clearPortfolio = async (req, res) => {
   try {
-    const portfolio = await Portfolio.findOne({ user: req.user._id })
-    
-    if (!portfolio) {
-      return res.status(404).json({
-        success: false,
-        message: 'Portfolio not found'
-      })
+    const outcome = await ledgerService.updatePortfolio(req.user._id, (portfolio) => {
+      portfolio.holdings = []
+      portfolio.totalInvested = 0
+    })
+
+    if (!outcome) {
+      return res.status(404).json({ success: false, message: 'Portfolio not found' })
     }
-
-    portfolio.holdings = []
-    portfolio.totalInvested = 0
-
-    await portfolio.save()
 
     res.json({
       success: true,
       message: 'Portfolio cleared',
-      portfolio
+      portfolio: outcome.portfolio
     })
   } catch (error) {
     logger.error('Failed to clear portfolio', { error, userId: req.user?._id?.toString() })

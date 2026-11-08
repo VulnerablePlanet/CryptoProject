@@ -3,11 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import CandlestickChart from '@/components/crypto/CandlestickChart.vue'
 import { calculateAllIndicators, getRSIInterpretation, generateSparklinePath } from '@/utils/technicalIndicators'
 import { logger } from '@/utils/logger'
+import { getCandles, syncCoin, getStatus } from '@/services/ohlc'
 
-// API endpoints for OHLC data
-const API_BASE = import.meta.env.PROD 
-  ? '/api/ohlc' 
-  : 'http://localhost:5000/api/ohlc'
 
 // State
 const selectedCoin = ref('bitcoin')
@@ -69,10 +66,7 @@ const fetchCandles = async () => {
   error.value = null
   
   try {
-    const response = await fetch(
-      `${API_BASE}/${selectedCoin.value}/candles?timeframe=${selectedTimeframe.value}&limit=100`
-    )
-    const data = await response.json()
+    const data = await getCandles(selectedCoin.value, { timeframe: selectedTimeframe.value, limit: 100 })
     
     if (data.success) {
       candleData.value = data.candles || []
@@ -80,7 +74,7 @@ const fetchCandles = async () => {
       error.value = data.message || 'Failed to fetch candle data'
     }
   } catch (err) {
-    error.value = err.message
+    error.value = err.response?.data?.message || err.message
   } finally {
     loading.value = false
   }
@@ -92,15 +86,7 @@ const syncData = async () => {
   error.value = null
   
   try {
-    const response = await fetch(`${API_BASE}/${selectedCoin.value}/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timeframe: selectedTimeframe.value,
-        vs_currency: 'usd'
-      })
-    })
-    const data = await response.json()
+    const data = await syncCoin(selectedCoin.value, { timeframe: selectedTimeframe.value, vs_currency: 'usd' })
     
     if (data.success) {
       // Refresh candles after sync
@@ -109,7 +95,7 @@ const syncData = async () => {
       error.value = data.message || 'Sync failed'
     }
   } catch (err) {
-    error.value = err.message
+    error.value = err.response?.data?.message || err.message
   } finally {
     syncing.value = false
   }
@@ -118,8 +104,7 @@ const syncData = async () => {
 // Fetch rate limit metrics
 const fetchMetrics = async () => {
   try {
-    const response = await fetch(`${API_BASE}/status`)
-    const data = await response.json()
+    const data = await getStatus()
     if (data.success) {
       rateLimitMetrics.value = data.service
     }

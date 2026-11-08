@@ -4,6 +4,21 @@
  */
 
 const fibonacciService = require('../services/fibonacciService')
+const { createLogger } = require('../utils/logger')
+
+const logger = createLogger('fibonacciController')
+
+/**
+ * Not enough market data → 422 with an actionable message.
+ * Anything else → generic 500 (internal error details stay in the logs).
+ */
+const sendError = (res, error, context, fallbackMessage) => {
+  if (error.code === 'INSUFFICIENT_DATA') {
+    return res.status(422).json({ success: false, code: error.code, message: error.message })
+  }
+  logger.error(context, error)
+  return res.status(500).json({ success: false, message: fallbackMessage })
+}
 
 /**
  * Get full Fibonacci analysis for a coin
@@ -55,11 +70,7 @@ const getAnalysis = async (req, res) => {
 
     res.json(analysis)
   } catch (error) {
-    console.error('Fibonacci analysis error:', error.message)
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to perform Fibonacci analysis'
-    })
+    sendError(res, error, 'Fibonacci analysis failed', 'Failed to perform Fibonacci analysis')
   }
 }
 
@@ -89,11 +100,7 @@ const getPivots = async (req, res) => {
 
     res.json(result)
   } catch (error) {
-    console.error('Pivot detection error:', error.message)
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to detect pivot points'
-    })
+    sendError(res, error, 'Pivot detection failed', 'Failed to detect pivot points')
   }
 }
 

@@ -12,13 +12,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // CoinGecko API proxy (must come BEFORE general /api)
-      '/api/coingecko': {
-        target: 'https://api.coingecko.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/coingecko/, '/api/v3'),
-        secure: true
-      },
+      // /api/coingecko is served by the backend (rate limited + API key),
+      // same as in production — no separate dev-only proxy.
       // Backend API proxy (catches all other /api/* routes)
       '/api': {
         target: 'http://localhost:5000',
@@ -30,6 +25,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/**/*.test.js'],
+    // Real-MongoDB tests run separately: npm run test:integration
+    exclude: ['test/integration/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html']

@@ -21,6 +21,9 @@ const fetchingPrice = ref(false)
 
 // Modal state
 const showRecordModal = ref(false)
+// Server-side ledger errors (e.g. selling more than is held) shown to the user
+const formError = ref('')
+const pageError = ref('')
 const recordForm = ref({
   type: 'buy',
   coinId: '',
@@ -133,6 +136,7 @@ const selectCoin = async (coin) => {
 
 const openRecordModal = () => {
   resetForm()
+  formError.value = ''
   showRecordModal.value = true
 }
 
@@ -175,12 +179,18 @@ const handleSubmit = async () => {
 
   if (result.success) {
     closeRecordModal()
+  } else {
+    formError.value = result.error || 'Error creating transaction'
   }
 }
 
 const handleDelete = async (id) => {
   if (confirm('Are you sure you want to delete this transaction?')) {
-    await transactionStore.deleteTransaction(id)
+    pageError.value = ''
+    const result = await transactionStore.deleteTransaction(id)
+    if (!result?.success) {
+      pageError.value = result?.error || 'Error deleting transaction'
+    }
   }
 }
 
@@ -216,6 +226,19 @@ onMounted(async () => {
       >
         <span class="material-symbols-outlined text-[20px]">add</span>
         Record Transaction
+      </button>
+    </div>
+
+    <!-- Ledger error (e.g. deleting a buy whose coins were sold later) -->
+    <div
+      v-if="pageError"
+      role="alert"
+      class="bg-danger/10 border border-danger/30 rounded-xl p-4 flex items-center gap-3"
+    >
+      <span class="material-symbols-outlined text-danger" aria-hidden="true">error</span>
+      <p class="text-danger text-sm flex-1">{{ pageError }}</p>
+      <button type="button" aria-label="Dismiss error" @click="pageError = ''" class="text-danger hover:text-danger/80 transition-colors">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
       </button>
     </div>
 
@@ -378,6 +401,14 @@ onMounted(async () => {
 
       <!-- Body -->
       <div class="p-6 space-y-5">
+        <div
+          v-if="formError"
+          role="alert"
+          class="p-3 rounded-lg bg-danger/10 border border-danger/30 text-danger text-sm flex items-start gap-2"
+        >
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">error</span>
+          <span>{{ formError }}</span>
+        </div>
         <!-- Type -->
         <div>
           <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Transaction Type</span>

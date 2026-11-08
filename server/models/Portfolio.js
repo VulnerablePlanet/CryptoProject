@@ -42,36 +42,14 @@ const portfolioSchema = new mongoose.Schema({
     default: 0
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  // Concurrent read-modify-write of `holdings` (two requests for the same
+  // user) used to lose updates silently; now the second save fails with a
+  // VersionError and ledgerService retries it on fresh data.
+  optimisticConcurrency: true
 })
 
-// Method to add or update a holding
-portfolioSchema.methods.addHolding = function(coinData, amount, buyPrice) {
-  const existingIndex = this.holdings.findIndex(h => h.coinId === coinData.id)
-  
-  if (existingIndex >= 0) {
-    // Update existing holding
-    const existing = this.holdings[existingIndex]
-    const totalCost = (existing.amount * existing.avgBuyPrice) + (amount * buyPrice)
-    const newAmount = existing.amount + amount
-    existing.avgBuyPrice = totalCost / newAmount
-    existing.amount = newAmount
-  } else {
-    // Add new holding
-    this.holdings.push({
-      coinId: coinData.id,
-      symbol: coinData.symbol,
-      name: coinData.name,
-      amount: amount,
-      avgBuyPrice: buyPrice
-    })
-  }
-  
-  // Update total invested
-  this.totalInvested += amount * buyPrice
-  
-  return this.save()
-}
+// Holding math lives in domain/portfolioLedger.js (single implementation)
 
 const Portfolio = mongoose.model('Portfolio', portfolioSchema)
 

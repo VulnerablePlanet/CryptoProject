@@ -114,4 +114,4 @@ positionSchema.virtual('currentPnl').get(function() {
 // Ensure virtuals are included in JSON
 positionSchema.set('toJSON', { virtuals: true })
 
-module.exports = mongoose.model('Position', positionSchema)
+module.exports = mongoose.models.Position || mongoose.model('Position', positionSchema)
